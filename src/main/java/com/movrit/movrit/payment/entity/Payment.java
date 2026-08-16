@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "payments")
+@Table(name = "payment")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -20,22 +20,43 @@ public class Payment extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @Column(unique = true, length = 100)
+    @Column(name = "payment_key")
     private String paymentKey;
 
-    @Column(nullable = false, precision = 15, scale = 2)
-    private BigDecimal amount;
+    @Column(name = "pg_provider")
+    private String pgProvider;
 
-    @Column(length = 30)
     private String method;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     private PaymentStatus status;
 
-    private LocalDateTime paidAt;
+    @Column(name = "requested_amount", nullable = false)
+    private BigDecimal requestedAmount;
+
+    @Column(name = "approved_amount")
+    private BigDecimal approvedAmount;
+
+    @Column(name = "idempotency_key")
+    private String idempotencyKey;
+
+    @Column(name = "requested_at")
+    private LocalDateTime requestedAt;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    @Column(name = "failed_at")
+    private LocalDateTime failedAt;
+
+    @Column(name = "failure_code")
+    private String failureCode;
+
+    @Column(name = "failure_message")
+    private String failureMessage;
 }
