@@ -3,6 +3,7 @@ package com.movrit.movrit.product.service;
 import com.movrit.movrit.product.dto.ProductDtos;
 import com.movrit.movrit.product.entity.Product;
 import com.movrit.movrit.product.repository.ProductRepository;
+import com.movrit.movrit.seller.service.SellerProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,9 +18,12 @@ import java.util.List;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final SellerProfileService sellerProfileService;
 
     @Transactional
     public ProductDtos.Response create(ProductDtos.CreateRequest request) {
+        sellerProfileService.getSeller(request.sellerId());
+
         Product product = Product.builder()
                 .sellerId(request.sellerId())
                 .name(request.name().trim())
