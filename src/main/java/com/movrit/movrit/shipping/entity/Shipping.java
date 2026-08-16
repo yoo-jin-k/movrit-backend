@@ -38,4 +38,13 @@ public class Shipping extends BaseEntity {
 
     @Column(name = "delivered_at")
     private LocalDateTime deliveredAt;
+
+    public void update(String courierCode, String trackingNumber, ShippingStatus status,
+                       LocalDateTime shippedAt, LocalDateTime deliveredAt) {
+        this.courierCode = courierCode;
+        this.trackingNumber = trackingNumber;
+        this.status = status;
+        this.shippedAt = shippedAt;
+        this.deliveredAt = deliveredAt;
+    }
 }
