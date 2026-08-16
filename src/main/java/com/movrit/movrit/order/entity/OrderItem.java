@@ -1,10 +1,11 @@
 package com.movrit.movrit.order.entity;
 
-import com.movrit.movrit.preorder.entity.Preorder;
+import com.movrit.movrit.product.entity.Product;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "order_item")
@@ -23,15 +24,30 @@ public class OrderItem {
     private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "preorder_id", nullable = false)
-    private Preorder preorder;
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
-    @Column(nullable = false)
-    private Integer quantity;
+    @Column(name = "product_variant_id")
+    private Long productVariantId;
 
-    @Column(nullable = false, precision = 15, scale = 2)
+    @Column(name = "preorder_variant_id")
+    private Long preorderVariantId;
+
+    @Column(name = "product_name", nullable = false)
+    private String productName;
+
+    @Column(name = "option_name")
+    private String optionName;
+
+    @Column(name = "unit_price", nullable = false)
     private BigDecimal unitPrice;
 
-    @Column(nullable = false, precision = 15, scale = 2)
+    @Column(nullable = false)
+    private Long quantity;
+
+    @Column(name = "total_price", nullable = false)
     private BigDecimal totalPrice;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 }
