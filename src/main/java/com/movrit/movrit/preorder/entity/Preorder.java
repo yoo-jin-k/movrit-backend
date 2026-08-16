@@ -36,6 +36,9 @@ public class Preorder extends BaseEntity {
     @Column(name = "preorder_price", nullable = false)
     private BigDecimal preorderPrice;
 
+    @Column(nullable = false, columnDefinition = "char(3)")
+    private String currency;
+
     @Column(name = "target_quantity", nullable = false)
     private Long targetQuantity;
 
@@ -70,4 +73,26 @@ public class Preorder extends BaseEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public void update(String title, String description, BigDecimal preorderPrice, String currency,
+                       Long targetQuantity, Long maxQuantity, LocalDateTime startAt, LocalDateTime endAt,
+                       LocalDateTime productionExpectedAt, LocalDateTime shippingExpectedAt, PreorderStatus status,
+                       String cancellationReason) {
+        this.title = title;
+        this.description = description;
+        this.preorderPrice = preorderPrice;
+        this.currency = currency;
+        this.targetQuantity = targetQuantity;
+        this.maxQuantity = maxQuantity;
+        this.startAt = startAt;
+        this.endAt = endAt;
+        this.productionExpectedAt = productionExpectedAt;
+        this.shippingExpectedAt = shippingExpectedAt;
+        this.status = status;
+        this.cancellationReason = cancellationReason;
+    }
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
 }
