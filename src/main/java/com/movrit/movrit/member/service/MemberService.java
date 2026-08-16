@@ -42,7 +42,10 @@ public class MemberService {
     }
 
     public List<MemberSignupResponse> findAll() {
-        return memberRepository.findAll().stream().map(MemberSignupResponse::from).toList();
+        return memberRepository.findAll().stream()
+                .filter(member -> member.getDeletedAt() == null)
+                .map(MemberSignupResponse::from)
+                .toList();
     }
 
     public MemberSignupResponse findById(Long id) {
@@ -62,8 +65,12 @@ public class MemberService {
     }
 
     public Member getMember(Long id) {
-        return memberRepository.findById(id)
+        Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어."));
+        if (member.getDeletedAt() != null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어.");
+        }
+        return member;
     }
 
     private String normalizePhone(String phone) {
