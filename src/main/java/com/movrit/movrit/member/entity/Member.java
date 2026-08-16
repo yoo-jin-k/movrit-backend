@@ -39,4 +39,18 @@ public class Member extends BaseEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public void updateProfile(String name, String phone) {
+        this.name = name;
+        this.phone = phone;
+    }
+
+    public void changePassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public void withdraw() {
+        this.status = MemberStatus.WITHDRAWN;
+        this.deletedAt = LocalDateTime.now();
+    }
 }
