@@ -1,6 +1,5 @@
 package com.movrit.movrit.settlement.entity;
 
-import com.movrit.movrit.brand.entity.Brand;
 import com.movrit.movrit.common.entity.BaseEntity;
 import com.movrit.movrit.creator.entity.Creator;
 import com.movrit.movrit.preorder.entity.Preorder;
@@ -25,10 +24,6 @@ public class Settlement extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "preorder_id", nullable = false)
     private Preorder preorder;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "brand_id", nullable = false)
-    private Brand brand;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "creator_id", nullable = false)
