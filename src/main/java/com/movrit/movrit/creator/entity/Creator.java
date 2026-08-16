@@ -21,7 +21,7 @@ public class Creator extends BaseEntity {
     @JoinColumn(name = "member_id", nullable = false, unique = true)
     private Member member;
 
-    @Column(name = "nickname")
+    @Column(name = "nickname", nullable = false)
     private String nickname;
 
     @Column(name = "bio", columnDefinition = "TEXT")
@@ -30,6 +30,13 @@ public class Creator extends BaseEntity {
     @Column(name = "primary_category")
     private String primaryCategory;
 
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     private String status;
+
+    public void update(String nickname, String bio, String primaryCategory, String status) {
+        this.nickname = nickname;
+        this.bio = bio;
+        this.primaryCategory = primaryCategory;
+        this.status = status;
+    }
 }
