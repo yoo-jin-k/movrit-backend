@@ -43,6 +43,9 @@ public class Settlement extends BaseEntity {
     @Column(name = "net_amount", nullable = false)
     private BigDecimal netAmount;
 
+    @Column(nullable = false, columnDefinition = "char(3)")
+    private String currency;
+
     @Column(name = "calculated_at")
     private LocalDateTime calculatedAt;
 
@@ -51,4 +54,17 @@ public class Settlement extends BaseEntity {
 
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
+
+    public void update(SettlementStatus status, BigDecimal grossAmount, BigDecimal refundAmount,
+                       BigDecimal platformFeeAmount, BigDecimal netAmount, LocalDateTime calculatedAt,
+                       LocalDateTime confirmedAt, LocalDateTime paidAt) {
+        this.status = status;
+        this.grossAmount = grossAmount;
+        this.refundAmount = refundAmount;
+        this.platformFeeAmount = platformFeeAmount;
+        this.netAmount = netAmount;
+        this.calculatedAt = calculatedAt;
+        this.confirmedAt = confirmedAt;
+        this.paidAt = paidAt;
+    }
 }
