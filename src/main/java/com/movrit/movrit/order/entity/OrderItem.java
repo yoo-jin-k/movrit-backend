@@ -1,6 +1,5 @@
 package com.movrit.movrit.order.entity;
 
-import com.movrit.movrit.common.entity.BaseEntity;
 import com.movrit.movrit.preorder.entity.Preorder;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,7 +12,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class OrderItem extends BaseEntity {
+public class OrderItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
