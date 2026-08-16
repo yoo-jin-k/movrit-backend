@@ -39,4 +39,16 @@ public class Product extends BaseEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public void update(String name, String description, String category, BigDecimal normalPrice, ProductStatus status) {
+        this.name = name;
+        this.description = description;
+        this.category = category;
+        this.normalPrice = normalPrice;
+        this.status = status;
+    }
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
 }
