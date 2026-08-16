@@ -2,6 +2,7 @@ package com.movrit.movrit.order.entity;
 
 import com.movrit.movrit.common.entity.BaseEntity;
 import com.movrit.movrit.member.entity.Member;
+import com.movrit.movrit.preorder.entity.Preorder;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,20 +21,60 @@ public class Order extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 40)
+    @Column(name = "order_number", nullable = false)
     private String orderNumber;
+
+    @Column(name = "request_key", nullable = false)
+    private String requestKey;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
-    @Column(nullable = false, precision = 15, scale = 2)
-    private BigDecimal totalAmount;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "preorder_id", nullable = false)
+    private Preorder preorder;
+
+    @Column(name = "attribution_id")
+    private Long attributionId;
+
+    @Column(name = "acquisition_source", nullable = false)
+    private String acquisitionSource;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false)
     private OrderStatus status;
 
-    @Column(nullable = false)
-    private LocalDateTime orderedAt;
+    @Column(name = "total_product_amount", nullable = false)
+    private BigDecimal totalProductAmount;
+
+    @Column(name = "discount_amount", nullable = false)
+    private BigDecimal discountAmount;
+
+    @Column(name = "shipping_amount", nullable = false)
+    private BigDecimal shippingAmount;
+
+    @Column(name = "total_payment_amount", nullable = false)
+    private BigDecimal totalPaymentAmount;
+
+    @Column(name = "receiver_name", nullable = false)
+    private String receiverName;
+
+    @Column(name = "receiver_phone", nullable = false)
+    private String receiverPhone;
+
+    @Column(name = "postal_code")
+    private String postalCode;
+
+    @Column(name = "address1", nullable = false)
+    private String address1;
+
+    @Column(name = "address2")
+    private String address2;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
 }
