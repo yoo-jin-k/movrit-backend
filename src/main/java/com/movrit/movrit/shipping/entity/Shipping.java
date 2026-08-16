@@ -5,8 +5,10 @@ import com.movrit.movrit.order.entity.Order;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
-@Table(name = "shippings")
+@Table(name = "shipment")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -17,32 +19,23 @@ public class Shipping extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @Column(nullable = false, length = 50)
-    private String receiverName;
+    @Column(name = "courier_code")
+    private String courierCode;
 
-    @Column(nullable = false, length = 20)
-    private String receiverPhone;
-
-    @Column(nullable = false, length = 255)
-    private String address;
-
-    @Column(length = 255)
-    private String addressDetail;
-
-    @Column(length = 20)
-    private String postalCode;
-
-    @Column(length = 50)
-    private String courier;
-
-    @Column(length = 100)
+    @Column(name = "tracking_number")
     private String trackingNumber;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     private ShippingStatus status;
+
+    @Column(name = "shipped_at")
+    private LocalDateTime shippedAt;
+
+    @Column(name = "delivered_at")
+    private LocalDateTime deliveredAt;
 }
