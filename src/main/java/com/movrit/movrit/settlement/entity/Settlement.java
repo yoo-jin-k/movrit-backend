@@ -1,7 +1,6 @@
 package com.movrit.movrit.settlement.entity;
 
 import com.movrit.movrit.common.entity.BaseEntity;
-import com.movrit.movrit.creator.entity.Creator;
 import com.movrit.movrit.preorder.entity.Preorder;
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "settlements")
+@Table(name = "settlement")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -25,25 +24,31 @@ public class Settlement extends BaseEntity {
     @JoinColumn(name = "preorder_id", nullable = false)
     private Preorder preorder;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "creator_id", nullable = false)
-    private Creator creator;
-
-    @Column(nullable = false, precision = 15, scale = 2)
-    private BigDecimal grossAmount;
-
-    @Column(nullable = false, precision = 15, scale = 2)
-    private BigDecimal platformFee;
-
-    @Column(nullable = false, precision = 15, scale = 2)
-    private BigDecimal creatorAmount;
-
-    @Column(nullable = false, precision = 15, scale = 2)
-    private BigDecimal brandAmount;
+    @Column(name = "settlement_number", nullable = false)
+    private String settlementNumber;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     private SettlementStatus status;
 
-    private LocalDateTime settledAt;
+    @Column(name = "gross_amount", nullable = false)
+    private BigDecimal grossAmount;
+
+    @Column(name = "refund_amount", nullable = false)
+    private BigDecimal refundAmount;
+
+    @Column(name = "platform_fee_amount", nullable = false)
+    private BigDecimal platformFeeAmount;
+
+    @Column(name = "net_amount", nullable = false)
+    private BigDecimal netAmount;
+
+    @Column(name = "calculated_at")
+    private LocalDateTime calculatedAt;
+
+    @Column(name = "confirmed_at")
+    private LocalDateTime confirmedAt;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
 }
