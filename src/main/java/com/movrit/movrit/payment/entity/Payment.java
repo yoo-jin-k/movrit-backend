@@ -42,6 +42,9 @@ public class Payment extends BaseEntity {
     @Column(name = "approved_amount")
     private BigDecimal approvedAmount;
 
+    @Column(nullable = false, columnDefinition = "char(3)")
+    private String currency;
+
     @Column(name = "idempotency_key")
     private String idempotencyKey;
 
@@ -59,4 +62,19 @@ public class Payment extends BaseEntity {
 
     @Column(name = "failure_message")
     private String failureMessage;
+
+    public void update(String paymentKey, String pgProvider, String method, PaymentStatus status,
+                       BigDecimal approvedAmount, LocalDateTime requestedAt, LocalDateTime approvedAt,
+                       LocalDateTime failedAt, String failureCode, String failureMessage) {
+        this.paymentKey = paymentKey;
+        this.pgProvider = pgProvider;
+        this.method = method;
+        this.status = status;
+        this.approvedAmount = approvedAmount;
+        this.requestedAt = requestedAt;
+        this.approvedAt = approvedAt;
+        this.failedAt = failedAt;
+        this.failureCode = failureCode;
+        this.failureMessage = failureMessage;
+    }
 }
