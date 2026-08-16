@@ -57,6 +57,9 @@ public class Order extends BaseEntity {
     @Column(name = "total_payment_amount", nullable = false)
     private BigDecimal totalPaymentAmount;
 
+    @Column(nullable = false, columnDefinition = "char(3)")
+    private String currency;
+
     @Column(name = "receiver_name", nullable = false)
     private String receiverName;
 
@@ -77,4 +80,16 @@ public class Order extends BaseEntity {
 
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
+
+    public void update(OrderStatus status, String receiverName, String receiverPhone, String postalCode,
+                       String address1, String address2, LocalDateTime paidAt, LocalDateTime cancelledAt) {
+        this.status = status;
+        this.receiverName = receiverName;
+        this.receiverPhone = receiverPhone;
+        this.postalCode = postalCode;
+        this.address1 = address1;
+        this.address2 = address2;
+        this.paidAt = paidAt;
+        this.cancelledAt = cancelledAt;
+    }
 }
