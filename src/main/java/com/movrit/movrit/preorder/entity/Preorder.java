@@ -1,7 +1,6 @@
 package com.movrit.movrit.preorder.entity;
 
 import com.movrit.movrit.common.entity.BaseEntity;
-import com.movrit.movrit.creator.entity.Creator;
 import com.movrit.movrit.product.entity.Product;
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "preorders")
+@Table(name = "preorder")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -21,29 +20,54 @@ public class Preorder extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "seller_id", nullable = false)
+    private Long sellerId;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "creator_id", nullable = false)
-    private Creator creator;
-
-    @Column(nullable = false, length = 150)
+    @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, precision = 15, scale = 2)
-    private BigDecimal salePrice;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
-    private Integer stockQuantity;
+    @Column(name = "preorder_price", nullable = false)
+    private BigDecimal preorderPrice;
 
-    @Column(nullable = false)
+    @Column(name = "target_quantity", nullable = false)
+    private Long targetQuantity;
+
+    @Column(name = "max_quantity")
+    private Long maxQuantity;
+
+    @Column(name = "ordered_quantity", nullable = false)
+    private Long orderedQuantity;
+
+    @Column(name = "start_at", nullable = false)
     private LocalDateTime startAt;
 
-    @Column(nullable = false)
+    @Column(name = "end_at", nullable = false)
     private LocalDateTime endAt;
 
+    @Column(name = "production_expected_at")
+    private LocalDateTime productionExpectedAt;
+
+    @Column(name = "shipping_expected_at")
+    private LocalDateTime shippingExpectedAt;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false)
     private PreorderStatus status;
+
+    @Column(name = "cancellation_reason")
+    private String cancellationReason;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 }
