@@ -21,12 +21,15 @@ public class Creator extends BaseEntity {
     @JoinColumn(name = "member_id", nullable = false, unique = true)
     private Member member;
 
-    @Column(nullable = false, length = 80)
-    private String displayName;
+    @Column(name = "nickname")
+    private String nickname;
 
-    @Column(length = 255)
-    private String profileImageUrl;
+    @Column(name = "bio", columnDefinition = "TEXT")
+    private String bio;
 
-    @Column(length = 500)
-    private String introduction;
+    @Column(name = "primary_category")
+    private String primaryCategory;
+
+    @Column(name = "status")
+    private String status;
 }
