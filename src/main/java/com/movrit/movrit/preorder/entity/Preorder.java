@@ -2,6 +2,7 @@ package com.movrit.movrit.preorder.entity;
 
 import com.movrit.movrit.common.entity.BaseEntity;
 import com.movrit.movrit.product.entity.Product;
+import com.movrit.movrit.product.entity.ProductVariant;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -9,6 +10,9 @@ import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "preorder")
@@ -25,6 +29,16 @@ public class Preorder extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
+
+    /** 프리오더에서 실제 판매 허용한 SKU만 주문할 수 있다. */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "preorder_variant",
+            joinColumns = @JoinColumn(name = "preorder_id"),
+            inverseJoinColumns = @JoinColumn(name = "product_variant_id")
+    )
+    @Builder.Default
+    private Set<ProductVariant> saleVariants = new LinkedHashSet<>();
 
     @Column(nullable = false)
     private String title;
@@ -103,14 +117,35 @@ public class Preorder extends BaseEntity {
         this.shippingExpectedAt = shippingExpectedAt;
     }
 
+    public void replaceSaleVariants(Collection<ProductVariant> variants) {
+        if (status == PreorderStatus.OPEN || status == PreorderStatus.CLOSED
+                || status == PreorderStatus.SUCCESS || status == PreorderStatus.FAILED) {
+            throw new IllegalStateException("판매가 시작된 프리오더의 SKU 구성은 변경할 수 없어.");
+        }
+        if (variants == null || variants.isEmpty()) {
+            throw new IllegalArgumentException("판매할 SKU를 하나 이상 선택해줘.");
+        }
+        this.saleVariants.clear();
+        this.saleVariants.addAll(variants);
+    }
+
+    public boolean canSellVariant(Long variantId) {
+        return saleVariants.stream().anyMatch(variant -> variant.getId().equals(variantId));
+    }
+
     public void schedule() {
         if (status != PreorderStatus.DRAFT) throw new IllegalStateException("초안 상태에서만 판매 예약할 수 있어.");
+        if (saleVariants.isEmpty()) throw new IllegalStateException("판매할 SKU를 하나 이상 연결해줘.");
         this.status = PreorderStatus.SCHEDULED;
     }
 
     public void open(LocalDateTime now) {
         if (status != PreorderStatus.SCHEDULED && status != PreorderStatus.DRAFT) {
             throw new IllegalStateException("예약 또는 초안 상태에서만 판매를 시작할 수 있어.");
+        }
+        if (saleVariants.isEmpty()) throw new IllegalStateException("판매할 SKU를 하나 이상 연결해줘.");
+        if (saleVariants.stream().noneMatch(variant -> variant.isActive() && variant.getAvailableQuantity() > 0)) {
+            throw new IllegalStateException("판매 가능한 재고가 있는 SKU가 없어.");
         }
         if (now.isBefore(startAt)) throw new IllegalStateException("프리오더 시작 시간이 아직 안 됐어.");
         if (!now.isBefore(endAt)) throw new IllegalStateException("이미 종료 시간이 지난 프리오더야.");
