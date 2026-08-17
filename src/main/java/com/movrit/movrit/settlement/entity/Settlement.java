@@ -1,5 +1,7 @@
 package com.movrit.movrit.settlement.entity;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.movrit.movrit.common.entity.BaseEntity;
 import com.movrit.movrit.preorder.entity.Preorder;
 import jakarta.persistence.*;
@@ -43,7 +45,8 @@ public class Settlement extends BaseEntity {
     @Column(name = "net_amount", nullable = false)
     private BigDecimal netAmount;
 
-    @Column(nullable = false, columnDefinition = "char(3)")
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(nullable = false, length = 3, columnDefinition = "char(3)")
     private String currency;
 
     @Column(name = "calculated_at")

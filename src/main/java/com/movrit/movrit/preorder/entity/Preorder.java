@@ -1,5 +1,7 @@
 package com.movrit.movrit.preorder.entity;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.movrit.movrit.common.entity.BaseEntity;
 import com.movrit.movrit.product.entity.Product;
 import jakarta.persistence.*;
@@ -36,7 +38,8 @@ public class Preorder extends BaseEntity {
     @Column(name = "preorder_price", nullable = false)
     private BigDecimal preorderPrice;
 
-    @Column(nullable = false, columnDefinition = "char(3)")
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(nullable = false, length = 3, columnDefinition = "char(3)")
     private String currency;
 
     @Column(name = "target_quantity", nullable = false)
