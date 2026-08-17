@@ -5,5 +5,7 @@ public enum PreorderStatus {
     SCHEDULED,
     OPEN,
     CLOSED,
+    SUCCESS,
+    FAILED,
     CANCELLED
 }
