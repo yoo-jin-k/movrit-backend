@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -55,22 +56,25 @@ public class CreatorController {
         return creatorService.updateCampaignStatus(memberId(jwt), campaignId, request);
     }
 
-    // 관리자 화면에서 신청 목록을 조회할 때 사용한다.
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public List<CreatorDtos.Response> findAll(@RequestParam(required = false) CreatorStatus status) {
         return creatorService.findAll(status);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public CreatorDtos.Response findById(@PathVariable Long id) {
         return creatorService.findById(id);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/approve")
     public CreatorDtos.Response approve(@PathVariable Long id) {
         return creatorService.approve(id);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/reject")
     public CreatorDtos.Response reject(
             @PathVariable Long id,
@@ -79,6 +83,7 @@ public class CreatorController {
         return creatorService.reject(id, request);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/campaigns")
     public ResponseEntity<CreatorDtos.CampaignResponse> assignCampaign(
             @PathVariable Long id,

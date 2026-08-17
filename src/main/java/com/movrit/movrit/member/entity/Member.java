@@ -34,6 +34,11 @@ public class Member extends BaseEntity {
     @Column(nullable = false, length = 20)
     private MemberStatus status;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private MemberRole role = MemberRole.BUYER;
+
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
@@ -47,6 +52,10 @@ public class Member extends BaseEntity {
 
     public void changePassword(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public void changeRole(MemberRole role) {
+        this.role = role;
     }
 
     public void updateLastLoginAt() {

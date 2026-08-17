@@ -12,7 +12,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "orders", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_orders_order_number", columnNames = "order_number"),
+        @UniqueConstraint(name = "uk_orders_request_key", columnNames = "request_key")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -94,5 +97,39 @@ public class Order extends BaseEntity {
         this.address2 = address2;
         this.paidAt = paidAt;
         this.cancelledAt = cancelledAt;
+    }
+
+    public void markPaid() {
+        if (status != OrderStatus.PENDING_PAYMENT) throw new IllegalStateException("결제대기 주문만 결제완료 처리할 수 있어.");
+        status = OrderStatus.PAID;
+        paidAt = LocalDateTime.now();
+    }
+
+    public void markPreparing() {
+        if (status != OrderStatus.PAID) throw new IllegalStateException("결제완료 주문만 배송 준비할 수 있어.");
+        status = OrderStatus.PREPARING;
+    }
+
+    public void markShipped() {
+        if (status != OrderStatus.PREPARING) throw new IllegalStateException("배송 준비 주문만 배송중 처리할 수 있어.");
+        status = OrderStatus.SHIPPED;
+    }
+
+    public void markDelivered() {
+        if (status != OrderStatus.SHIPPED) throw new IllegalStateException("배송중 주문만 배송완료 처리할 수 있어.");
+        status = OrderStatus.DELIVERED;
+    }
+
+    public void cancel() {
+        if (status == OrderStatus.SHIPPED || status == OrderStatus.DELIVERED) {
+            throw new IllegalStateException("배송이 시작된 주문은 일반 취소할 수 없어.");
+        }
+        if (status == OrderStatus.CANCELLED) return;
+        status = OrderStatus.CANCELLED;
+        cancelledAt = LocalDateTime.now();
+    }
+
+    public void markRefunded() {
+        status = OrderStatus.REFUNDED;
     }
 }

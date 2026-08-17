@@ -1,7 +1,6 @@
 package com.movrit.movrit.auth.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
-
 import com.movrit.movrit.auth.dto.GoogleUserInfo;
 import com.movrit.movrit.auth.service.GoogleAuthService;
 import java.io.IOException;
@@ -34,29 +33,18 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(
-            @Valid @RequestBody LoginRequest request
-    ) {
-        LoginResponse response = authService.login(request);
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 
     @GetMapping("/google/login-url")
     public ResponseEntity<String> googleLoginUrl() {
-
-        return ResponseEntity.ok(
-                googleAuthService.getLoginUrl()
-        );
+        return ResponseEntity.ok(googleAuthService.getLoginUrl());
     }
 
     @GetMapping("/me")
-    public ResponseEntity<String> me(
-            @AuthenticationPrincipal Jwt jwt
-    ) {
-        return ResponseEntity.ok(
-                "로그인 회원 ID: " + jwt.getSubject()
-        );
+    public ResponseEntity<String> me(@AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok("로그인 회원 ID: " + jwt.getSubject());
     }
 
     @GetMapping("/kakao")
@@ -64,75 +52,32 @@ public class AuthController {
             @Value("${kakao.client-id}") String clientId,
             @Value("${kakao.redirect-uri}") String redirectUri
     ) {
-        String kakaoAuthUrl =
-                "https://kauth.kakao.com/oauth/authorize"
-                        + "?response_type=code"
-                        + "&client_id=" + clientId
-                        + "&redirect_uri=" + redirectUri;
-
+        String kakaoAuthUrl = "https://kauth.kakao.com/oauth/authorize"
+                + "?response_type=code"
+                + "&client_id=" + clientId
+                + "&redirect_uri=" + redirectUri;
         return ResponseEntity.ok(kakaoAuthUrl);
     }
 
     @GetMapping("/kakao/callback")
-    public void kakaoCallback(
-            @RequestParam("code") String code,
-            HttpServletResponse response
-    ) throws IOException {
-
-        String kakaoAccessToken =
-                kakaoAuthService.getAccessToken(code);
-
-        KakaoUserInfo userInfo =
-                kakaoAuthService.getUserInfo(kakaoAccessToken);
-
-        Member member =
-                kakaoAuthService.loginOrSignup(userInfo);
-
-        String movritAccessToken =
-                jwtTokenProvider.createAccessToken(
-                        member.getId(),
-                        member.getEmail()
-                );
-
-        String redirectUrl =
-                "http://localhost:5173/oauth/callback"
-                        + "?token=" + URLEncoder.encode(
-                        movritAccessToken,
-                        StandardCharsets.UTF_8
-                );
-
+    public void kakaoCallback(@RequestParam("code") String code, HttpServletResponse response) throws IOException {
+        String kakaoAccessToken = kakaoAuthService.getAccessToken(code);
+        KakaoUserInfo userInfo = kakaoAuthService.getUserInfo(kakaoAccessToken);
+        Member member = kakaoAuthService.loginOrSignup(userInfo);
+        String movritAccessToken = jwtTokenProvider.createAccessToken(member.getId(), member.getEmail(), member.getRole());
+        String redirectUrl = "http://localhost:5173/oauth/callback?token="
+                + URLEncoder.encode(movritAccessToken, StandardCharsets.UTF_8);
         response.sendRedirect(redirectUrl);
     }
 
     @GetMapping("/google/callback")
-    public void googleCallback(
-            @RequestParam("code") String code,
-            HttpServletResponse response
-    ) throws IOException {
-
-        String googleAccessToken =
-                googleAuthService.getAccessToken(code);
-
-        GoogleUserInfo userInfo =
-                googleAuthService.getUserInfo(googleAccessToken);
-
-        Member member =
-                googleAuthService.loginOrSignup(userInfo);
-
-        String movritAccessToken =
-                jwtTokenProvider.createAccessToken(
-                        member.getId(),
-                        member.getEmail()
-                );
-
-        String redirectUrl =
-                "http://localhost:5173/oauth/callback"
-                        + "?token="
-                        + URLEncoder.encode(
-                        movritAccessToken,
-                        StandardCharsets.UTF_8
-                );
-
+    public void googleCallback(@RequestParam("code") String code, HttpServletResponse response) throws IOException {
+        String googleAccessToken = googleAuthService.getAccessToken(code);
+        GoogleUserInfo userInfo = googleAuthService.getUserInfo(googleAccessToken);
+        Member member = googleAuthService.loginOrSignup(userInfo);
+        String movritAccessToken = jwtTokenProvider.createAccessToken(member.getId(), member.getEmail(), member.getRole());
+        String redirectUrl = "http://localhost:5173/oauth/callback?token="
+                + URLEncoder.encode(movritAccessToken, StandardCharsets.UTF_8);
         response.sendRedirect(redirectUrl);
     }
 }
