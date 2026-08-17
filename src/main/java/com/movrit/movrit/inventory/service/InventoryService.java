@@ -70,7 +70,7 @@ public class InventoryService {
     }
 
     private Inventory locked(Long skuId) {
-        return inventoryRepository.findWithLockByProductSkuId(skuId)
+        return inventoryRepository.findByProductSkuIdForUpdate(skuId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "재고 정보를 찾을 수 없어."));
     }
 }
