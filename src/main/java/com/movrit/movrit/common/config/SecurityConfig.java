@@ -46,6 +46,7 @@ public class SecurityConfig {
                                 "/api/auth/kakao/**",
                                 "/api/auth/google/**",
                                 "/api/preorders/open",
+                                "/api/preorders/browse",
                                 "/api/preorders/*",
                                 "/api/products/*/variants",
                                 "/api/collaborations/campaigns/open",

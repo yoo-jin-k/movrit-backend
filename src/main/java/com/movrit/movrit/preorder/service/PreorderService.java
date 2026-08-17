@@ -70,6 +70,12 @@ public class PreorderService {
                 .map(PreorderDtos.Response::from)
                 .toList();
     }
+    public List<PreorderDtos.Response> browse(String keyword,String category,PreorderStatus status){
+        Set<PreorderStatus> publicStatuses=Set.of(PreorderStatus.SCHEDULED,PreorderStatus.OPEN,PreorderStatus.SUCCESS,PreorderStatus.FAILED,PreorderStatus.PRODUCTION,PreorderStatus.SHIPPING,PreorderStatus.COMPLETED);
+        if(status!=null&&!publicStatuses.contains(status))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"공개 조회할 수 없는 상태야.");
+        String q=keyword==null?"":keyword.trim().toLowerCase();
+        return preorderRepository.findAll().stream().filter(p->p.getDeletedAt()==null&&publicStatuses.contains(p.getStatus())).filter(p->status==null||p.getStatus()==status).filter(p->category==null||category.isBlank()||category.equalsIgnoreCase(p.getProduct().getCategory())).filter(p->q.isBlank()||p.getTitle().toLowerCase().contains(q)||p.getProduct().getName().toLowerCase().contains(q)||p.getProduct().getBrand().getName().toLowerCase().contains(q)).map(PreorderDtos.Response::from).toList();
+    }
 
     public PreorderDtos.Response findById(Long id) {
         return PreorderDtos.Response.from(getPreorder(id));

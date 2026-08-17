@@ -34,6 +34,7 @@ public class PreorderController {
     public List<PreorderDtos.Response> findOpen() {
         return preorderService.findOpen();
     }
+    @GetMapping("/browse") public List<PreorderDtos.Response> browse(@RequestParam(required=false)String keyword,@RequestParam(required=false)String category,@RequestParam(required=false)com.movrit.movrit.preorder.entity.PreorderStatus status){return preorderService.browse(keyword,category,status);}
 
     @GetMapping("/{id}")
     public PreorderDtos.Response findById(@PathVariable Long id) {
