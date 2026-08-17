@@ -45,15 +45,22 @@ public class OrderService {
         }
 
         Member member = memberService.getMember(memberId);
-        Preorder preorder = preorderService.getPreorder(request.preorderId());
-        ProductVariant variant = productService.getVariant(request.productVariantId());
+        // 프리오더를 먼저 잠그고 SKU를 잠가 모든 주문이 같은 순서로 재고를 확인한다.
+        Preorder preorder = preorderService.getPreorderForOrder(request.preorderId());
+        ProductVariant variant = productService.getVariantForOrder(request.productVariantId());
         if (!variant.getProduct().getId().equals(preorder.getProduct().getId())
                 || !preorder.canSellVariant(variant.getId())
                 || !variant.isActive()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "프리오더에서 판매 중인 SKU가 아니야.");
         }
+        long alreadyOrdered = orderRepository.findAllByMemberIdOrderByIdDesc(memberId).stream()
+                .filter(order -> order.getPreorder().getId().equals(preorder.getId()))
+                .filter(order -> order.getStatus() != OrderStatus.CANCELLED && order.getStatus() != OrderStatus.REFUNDED)
+                .flatMap(order -> orderItemRepository.findAllByOrderId(order.getId()).stream())
+                .mapToLong(OrderItem::getQuantity)
+                .sum();
         if (preorder.getMaxOrderQuantityPerMember() != null
-                && request.quantity() > preorder.getMaxOrderQuantityPerMember()) {
+                && alreadyOrdered + request.quantity() > preorder.getMaxOrderQuantityPerMember()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "회원별 최대 주문 수량을 초과해.");
         }
 

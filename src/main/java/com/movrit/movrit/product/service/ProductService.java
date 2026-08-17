@@ -180,6 +180,12 @@ public class ProductService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "상품 옵션을 찾을 수 없어."));
     }
 
+    /** 주문 재고를 예약하는 동안 같은 SKU의 다른 예약이 끼어들지 못하게 한다. */
+    public ProductVariant getVariantForOrder(Long variantId) {
+        return productVariantRepository.findLockedById(variantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "상품 옵션을 찾을 수 없어."));
+    }
+
     @Transactional
     public void delete(Long memberId, Long id) {
         getOwnedProduct(memberId, id).softDelete();

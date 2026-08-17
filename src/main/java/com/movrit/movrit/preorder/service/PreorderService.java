@@ -153,6 +153,16 @@ public class PreorderService {
         return preorder;
     }
 
+    /** 주문 수량을 검사하고 늘리는 동안 다른 주문이 같은 프리오더 수량을 바꾸지 못하게 한다. */
+    public Preorder getPreorderForOrder(Long id) {
+        Preorder preorder = preorderRepository.findLockedById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "프리오더를 찾을 수 없어."));
+        if (preorder.getDeletedAt() != null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "프리오더를 찾을 수 없어.");
+        }
+        return preorder;
+    }
+
     @Transactional
     public void addOrderQuantity(Preorder preorder, long quantity) {
         try {
