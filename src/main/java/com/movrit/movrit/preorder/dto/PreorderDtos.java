@@ -5,17 +5,20 @@ import com.movrit.movrit.preorder.entity.PreorderStatus;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public final class PreorderDtos {
     private PreorderDtos() {}
 
     public record CreateRequest(
             @NotNull Long productId,
+            @NotEmpty List<@NotNull Long> variantIds,
             @NotBlank String title,
             String description,
             @NotNull @DecimalMin("0") BigDecimal preorderPrice,
@@ -31,6 +34,7 @@ public final class PreorderDtos {
     ) {}
 
     public record UpdateRequest(
+            @NotEmpty List<@NotNull Long> variantIds,
             @NotBlank String title,
             String description,
             @NotNull @DecimalMin("0") BigDecimal preorderPrice,
@@ -52,6 +56,7 @@ public final class PreorderDtos {
             Long brandId,
             Long productId,
             String productName,
+            List<Long> variantIds,
             String title,
             String description,
             BigDecimal preorderPrice,
@@ -74,6 +79,7 @@ public final class PreorderDtos {
                     preorder.getProduct().getBrand().getId(),
                     preorder.getProduct().getId(),
                     preorder.getProduct().getName(),
+                    preorder.getSaleVariants().stream().map(variant -> variant.getId()).sorted().toList(),
                     preorder.getTitle(),
                     preorder.getDescription(),
                     preorder.getPreorderPrice(),
