@@ -19,5 +19,5 @@ jobs:
         run: chmod +x gradlew
       - name: Compile backend
         run: ./gradlew clean compileJava --no-daemon
-      - name: Test creator dashboard calculation
-        run: ./gradlew test --tests com.movrit.movrit.creator.CreatorDtosTest --no-daemon
+      - name: Test core backend logic
+        run: ./gradlew test --tests com.movrit.movrit.creator.CreatorDtosTest --tests com.movrit.movrit.inventory.InventoryTest --tests com.movrit.movrit.order.OrderStateTest --no-daemon
