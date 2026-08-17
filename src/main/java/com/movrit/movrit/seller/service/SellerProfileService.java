@@ -48,19 +48,23 @@ public class SellerProfileService {
 
     /** 로그인한 회원 본인의 판매자 신청 상태를 조회한다. */
     public SellerDtos.Response findMine(Long memberId) {
-        SellerProfile seller = sellerProfileRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "판매자 등록 신청 정보가 없어."
-                ));
-
-        return SellerDtos.Response.from(seller);
+        return SellerDtos.Response.from(getSellerByMemberId(memberId));
     }
 
-    /** 이후 상품 등록 서비스에서도 승인 여부를 검사할 때 사용할 수 있는 공통 조회 메서드다. */
+    /** 상품 등 다른 도메인에서 판매자 id 자체를 조회해야 할 때 사용하는 기본 조회다. */
+    public SellerProfile getSeller(Long sellerId) {
+        return sellerProfileRepository.findById(sellerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "판매자 정보를 찾을 수 없어."));
+    }
+
+    public SellerProfile getSellerByMemberId(Long memberId) {
+        return sellerProfileRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "판매자 등록 신청 정보가 없어."));
+    }
+
+    /** 이후 상품 등록 서비스에서 승인 여부를 검사할 때 사용할 공통 조회 메서드다. */
     public SellerProfile getApprovedSeller(Long memberId) {
-        SellerProfile seller = sellerProfileRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "판매자 등록이 필요해."));
+        SellerProfile seller = getSellerByMemberId(memberId);
 
         if (seller.getStatus() != SellerStatus.APPROVED) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "승인된 판매자만 이용할 수 있어.");
