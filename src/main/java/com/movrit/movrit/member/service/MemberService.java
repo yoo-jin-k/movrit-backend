@@ -50,6 +50,7 @@ public class MemberService {
                 .map(MemberSignupResponse::from)
                 .toList();
     }
+    public List<MemberSignupResponse> findAllForAdmin(Long adminId){getAdmin(adminId);return findAll();}
 
     public MemberSignupResponse findById(Long id) {
         return MemberSignupResponse.from(getMember(id));
@@ -61,6 +62,7 @@ public class MemberService {
         member.updateProfile(request.name().trim(), normalizePhone(request.phone()));
         return MemberSignupResponse.from(member);
     }
+    @Transactional public MemberSignupResponse updateStatus(Long adminId,Long id,MemberStatus status){getAdmin(adminId);Member m=getMember(id);try{m.changeStatus(status);}catch(IllegalStateException e){throw new ResponseStatusException(HttpStatus.CONFLICT,e.getMessage());}return MemberSignupResponse.from(m);}
 
     @Transactional
     public void delete(Long id) {

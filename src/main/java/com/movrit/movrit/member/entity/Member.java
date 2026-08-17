@@ -69,4 +69,5 @@ public class Member extends BaseEntity {
         this.status = MemberStatus.WITHDRAWN;
         this.deletedAt = LocalDateTime.now();
     }
+    public void changeStatus(MemberStatus status){if(this.role==MemberRole.ADMIN&&status!=MemberStatus.ACTIVE)throw new IllegalStateException("관리자 계정은 이 API로 정지할 수 없어.");this.status=status;if(status==MemberStatus.WITHDRAWN)this.deletedAt=LocalDateTime.now();}
 }

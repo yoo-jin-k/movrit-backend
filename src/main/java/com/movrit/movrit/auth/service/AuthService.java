@@ -4,6 +4,7 @@ import com.movrit.movrit.auth.dto.LoginRequest;
 import com.movrit.movrit.auth.dto.LoginResponse;
 import com.movrit.movrit.auth.jwt.JwtTokenProvider;
 import com.movrit.movrit.member.entity.Member;
+import com.movrit.movrit.member.entity.MemberStatus;
 import com.movrit.movrit.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +29,7 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "이메일 또는 비밀번호가 올바르지 않아."
                 ));
+        if(member.getStatus()!=MemberStatus.ACTIVE)throw new ResponseStatusException(HttpStatus.FORBIDDEN,"이용할 수 없는 회원 상태야.");
 
         // 2. 입력한 비밀번호와 DB의 암호화된 비밀번호 비교
         if (!passwordEncoder.matches(
