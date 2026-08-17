@@ -7,5 +7,8 @@ public enum PreorderStatus {
     CLOSED,
     SUCCESS,
     FAILED,
+    PRODUCTION,
+    SHIPPING,
+    COMPLETED,
     CANCELLED
 }

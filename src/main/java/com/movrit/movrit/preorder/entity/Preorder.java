@@ -171,6 +171,21 @@ public class Preorder extends BaseEntity {
         this.cancellationReason = reason;
     }
 
+    public void startProduction() {
+        if (status != PreorderStatus.SUCCESS) throw new IllegalStateException("성공 확정 프리오더만 생산을 시작할 수 있어.");
+        status = PreorderStatus.PRODUCTION;
+    }
+
+    public void startShipping() {
+        if (status != PreorderStatus.PRODUCTION) throw new IllegalStateException("생산 중 프리오더만 배송 단계로 변경할 수 있어.");
+        status = PreorderStatus.SHIPPING;
+    }
+
+    public void complete() {
+        if (status != PreorderStatus.SHIPPING) throw new IllegalStateException("배송 단계 프리오더만 완료할 수 있어.");
+        status = PreorderStatus.COMPLETED;
+    }
+
     public void increaseOrderedQuantity(long quantity) {
         if (status != PreorderStatus.OPEN) throw new IllegalStateException("판매 중인 프리오더가 아니야.");
         if (quantity < minOrderQuantity) throw new IllegalStateException("최소 주문 수량보다 적어.");

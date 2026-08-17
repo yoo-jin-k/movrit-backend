@@ -74,6 +74,10 @@ public class PreorderController {
         return preorderService.cancel(memberId(jwt), id, request.reason());
     }
 
+    @PatchMapping("/{id}/production") public PreorderDtos.Response production(@AuthenticationPrincipal Jwt jwt,@PathVariable Long id){return preorderService.startProduction(memberId(jwt),id);}
+    @PatchMapping("/{id}/shipping") public PreorderDtos.Response shipping(@AuthenticationPrincipal Jwt jwt,@PathVariable Long id){return preorderService.startShipping(memberId(jwt),id);}
+    @PatchMapping("/{id}/complete") public PreorderDtos.Response complete(@AuthenticationPrincipal Jwt jwt,@PathVariable Long id){return preorderService.complete(memberId(jwt),id);}
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         preorderService.delete(memberId(jwt), id);

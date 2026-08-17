@@ -124,6 +124,10 @@ public class PreorderService {
         return applyTransition(preorder, value -> value.cancel(reason.trim()));
     }
 
+    @Transactional public PreorderDtos.Response startProduction(Long memberId,Long id){return applyTransition(getOwnedPreorder(memberId,id),Preorder::startProduction);}
+    @Transactional public PreorderDtos.Response startShipping(Long memberId,Long id){return applyTransition(getOwnedPreorder(memberId,id),Preorder::startShipping);}
+    @Transactional public PreorderDtos.Response complete(Long memberId,Long id){return applyTransition(getOwnedPreorder(memberId,id),Preorder::complete);}
+
     @Transactional
     public void delete(Long memberId, Long id) {
         Preorder preorder = getOwnedPreorder(memberId, id);

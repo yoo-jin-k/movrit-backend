@@ -9,6 +9,7 @@ import com.movrit.movrit.payment.entity.Payment;
 import com.movrit.movrit.payment.entity.PaymentStatus;
 import com.movrit.movrit.payment.repository.PaymentRepository;
 import com.movrit.movrit.product.service.ProductService;
+import com.movrit.movrit.preorder.service.PreorderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderService orderService;
     private final ProductService productService;
+    private final PreorderService preorderService;
 
     @Transactional
     public PaymentDtos.Response create(Long memberId, PaymentDtos.CreateRequest request) {
@@ -68,8 +70,21 @@ public class PaymentService {
             payment.getOrder().refund();
             for (OrderItem item : orderService.getItems(payment.getOrder().getId()))
                 productService.getVariant(item.getProductVariantId()).refundSale(item.getQuantity());
+            preorderService.removeOrderQuantity(payment.getOrder().getPreorder(), orderService.getItems(payment.getOrder().getId()).stream().mapToLong(OrderItem::getQuantity).sum());
         } catch (IllegalStateException e) { throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage()); }
         return PaymentDtos.Response.from(payment);
+    }
+
+    @Transactional
+    public void refundForFailedPreorder(Payment payment) {
+        if (payment.getStatus() != PaymentStatus.PAID) return;
+        try {
+            payment.refund();
+            payment.getOrder().refund();
+            for (OrderItem item : orderService.getItems(payment.getOrder().getId()))
+                productService.getVariant(item.getProductVariantId()).refundSale(item.getQuantity());
+            preorderService.removeOrderQuantity(payment.getOrder().getPreorder(), orderService.getItems(payment.getOrder().getId()).stream().mapToLong(OrderItem::getQuantity).sum());
+        } catch (IllegalStateException e) { throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage()); }
     }
 
     private Payment getOwned(Long memberId, Long id) { return ownedPayment(memberId, paymentRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "결제를 찾을 수 없어."))); }
