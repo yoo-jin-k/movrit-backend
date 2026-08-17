@@ -45,8 +45,15 @@ public class PaymentService {
     @Transactional
     public PaymentDtos.Response approve(Long memberId, Long id, PaymentDtos.ApproveRequest request) {
         Payment payment = getOwned(memberId, id);
+        String paymentKey = request.paymentKey().trim();
+        if (payment.getStatus() == PaymentStatus.PAID && paymentKey.equals(payment.getPaymentKey())) {
+            return PaymentDtos.Response.from(payment);
+        }
+        paymentRepository.findByPaymentKey(paymentKey).filter(existing -> !existing.getId().equals(id)).ifPresent(existing -> {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 처리된 결제 승인 키야.");
+        });
         try {
-            payment.approve(request.paymentKey().trim(), request.pgProvider().trim(), request.method().trim());
+            payment.approve(paymentKey, request.pgProvider().trim(), request.method().trim());
             for (OrderItem item : orderService.getItems(payment.getOrder().getId()))
                 productService.getVariant(item.getProductVariantId()).confirmSale(item.getQuantity());
             payment.getOrder().markPaid();

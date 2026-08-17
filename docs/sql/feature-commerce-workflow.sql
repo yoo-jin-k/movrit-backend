@@ -7,6 +7,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_payment_order_id ON payment(order_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_payment_idempotency_key
     ON payment(idempotency_key)
     WHERE idempotency_key IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_payment_payment_key
+    ON payment(payment_key)
+    WHERE payment_key IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_shipment_order_id ON shipment(order_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_settlement_preorder_id ON settlement(preorder_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_settlement_number ON settlement(settlement_number);
