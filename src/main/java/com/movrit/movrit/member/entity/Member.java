@@ -31,13 +31,6 @@ public class Member extends BaseEntity {
     private String phone;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "auth_provider", nullable = false, length = 20)
-    private AuthProvider authProvider;
-
-    @Column(name = "provider_id", length = 100)
-    private String providerId;
-
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private MemberStatus status;
 

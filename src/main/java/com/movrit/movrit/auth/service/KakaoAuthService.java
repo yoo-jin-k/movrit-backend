@@ -14,12 +14,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import com.movrit.movrit.member.entity.MemberSocialAccount;
+import com.movrit.movrit.member.repository.MemberSocialAccountRepository;
 
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class KakaoAuthService {
+
+    private final MemberSocialAccountRepository socialAccountRepository;
 
     private final MemberRepository memberRepository;
     @Value("${kakao.client-id}")
@@ -103,13 +107,16 @@ public class KakaoAuthService {
         String providerId =
                 String.valueOf(userInfo.getProviderId());
 
-        return memberRepository
-                .findByAuthProviderAndProviderId(
+        return socialAccountRepository
+                .findByProviderAndProviderId(
                         AuthProvider.KAKAO,
                         providerId
                 )
-                .map(member -> {
+                .map(socialAccount -> {
+
+                    Member member = socialAccount.getMember();
                     member.updateLastLoginAt();
+
                     return member;
                 })
                 .orElseGet(() -> {
@@ -125,13 +132,25 @@ public class KakaoAuthService {
                             .passwordHash(null)
                             .name(nickname)
                             .phone(null)
-                            .authProvider(AuthProvider.KAKAO)
-                            .providerId(providerId)
                             .status(MemberStatus.ACTIVE)
                             .lastLoginAt(LocalDateTime.now())
                             .build();
 
-                    return memberRepository.save(member);
+                    Member savedMember =
+                            memberRepository.save(member);
+
+                    MemberSocialAccount socialAccount =
+                            MemberSocialAccount.builder()
+                                    .member(savedMember)
+                                    .provider(AuthProvider.KAKAO)
+                                    .providerId(providerId)
+                                    .email(null)
+                                    .build();
+
+                    socialAccountRepository.save(socialAccount);
+
+                    return savedMember;
                 });
     }
+
 }

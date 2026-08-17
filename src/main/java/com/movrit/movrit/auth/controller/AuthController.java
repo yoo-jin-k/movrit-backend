@@ -2,6 +2,8 @@ package com.movrit.movrit.auth.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 
+import com.movrit.movrit.auth.dto.GoogleUserInfo;
+import com.movrit.movrit.auth.service.GoogleAuthService;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private final GoogleAuthService googleAuthService;
     private final JwtTokenProvider jwtTokenProvider;
     private final KakaoAuthService kakaoAuthService;
     private final AuthService authService;
@@ -37,6 +40,14 @@ public class AuthController {
         LoginResponse response = authService.login(request);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/google/login-url")
+    public ResponseEntity<String> googleLoginUrl() {
+
+        return ResponseEntity.ok(
+                googleAuthService.getLoginUrl()
+        );
     }
 
     @GetMapping("/me")
@@ -86,6 +97,38 @@ public class AuthController {
         String redirectUrl =
                 "http://localhost:5173/oauth/callback"
                         + "?token=" + URLEncoder.encode(
+                        movritAccessToken,
+                        StandardCharsets.UTF_8
+                );
+
+        response.sendRedirect(redirectUrl);
+    }
+
+    @GetMapping("/google/callback")
+    public void googleCallback(
+            @RequestParam("code") String code,
+            HttpServletResponse response
+    ) throws IOException {
+
+        String googleAccessToken =
+                googleAuthService.getAccessToken(code);
+
+        GoogleUserInfo userInfo =
+                googleAuthService.getUserInfo(googleAccessToken);
+
+        Member member =
+                googleAuthService.loginOrSignup(userInfo);
+
+        String movritAccessToken =
+                jwtTokenProvider.createAccessToken(
+                        member.getId(),
+                        member.getEmail()
+                );
+
+        String redirectUrl =
+                "http://localhost:5173/oauth/callback"
+                        + "?token="
+                        + URLEncoder.encode(
                         movritAccessToken,
                         StandardCharsets.UTF_8
                 );

@@ -43,6 +43,7 @@ public class SecurityConfig {
                                 "/api/members/signup",
                                 "/api/auth/login",
                                 "/api/auth/kakao/**",
+                                "/api/auth/google/**",
                                 "/error"
                         ).permitAll()
                         .anyRequest().authenticated()
