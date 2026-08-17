@@ -16,6 +16,14 @@ public class AdminSellerController {
 
     private final SellerProfileService sellerProfileService;
 
+    /** 승인/반려 결과까지 포함한 전체 판매자 신청 목록 조회 */
+    @GetMapping
+    public List<SellerDtos.Response> findAll(
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        return sellerProfileService.findAllForAdmin(memberId(jwt));
+    }
+
     /** 관리자용 판매자 등록 심사 대기 목록 조회 */
     @GetMapping("/pending")
     public List<SellerDtos.Response> findPending(
