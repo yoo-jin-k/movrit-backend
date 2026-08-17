@@ -1,28 +1,23 @@
 package com.movrit.movrit.auth.controller;
 
-import com.movrit.movrit.auth.dto.AuthMeResponse;
-import com.movrit.movrit.auth.dto.GoogleUserInfo;
-import com.movrit.movrit.auth.dto.KakaoUserInfo;
-import com.movrit.movrit.auth.dto.LoginRequest;
-import com.movrit.movrit.auth.dto.LoginResponse;
+import com.movrit.movrit.auth.dto.*;
 import com.movrit.movrit.auth.jwt.JwtTokenProvider;
-import com.movrit.movrit.auth.service.AuthService;
-import com.movrit.movrit.auth.service.GoogleAuthService;
-import com.movrit.movrit.auth.service.KakaoAuthService;
+import com.movrit.movrit.auth.service.*;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.service.MemberService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -34,13 +29,12 @@ public class AuthController {
     private final KakaoAuthService kakaoAuthService;
     private final AuthService authService;
     private final MemberService memberService;
+    private final SocialLinkStateService socialLinkStateService;
+    private final SocialAccountService socialAccountService;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(
-            @Valid @RequestBody LoginRequest request
-    ) {
-        LoginResponse response = authService.login(request);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 
     @GetMapping("/google/login-url")
@@ -48,76 +42,115 @@ public class AuthController {
         return ResponseEntity.ok(googleAuthService.getLoginUrl());
     }
 
+    @GetMapping("/kakao")
+    public ResponseEntity<String> kakaoLogin() {
+        return ResponseEntity.ok(kakaoAuthService.getLoginUrl(null));
+    }
+
     @GetMapping("/me")
-    public ResponseEntity<AuthMeResponse> me(
-            @AuthenticationPrincipal Jwt jwt
-    ) {
+    public ResponseEntity<AuthMeResponse> me(@AuthenticationPrincipal Jwt jwt) {
         Long memberId = Long.valueOf(jwt.getSubject());
         return ResponseEntity.ok(AuthMeResponse.from(memberService.getMember(memberId)));
     }
 
-    @GetMapping("/kakao")
-    public ResponseEntity<String> kakaoLogin(
-            @Value("${kakao.client-id}") String clientId,
-            @Value("${kakao.redirect-uri}") String redirectUri
-    ) {
-        String kakaoAuthUrl =
-                "https://kauth.kakao.com/oauth/authorize"
-                        + "?response_type=code"
-                        + "&client_id=" + clientId
-                        + "&redirect_uri=" + redirectUri;
+    /** 현재 MOVRIT 계정에 연결된 소셜 로그인 수단을 조회한다. */
+    @GetMapping("/social/accounts")
+    public List<SocialAccountResponse> socialAccounts(@AuthenticationPrincipal Jwt jwt) {
+        return socialAccountService.findByMemberId(Long.valueOf(jwt.getSubject()));
+    }
 
-        return ResponseEntity.ok(kakaoAuthUrl);
+    /**
+     * 로그인된 회원이 카카오 계정을 추가 연결할 때 사용하는 인증 URL이다.
+     * state에는 회원 ID를 그대로 노출하지 않고 서버 서명을 포함한 일회성 값을 넣는다.
+     */
+    @GetMapping("/social/kakao/link-url")
+    public ResponseEntity<String> kakaoLinkUrl(@AuthenticationPrincipal Jwt jwt) {
+        String state = socialLinkStateService.create(Long.valueOf(jwt.getSubject()));
+        return ResponseEntity.ok(kakaoAuthService.getLoginUrl(state));
+    }
+
+    @GetMapping("/social/google/link-url")
+    public ResponseEntity<String> googleLinkUrl(@AuthenticationPrincipal Jwt jwt) {
+        String state = socialLinkStateService.create(Long.valueOf(jwt.getSubject()));
+        return ResponseEntity.ok(googleAuthService.getLoginUrl(state));
     }
 
     @GetMapping("/kakao/callback")
     public void kakaoCallback(
             @RequestParam("code") String code,
+            @RequestParam(value = "state", required = false) String state,
             HttpServletResponse response
     ) throws IOException {
-
         String kakaoAccessToken = kakaoAuthService.getAccessToken(code);
         KakaoUserInfo userInfo = kakaoAuthService.getUserInfo(kakaoAccessToken);
+
+        // state가 있으면 신규 로그인/회원가입이 아니라 기존 회원의 계정 연결 요청이다.
+        if (state != null && !state.isBlank()) {
+            try {
+                Long memberId = socialLinkStateService.getMemberId(state);
+                kakaoAuthService.linkAccount(memberId, userInfo);
+                redirectSocialLink(response, "KAKAO", true, null);
+            } catch (ResponseStatusException e) {
+                redirectSocialLink(response, "KAKAO", false, e.getReason());
+            }
+            return;
+        }
+
         Member member = kakaoAuthService.loginOrSignup(userInfo);
-
-        String movritAccessToken = jwtTokenProvider.createAccessToken(
-                member.getId(),
-                member.getEmail()
-        );
-
-        String redirectUrl =
-                "http://localhost:5173/oauth/callback"
-                        + "?token=" + URLEncoder.encode(
-                        movritAccessToken,
-                        StandardCharsets.UTF_8
-                );
-
-        response.sendRedirect(redirectUrl);
+        redirectLogin(response, member);
     }
 
     @GetMapping("/google/callback")
     public void googleCallback(
             @RequestParam("code") String code,
+            @RequestParam(value = "state", required = false) String state,
             HttpServletResponse response
     ) throws IOException {
-
         String googleAccessToken = googleAuthService.getAccessToken(code);
         GoogleUserInfo userInfo = googleAuthService.getUserInfo(googleAccessToken);
-        Member member = googleAuthService.loginOrSignup(userInfo);
 
+        if (state != null && !state.isBlank()) {
+            try {
+                Long memberId = socialLinkStateService.getMemberId(state);
+                googleAuthService.linkAccount(memberId, userInfo);
+                redirectSocialLink(response, "GOOGLE", true, null);
+            } catch (ResponseStatusException e) {
+                redirectSocialLink(response, "GOOGLE", false, e.getReason());
+            }
+            return;
+        }
+
+        Member member = googleAuthService.loginOrSignup(userInfo);
+        redirectLogin(response, member);
+    }
+
+    private void redirectLogin(HttpServletResponse response, Member member) throws IOException {
         String movritAccessToken = jwtTokenProvider.createAccessToken(
                 member.getId(),
                 member.getEmail()
         );
 
-        String redirectUrl =
-                "http://localhost:5173/oauth/callback"
-                        + "?token="
-                        + URLEncoder.encode(
-                        movritAccessToken,
-                        StandardCharsets.UTF_8
-                );
+        String redirectUrl = "http://localhost:5173/oauth/callback?token="
+                + URLEncoder.encode(movritAccessToken, StandardCharsets.UTF_8);
 
         response.sendRedirect(redirectUrl);
+    }
+
+    private void redirectSocialLink(
+            HttpServletResponse response,
+            String provider,
+            boolean success,
+            String message
+    ) throws IOException {
+        StringBuilder url = new StringBuilder("http://localhost:5173/social-link/callback")
+                .append("?provider=").append(provider)
+                .append("&success=").append(success);
+
+        if (message != null && !message.isBlank()) {
+            url.append("&message=")
+                    .append(URLEncoder.encode(message, StandardCharsets.UTF_8));
+        }
+
+        response.sendRedirect(url.toString());
     }
 }
