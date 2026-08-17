@@ -4,6 +4,7 @@ import com.movrit.movrit.member.dto.MemberSignupRequest;
 import com.movrit.movrit.member.dto.MemberSignupResponse;
 import com.movrit.movrit.member.dto.MemberUpdateRequest;
 import com.movrit.movrit.member.entity.Member;
+import com.movrit.movrit.member.entity.MemberRole;
 import com.movrit.movrit.member.entity.MemberStatus;
 import com.movrit.movrit.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,8 @@ public class MemberService {
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .name(request.name().trim())
                 .phone(normalizePhone(request.phone()))
+                // 회원가입 요청에서 관리자 권한을 받을 수 없도록 서버가 USER로 고정한다.
+                .role(MemberRole.USER)
                 .status(MemberStatus.ACTIVE)
                 .build();
 
@@ -69,6 +72,14 @@ public class MemberService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어."));
         if (member.getDeletedAt() != null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어.");
+        }
+        return member;
+    }
+
+    public Member getAdmin(Long memberId) {
+        Member member = getMember(memberId);
+        if (!member.isAdmin()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자 권한이 필요해.");
         }
         return member;
     }
