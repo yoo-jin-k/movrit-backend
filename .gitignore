@@ -5,6 +5,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+# Development file uploads are runtime data, not source code.
+uploads/
+
 ### STS ###
 .apt_generated
 .classpath
