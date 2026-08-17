@@ -30,13 +30,48 @@ public class Creator extends BaseEntity {
     @Column(name = "primary_category")
     private String primaryCategory;
 
-    @Column(name = "status", nullable = false)
-    private String status;
+    @Column(name = "channel_platform", length = 30)
+    private String channelPlatform;
 
-    public void update(String nickname, String bio, String primaryCategory, String status) {
+    @Column(name = "channel_handle", length = 100)
+    private String channelHandle;
+
+    @Column(name = "channel_url", length = 500)
+    private String channelUrl;
+
+    @Column(name = "follower_count")
+    private Long followerCount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private CreatorStatus status;
+
+    @Column(name = "rejection_reason", length = 500)
+    private String rejectionReason;
+
+    public void updateProfile(String nickname, String bio, String primaryCategory,
+                              String channelPlatform, String channelHandle, String channelUrl,
+                              Long followerCount) {
         this.nickname = nickname;
         this.bio = bio;
         this.primaryCategory = primaryCategory;
-        this.status = status;
+        this.channelPlatform = channelPlatform;
+        this.channelHandle = channelHandle;
+        this.channelUrl = channelUrl;
+        this.followerCount = followerCount;
+    }
+
+    public void approve() {
+        this.status = CreatorStatus.APPROVED;
+        this.rejectionReason = null;
+    }
+
+    public void reject(String rejectionReason) {
+        this.status = CreatorStatus.REJECTED;
+        this.rejectionReason = rejectionReason;
+    }
+
+    public void suspend() {
+        this.status = CreatorStatus.SUSPENDED;
     }
 }
