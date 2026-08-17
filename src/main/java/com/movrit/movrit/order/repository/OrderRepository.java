@@ -8,5 +8,6 @@ import java.util.List;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     boolean existsByOrderNumber(String orderNumber);
     boolean existsByRequestKey(String requestKey);
+    List<Order> findAllByMemberIdOrderByCreatedAtDesc(Long memberId);
     List<Order> findAllByPreorderSellerId(Long sellerId);
 }
