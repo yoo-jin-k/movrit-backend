@@ -1,0 +1,2 @@
+package com.movrit.movrit.collaboration.repository; import com.movrit.movrit.collaboration.entity.Campaign; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*;
+public interface CampaignRepository extends JpaRepository<Campaign,Long>{Optional<Campaign> findByPreorderId(Long id);List<Campaign> findAllByOpenTrueOrderByIdDesc();List<Campaign> findAllByPreorderProductBrandSellerMemberIdOrderByIdDesc(Long id);}

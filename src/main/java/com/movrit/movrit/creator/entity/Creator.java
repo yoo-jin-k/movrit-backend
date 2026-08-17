@@ -30,13 +30,20 @@ public class Creator extends BaseEntity {
     @Column(name = "primary_category")
     private String primaryCategory;
 
+    @Column(name = "sns_url", length = 500)
+    private String snsUrl;
+
+    @Column(name = "follower_count", nullable = false)
+    private Long followerCount;
+
     @Column(name = "status", nullable = false)
     private String status;
 
-    public void update(String nickname, String bio, String primaryCategory, String status) {
+    public void update(String nickname, String bio, String primaryCategory, String snsUrl, Long followerCount) {
         this.nickname = nickname;
         this.bio = bio;
         this.primaryCategory = primaryCategory;
-        this.status = status;
+        this.snsUrl = snsUrl;
+        this.followerCount = followerCount;
     }
 }
