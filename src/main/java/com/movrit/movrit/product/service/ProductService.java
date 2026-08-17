@@ -1,6 +1,7 @@
 package com.movrit.movrit.product.service;
 
 import com.movrit.movrit.brand.entity.Brand;
+import com.movrit.movrit.brand.entity.BrandStatus;
 import com.movrit.movrit.brand.service.BrandService;
 import com.movrit.movrit.common.file.LocalFileStorageService;
 import com.movrit.movrit.product.dto.ProductDtos;
@@ -31,6 +32,9 @@ public class ProductService {
     @Transactional
     public ProductDtos.Response create(Long memberId, ProductDtos.CreateRequest request) {
         Brand brand = brandService.getOwnedBrand(memberId, request.brandId());
+        if (brand.getStatus() != BrandStatus.ACTIVE) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "활성화된 브랜드에만 상품을 등록할 수 있어.");
+        }
 
         Product product = Product.builder()
                 .brand(brand)
