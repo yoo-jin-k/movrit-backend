@@ -53,7 +53,16 @@ public class SellerProfileService {
         return SellerDtos.Response.from(getSellerByMemberId(memberId));
     }
 
-    /** 관리자 화면에서 심사 대기 신청 목록을 확인할 때 사용한다. */
+    /** 관리자 화면에서 전체 신청 처리 이력을 확인할 때 사용한다. */
+    public List<SellerDtos.Response> findAllForAdmin(Long adminMemberId) {
+        memberService.getAdmin(adminMemberId);
+
+        return sellerProfileRepository.findAll().stream()
+                .map(SellerDtos.Response::from)
+                .toList();
+    }
+
+    /** 관리자 화면에서 심사 대기 신청만 확인할 때 사용한다. */
     public List<SellerDtos.Response> findPendingForAdmin(Long adminMemberId) {
         memberService.getAdmin(adminMemberId);
 
