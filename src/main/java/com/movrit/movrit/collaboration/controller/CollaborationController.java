@@ -8,4 +8,8 @@ import com.movrit.movrit.collaboration.dto.CollaborationDtos;import com.movrit.m
  @GetMapping("/mine")public List<CollaborationDtos.Response> mine(@AuthenticationPrincipal Jwt j){return s.mine(id(j));}@GetMapping("/seller")public List<CollaborationDtos.Response> seller(@AuthenticationPrincipal Jwt j){return s.seller(id(j));}
  @PatchMapping("/{id}/approve")public CollaborationDtos.Response approve(@AuthenticationPrincipal Jwt j,@PathVariable Long id){return s.sellerDecision(id(j),id,true);}@PatchMapping("/{id}/reject")public CollaborationDtos.Response reject(@AuthenticationPrincipal Jwt j,@PathVariable Long id){return s.sellerDecision(id(j),id,false);}
  @PatchMapping("/{id}/accept")public CollaborationDtos.Response accept(@AuthenticationPrincipal Jwt j,@PathVariable Long id){return s.creatorDecision(id(j),id,true);}@PatchMapping("/{id}/decline")public CollaborationDtos.Response decline(@AuthenticationPrincipal Jwt j,@PathVariable Long id){return s.creatorDecision(id(j),id,false);}
- @PatchMapping("/{id}/end")public CollaborationDtos.Response end(@AuthenticationPrincipal Jwt j,@PathVariable Long id){return s.end(id(j),id);}private Long id(Jwt j){return Long.valueOf(j.getSubject());}}
+ @PatchMapping("/{id}/end")public CollaborationDtos.Response end(@AuthenticationPrincipal Jwt j,@PathVariable Long id){return s.end(id(j),id);}
+ @PostMapping("/referrals/{code}/click")public ResponseEntity<Void> click(@PathVariable String code,@RequestBody CollaborationDtos.ClickRequest r){s.click(code,r);return ResponseEntity.noContent().build();}
+ @GetMapping("/performance/mine")public List<CollaborationDtos.PerformanceResponse> myPerformance(@AuthenticationPrincipal Jwt j){return s.creatorPerformance(id(j));}
+ @GetMapping("/performance/seller")public List<CollaborationDtos.PerformanceResponse> sellerPerformance(@AuthenticationPrincipal Jwt j){return s.sellerPerformance(id(j));}
+ private Long id(Jwt j){return Long.valueOf(j.getSubject());}}

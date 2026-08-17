@@ -43,6 +43,11 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/kakao/**",
                                 "/api/auth/google/**",
+                                "/api/preorders/open",
+                                "/api/preorders/*",
+                                "/api/products/*/variants",
+                                "/api/collaborations/campaigns/open",
+                                "/api/collaborations/referrals/*/click",
                                 "/uploads/**",
                                 "/error"
                         ).permitAll()

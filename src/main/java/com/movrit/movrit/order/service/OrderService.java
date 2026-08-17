@@ -12,6 +12,8 @@ import com.movrit.movrit.preorder.entity.Preorder;
 import com.movrit.movrit.preorder.service.PreorderService;
 import com.movrit.movrit.product.entity.ProductVariant;
 import com.movrit.movrit.product.service.ProductService;
+import com.movrit.movrit.collaboration.entity.Collaboration;
+import com.movrit.movrit.collaboration.service.CollaborationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,7 @@ public class OrderService {
     private final MemberService memberService;
     private final PreorderService preorderService;
     private final ProductService productService;
+    private final CollaborationService collaborationService;
 
     @Transactional
     public OrderDtos.Response create(Long memberId, OrderDtos.CreateRequest request) {
@@ -61,10 +64,15 @@ public class OrderService {
 
         BigDecimal unitPrice = preorder.getPreorderPrice().add(variant.getAdditionalPrice());
         BigDecimal productAmount = unitPrice.multiply(BigDecimal.valueOf(request.quantity()));
+        Collaboration attribution = request.referralCode() == null || request.referralCode().isBlank()
+                ? null : collaborationService.findByReferral(request.referralCode().trim());
+        if (attribution != null && !attribution.getPreorder().getId().equals(preorder.getId()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "다른 프리오더의 추천코드야.");
         Order order = orderRepository.save(Order.builder()
                 .orderNumber("MV" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")))
                 .requestKey(request.requestKey().trim()).member(member).preorder(preorder)
-                .acquisitionSource(blankToDefault(request.acquisitionSource(), "DIRECT"))
+                .attributionId(attribution == null ? null : attribution.getId())
+                .acquisitionSource(attribution == null ? blankToDefault(request.acquisitionSource(), "DIRECT") : "INFLUENCER")
                 .status(OrderStatus.PENDING_PAYMENT).totalProductAmount(productAmount)
                 .discountAmount(BigDecimal.ZERO).shippingAmount(BigDecimal.ZERO)
                 .totalPaymentAmount(productAmount).currency(preorder.getCurrency())

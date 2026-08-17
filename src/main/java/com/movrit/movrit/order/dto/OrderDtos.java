@@ -19,6 +19,7 @@ public final class OrderDtos {
             @NotNull Long preorderId,
             @NotNull Long productVariantId,
             @NotNull @Min(1) Long quantity,
+            String referralCode,
             String acquisitionSource,
             @NotBlank String receiverName,
             @NotBlank String receiverPhone,

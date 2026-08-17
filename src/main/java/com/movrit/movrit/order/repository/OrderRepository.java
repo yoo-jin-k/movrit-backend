@@ -10,4 +10,5 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findAllByMemberIdOrderByIdDesc(Long memberId);
     List<Order> findAllByPreorderProductBrandSellerMemberIdOrderByIdDesc(Long memberId);
     long countByMemberIdAndPreorderIdAndStatusNot(Long memberId, Long preorderId, com.movrit.movrit.order.entity.OrderStatus status);
+    List<Order> findAllByAttributionId(Long attributionId);
 }

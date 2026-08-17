@@ -16,3 +16,8 @@ CREATE TABLE IF NOT EXISTS collaboration (
 );
 CREATE INDEX IF NOT EXISTS idx_collaboration_creator ON collaboration(creator_id);
 CREATE INDEX IF NOT EXISTS idx_collaboration_preorder ON collaboration(preorder_id);
+CREATE TABLE IF NOT EXISTS referral_click (
+ id BIGSERIAL PRIMARY KEY, collaboration_id BIGINT NOT NULL REFERENCES collaboration(id), visitor_key VARCHAR(100),
+ user_agent VARCHAR(500), created_at TIMESTAMP NOT NULL, updated_at TIMESTAMP NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_referral_click_collaboration ON referral_click(collaboration_id);
