@@ -77,6 +77,19 @@ public class ProductController {
         return productService.updateSafetyStock(memberId(jwt), variantId, request.quantity());
     }
 
+    @PutMapping("/variants/{variantId}")
+    public ProductDtos.VariantResponse updateVariant(@AuthenticationPrincipal Jwt jwt,
+                                                      @PathVariable Long variantId,
+                                                      @Valid @RequestBody ProductDtos.VariantUpdateRequest request) {
+        return productService.updateVariant(memberId(jwt), variantId, request);
+    }
+
+    @DeleteMapping("/variants/{variantId}")
+    public ProductDtos.VariantResponse deactivateVariant(@AuthenticationPrincipal Jwt jwt,
+                                                          @PathVariable Long variantId) {
+        return productService.deactivateVariant(memberId(jwt), variantId);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
         productService.delete(memberId(jwt), id);

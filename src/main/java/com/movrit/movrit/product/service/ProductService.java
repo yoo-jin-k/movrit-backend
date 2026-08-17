@@ -49,9 +49,7 @@ public class ProductService {
     }
 
     public List<ProductDtos.Response> findMine(Long memberId) {
-        return productRepository.findAll().stream()
-                .filter(product -> product.getDeletedAt() == null)
-                .filter(product -> product.getBrand().getSeller().getMember().getId().equals(memberId))
+        return productRepository.findAllByBrandSellerMemberIdAndDeletedAtIsNullOrderByIdDesc(memberId).stream()
                 .map(ProductDtos.Response::from)
                 .toList();
     }
@@ -135,6 +133,31 @@ public class ProductService {
     }
 
     @Transactional
+    public ProductDtos.VariantResponse updateVariant(Long memberId, Long variantId, ProductDtos.VariantUpdateRequest request) {
+        ProductVariant variant = getOwnedVariant(memberId, variantId);
+        variant.updateOption(blankToNull(request.optionName1()), blankToNull(request.optionValue1()),
+                blankToNull(request.optionName2()), blankToNull(request.optionValue2()),
+                request.additionalPrice(), request.active());
+        return ProductDtos.VariantResponse.from(variant);
+    }
+
+    @Transactional
+    public ProductDtos.VariantResponse deactivateVariant(Long memberId, Long variantId) {
+        ProductVariant variant = getOwnedVariant(memberId, variantId);
+        try {
+            variant.deactivate();
+        } catch (IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        }
+        return ProductDtos.VariantResponse.from(variant);
+    }
+
+    public ProductVariant getVariant(Long variantId) {
+        return productVariantRepository.findById(variantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "상품 옵션을 찾을 수 없어."));
+    }
+
+    @Transactional
     public void delete(Long memberId, Long id) {
         getOwnedProduct(memberId, id).softDelete();
     }
@@ -155,8 +178,7 @@ public class ProductService {
     }
 
     private ProductVariant getOwnedVariant(Long memberId, Long variantId) {
-        ProductVariant variant = productVariantRepository.findById(variantId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "상품 옵션을 찾을 수 없어."));
+        ProductVariant variant = getVariant(variantId);
         getOwnedProduct(memberId, variant.getProduct().getId());
         return variant;
     }

@@ -58,6 +58,11 @@ public class BrandController {
         return brandService.changeStatus(memberId(jwt), brandId, status);
     }
 
+    @DeleteMapping("/{brandId}")
+    public void delete(@AuthenticationPrincipal Jwt jwt, @PathVariable Long brandId) {
+        brandService.delete(memberId(jwt), brandId);
+    }
+
     private Long memberId(Jwt jwt) {
         return Long.valueOf(jwt.getSubject());
     }

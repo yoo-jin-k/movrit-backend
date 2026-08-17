@@ -76,6 +76,11 @@ public class ProductVariant extends BaseEntity {
         this.active = active;
     }
 
+    public void deactivate() {
+        if (reservedQuantity > 0) throw new IllegalStateException("예약된 재고가 있는 SKU는 비활성화할 수 없어.");
+        this.active = false;
+    }
+
     public void restock(long quantity) {
         requirePositive(quantity);
         this.onHandQuantity += quantity;

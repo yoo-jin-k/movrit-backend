@@ -8,4 +8,5 @@ import java.util.List;
 public interface BrandRepository extends JpaRepository<Brand, Long> {
     List<Brand> findAllBySellerIdAndDeletedAtIsNull(Long sellerId);
     boolean existsBySellerIdAndNameIgnoreCaseAndDeletedAtIsNull(Long sellerId, String name);
+    boolean existsBySellerIdAndNameIgnoreCaseAndDeletedAtIsNullAndIdNot(Long sellerId, String name, Long id);
 }

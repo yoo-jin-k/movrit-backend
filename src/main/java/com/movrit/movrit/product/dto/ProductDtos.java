@@ -41,6 +41,15 @@ public final class ProductDtos {
             @NotNull @Min(0) Long safetyStock
     ) {}
 
+    public record VariantUpdateRequest(
+            String optionName1,
+            String optionValue1,
+            String optionName2,
+            String optionValue2,
+            @NotNull @DecimalMin("0") BigDecimal additionalPrice,
+            boolean active
+    ) {}
+
     public record StockRequest(@NotNull @Min(1) Long quantity) {}
     public record SafetyStockRequest(@NotNull @Min(0) Long quantity) {}
 

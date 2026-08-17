@@ -54,7 +54,12 @@ public class BrandService {
     @Transactional
     public BrandDtos.Response update(Long memberId, Long brandId, BrandDtos.UpdateRequest request) {
         Brand brand = getOwnedBrand(memberId, brandId);
-        brand.update(request.name().trim(), request.description());
+        String name = request.name().trim();
+        if (brandRepository.existsBySellerIdAndNameIgnoreCaseAndDeletedAtIsNullAndIdNot(
+                brand.getSeller().getId(), name, brandId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 같은 이름의 브랜드를 운영하고 있어.");
+        }
+        brand.update(name, request.description());
         return BrandDtos.Response.from(brand);
     }
 
@@ -87,6 +92,12 @@ public class BrandService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "내 브랜드만 관리할 수 있어.");
         }
         return brand;
+    }
+
+    @Transactional
+    public void delete(Long memberId, Long brandId) {
+        Brand brand = getOwnedBrand(memberId, brandId);
+        brand.softDelete();
     }
 
     public Brand getBrand(Long brandId) {
