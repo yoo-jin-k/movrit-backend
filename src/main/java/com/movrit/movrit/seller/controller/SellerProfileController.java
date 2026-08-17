@@ -6,9 +6,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,29 +17,24 @@ public class SellerProfileController {
 
     private final SellerProfileService sellerProfileService;
 
-    @PostMapping
-    public ResponseEntity<SellerDtos.Response> create(@Valid @RequestBody SellerDtos.CreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(sellerProfileService.create(request));
+    /**
+     * JWT subject에는 로그인한 Member의 id가 들어 있다.
+     * 요청 body에서 memberId를 받지 않고 토큰에서 꺼내 사용해 본인 명의로만 신청할 수 있게 한다.
+     */
+    @PostMapping("/apply")
+    public ResponseEntity<SellerDtos.Response> apply(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody SellerDtos.ApplyRequest request
+    ) {
+        Long memberId = Long.valueOf(jwt.getSubject());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(sellerProfileService.apply(memberId, request));
     }
 
-    @GetMapping
-    public List<SellerDtos.Response> findAll() {
-        return sellerProfileService.findAll();
-    }
-
-    @GetMapping("/{id}")
-    public SellerDtos.Response findById(@PathVariable Long id) {
-        return sellerProfileService.findById(id);
-    }
-
-    @PutMapping("/{id}")
-    public SellerDtos.Response update(@PathVariable Long id, @Valid @RequestBody SellerDtos.UpdateRequest request) {
-        return sellerProfileService.update(id, request);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        sellerProfileService.delete(id);
-        return ResponseEntity.noContent().build();
+    @GetMapping("/me")
+    public SellerDtos.Response findMine(@AuthenticationPrincipal Jwt jwt) {
+        Long memberId = Long.valueOf(jwt.getSubject());
+        return sellerProfileService.findMine(memberId);
     }
 }
