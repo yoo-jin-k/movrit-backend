@@ -17,7 +17,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -108,6 +110,27 @@ public class ProductService {
         return productVariantRepository.findAllByProductIdOrderByIdAsc(productId).stream()
                 .map(ProductDtos.VariantResponse::from)
                 .toList();
+    }
+
+    /** 프리오더에 연결할 SKU들이 모두 해당 판매자의 같은 상품 소속인지 확인한다. */
+    public Set<ProductVariant> getOwnedVariants(Long memberId, Long productId, List<Long> variantIds) {
+        getOwnedProduct(memberId, productId);
+        if (variantIds == null || variantIds.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "프리오더에서 판매할 SKU를 하나 이상 선택해줘.");
+        }
+
+        Set<Long> uniqueIds = new LinkedHashSet<>(variantIds);
+        List<ProductVariant> variants = productVariantRepository.findAllById(uniqueIds);
+        if (variants.size() != uniqueIds.size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "존재하지 않는 SKU가 포함되어 있어.");
+        }
+        if (variants.stream().anyMatch(variant -> !variant.getProduct().getId().equals(productId))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "선택한 상품에 속하지 않는 SKU가 포함되어 있어.");
+        }
+        if (variants.stream().anyMatch(variant -> !variant.isActive())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "비활성화된 SKU는 프리오더에 연결할 수 없어.");
+        }
+        return new LinkedHashSet<>(variants);
     }
 
     @Transactional
