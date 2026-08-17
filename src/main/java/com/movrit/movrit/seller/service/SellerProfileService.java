@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -51,7 +53,46 @@ public class SellerProfileService {
         return SellerDtos.Response.from(getSellerByMemberId(memberId));
     }
 
-    /** 상품 등 다른 도메인에서 판매자 id 자체를 조회해야 할 때 사용하는 기본 조회다. */
+    /** 관리자 화면에서 심사 대기 신청 목록을 확인할 때 사용한다. */
+    public List<SellerDtos.Response> findPendingForAdmin(Long adminMemberId) {
+        memberService.getAdmin(adminMemberId);
+
+        return sellerProfileRepository.findAll().stream()
+                .filter(seller -> seller.getStatus() == SellerStatus.PENDING)
+                .map(SellerDtos.Response::from)
+                .toList();
+    }
+
+    /**
+     * 화면에서 관리자 버튼을 숨기는 것만으로는 보안이 되지 않으므로,
+     * 실제 승인/반려 시점에도 DB의 관리자 권한을 다시 확인한다.
+     */
+    @Transactional
+    public SellerDtos.Response approve(Long adminMemberId, Long sellerId) {
+        memberService.getAdmin(adminMemberId);
+        SellerProfile seller = getSeller(sellerId);
+
+        if (seller.getStatus() != SellerStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "심사 대기 중인 신청만 승인할 수 있어.");
+        }
+
+        seller.approve();
+        return SellerDtos.Response.from(seller);
+    }
+
+    @Transactional
+    public SellerDtos.Response reject(Long adminMemberId, Long sellerId) {
+        memberService.getAdmin(adminMemberId);
+        SellerProfile seller = getSeller(sellerId);
+
+        if (seller.getStatus() != SellerStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "심사 대기 중인 신청만 반려할 수 있어.");
+        }
+
+        seller.reject();
+        return SellerDtos.Response.from(seller);
+    }
+
     public SellerProfile getSeller(Long sellerId) {
         return sellerProfileRepository.findById(sellerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "판매자 정보를 찾을 수 없어."));
