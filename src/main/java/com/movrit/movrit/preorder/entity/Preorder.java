@@ -95,6 +95,24 @@ public class Preorder extends BaseEntity {
         this.cancellationReason = cancellationReason;
     }
 
+    public void increaseOrderedQuantity(long quantity) {
+        if (quantity <= 0) throw new IllegalArgumentException("주문 수량은 1개 이상이어야 해.");
+        long next = orderedQuantity + quantity;
+        if (maxQuantity != null && next > maxQuantity) {
+            throw new IllegalStateException("공동구매 최대 판매수량을 초과했어.");
+        }
+        orderedQuantity = next;
+    }
+
+    public void decreaseOrderedQuantity(long quantity) {
+        if (quantity <= 0) return;
+        orderedQuantity = Math.max(0L, orderedQuantity - quantity);
+    }
+
+    public boolean targetReached() {
+        return orderedQuantity >= targetQuantity;
+    }
+
     public void softDelete() {
         this.deletedAt = LocalDateTime.now();
     }
