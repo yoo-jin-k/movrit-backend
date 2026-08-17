@@ -1,44 +1,21 @@
 package com.movrit.movrit.payment.controller;
-
 import com.movrit.movrit.payment.dto.PaymentDtos;
 import com.movrit.movrit.payment.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
-@RestController
-@RequiredArgsConstructor
-@RequestMapping("/api/payments")
+@RestController @RequiredArgsConstructor @RequestMapping("/api/payments")
 public class PaymentController {
     private final PaymentService paymentService;
-
-    @PostMapping
-    public ResponseEntity<PaymentDtos.Response> create(@Valid @RequestBody PaymentDtos.CreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.create(request));
-    }
-
-    @GetMapping
-    public List<PaymentDtos.Response> findAll() {
-        return paymentService.findAll();
-    }
-
-    @GetMapping("/{id}")
-    public PaymentDtos.Response findById(@PathVariable Long id) {
-        return paymentService.findById(id);
-    }
-
-    @PutMapping("/{id}")
-    public PaymentDtos.Response update(@PathVariable Long id, @Valid @RequestBody PaymentDtos.UpdateRequest request) {
-        return paymentService.update(id, request);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        paymentService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+    @PostMapping public ResponseEntity<PaymentDtos.Response> create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody PaymentDtos.CreateRequest request) { return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.create(id(jwt), request)); }
+    @GetMapping("/mine") public List<PaymentDtos.Response> mine(@AuthenticationPrincipal Jwt jwt) { return paymentService.findMine(id(jwt)); }
+    @PatchMapping("/{paymentId}/approve") public PaymentDtos.Response approve(@AuthenticationPrincipal Jwt jwt, @PathVariable Long paymentId, @Valid @RequestBody PaymentDtos.ApproveRequest request) { return paymentService.approve(id(jwt), paymentId, request); }
+    @PatchMapping("/{paymentId}/fail") public PaymentDtos.Response fail(@AuthenticationPrincipal Jwt jwt, @PathVariable Long paymentId, @Valid @RequestBody PaymentDtos.FailRequest request) { return paymentService.fail(id(jwt), paymentId, request); }
+    @PatchMapping("/{paymentId}/refund") public PaymentDtos.Response refund(@AuthenticationPrincipal Jwt jwt, @PathVariable Long paymentId) { return paymentService.refund(id(jwt), paymentId); }
+    private Long id(Jwt jwt) { return Long.valueOf(jwt.getSubject()); }
 }

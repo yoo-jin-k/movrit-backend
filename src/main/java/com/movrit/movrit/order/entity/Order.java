@@ -84,15 +84,43 @@ public class Order extends BaseEntity {
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
 
-    public void update(OrderStatus status, String receiverName, String receiverPhone, String postalCode,
-                       String address1, String address2, LocalDateTime paidAt, LocalDateTime cancelledAt) {
-        this.status = status;
+    public void updateReceiver(String receiverName, String receiverPhone, String postalCode,
+                       String address1, String address2) {
+        if (status != OrderStatus.PENDING_PAYMENT && status != OrderStatus.PAID) {
+            throw new IllegalStateException("배송 준비가 시작된 주문은 배송지를 변경할 수 없어.");
+        }
         this.receiverName = receiverName;
         this.receiverPhone = receiverPhone;
         this.postalCode = postalCode;
         this.address1 = address1;
         this.address2 = address2;
-        this.paidAt = paidAt;
-        this.cancelledAt = cancelledAt;
+    }
+
+    public void markPaid() {
+        requireStatus(OrderStatus.PENDING_PAYMENT);
+        this.status = OrderStatus.PAID;
+        this.paidAt = LocalDateTime.now();
+    }
+
+    public void markPreparing() { requireStatus(OrderStatus.PAID); this.status = OrderStatus.PREPARING; }
+    public void markShipped() { requireStatus(OrderStatus.PREPARING); this.status = OrderStatus.SHIPPED; }
+    public void markDelivered() { requireStatus(OrderStatus.SHIPPED); this.status = OrderStatus.DELIVERED; }
+
+    public void cancel() {
+        if (status != OrderStatus.PENDING_PAYMENT) throw new IllegalStateException("결제 대기 주문만 바로 취소할 수 있어.");
+        this.status = OrderStatus.CANCELLED;
+        this.cancelledAt = LocalDateTime.now();
+    }
+
+    public void refund() {
+        if (status != OrderStatus.PAID && status != OrderStatus.PREPARING) {
+            throw new IllegalStateException("결제 완료 또는 배송 준비 주문만 환불할 수 있어.");
+        }
+        this.status = OrderStatus.REFUNDED;
+        this.cancelledAt = LocalDateTime.now();
+    }
+
+    private void requireStatus(OrderStatus expected) {
+        if (status != expected) throw new IllegalStateException("현재 주문 상태에서는 처리할 수 없어.");
     }
 }

@@ -118,6 +118,13 @@ public class ProductVariant extends BaseEntity {
         this.soldQuantity += quantity;
     }
 
+    public void refundSale(long quantity) {
+        requirePositive(quantity);
+        if (soldQuantity < quantity) throw new IllegalStateException("환불할 판매 수량이 부족해.");
+        this.onHandQuantity += quantity;
+        this.soldQuantity -= quantity;
+    }
+
     private void requirePositive(long quantity) {
         if (quantity <= 0) throw new IllegalArgumentException("수량은 1 이상이어야 해.");
     }

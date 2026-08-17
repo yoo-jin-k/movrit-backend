@@ -80,4 +80,27 @@ public class Payment extends BaseEntity {
         this.failureCode = failureCode;
         this.failureMessage = failureMessage;
     }
+
+    public void approve(String paymentKey, String pgProvider, String method) {
+        if (status != PaymentStatus.READY) throw new IllegalStateException("결제 대기 상태에서만 승인할 수 있어.");
+        this.paymentKey = paymentKey;
+        this.pgProvider = pgProvider;
+        this.method = method;
+        this.status = PaymentStatus.PAID;
+        this.approvedAmount = requestedAmount;
+        this.approvedAt = LocalDateTime.now();
+    }
+
+    public void fail(String code, String message) {
+        if (status != PaymentStatus.READY) throw new IllegalStateException("결제 대기 상태에서만 실패 처리할 수 있어.");
+        this.status = PaymentStatus.FAILED;
+        this.failedAt = LocalDateTime.now();
+        this.failureCode = code;
+        this.failureMessage = message;
+    }
+
+    public void refund() {
+        if (status != PaymentStatus.PAID) throw new IllegalStateException("승인된 결제만 환불할 수 있어.");
+        this.status = PaymentStatus.REFUNDED;
+    }
 }

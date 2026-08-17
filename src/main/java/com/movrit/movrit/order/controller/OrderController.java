@@ -6,6 +6,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,28 +19,13 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<OrderDtos.Response> create(@Valid @RequestBody OrderDtos.CreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.create(request));
+    public ResponseEntity<OrderDtos.Response> create(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody OrderDtos.CreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.create(memberId(jwt), request));
     }
-
-    @GetMapping
-    public List<OrderDtos.Response> findAll() {
-        return orderService.findAll();
-    }
-
-    @GetMapping("/{id}")
-    public OrderDtos.Response findById(@PathVariable Long id) {
-        return orderService.findById(id);
-    }
-
-    @PutMapping("/{id}")
-    public OrderDtos.Response update(@PathVariable Long id, @Valid @RequestBody OrderDtos.UpdateRequest request) {
-        return orderService.update(id, request);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        orderService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+    @GetMapping("/mine") public List<OrderDtos.Response> findMine(@AuthenticationPrincipal Jwt jwt) { return orderService.findMine(memberId(jwt)); }
+    @GetMapping("/seller") public List<OrderDtos.Response> findSellerOrders(@AuthenticationPrincipal Jwt jwt) { return orderService.findSellerOrders(memberId(jwt)); }
+    @GetMapping("/{id}") public OrderDtos.Response findById(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) { return orderService.findById(memberId(jwt), id); }
+    @PutMapping("/{id}/receiver") public OrderDtos.Response updateReceiver(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id, @Valid @RequestBody OrderDtos.ReceiverUpdateRequest request) { return orderService.updateReceiver(memberId(jwt), id, request); }
+    @PatchMapping("/{id}/cancel") public OrderDtos.Response cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) { return orderService.cancel(memberId(jwt), id); }
+    private Long memberId(Jwt jwt) { return Long.valueOf(jwt.getSubject()); }
 }

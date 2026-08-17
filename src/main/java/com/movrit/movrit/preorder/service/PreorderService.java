@@ -133,6 +133,20 @@ public class PreorderService {
         return preorder;
     }
 
+    @Transactional
+    public void addOrderQuantity(Preorder preorder, long quantity) {
+        try {
+            preorder.increaseOrderedQuantity(quantity);
+        } catch (IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void removeOrderQuantity(Preorder preorder, long quantity) {
+        preorder.decreaseOrderedQuantity(quantity);
+    }
+
     private Preorder getOwnedPreorder(Long memberId, Long id) {
         Preorder preorder = getPreorder(id);
         productService.getOwnedProduct(memberId, preorder.getProduct().getId());
