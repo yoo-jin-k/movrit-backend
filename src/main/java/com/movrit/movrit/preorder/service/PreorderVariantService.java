@@ -57,7 +57,7 @@ public class PreorderVariantService {
 
     @Transactional
     public PreorderVariant reserve(Long id, long quantity) {
-        PreorderVariant variant = repository.findWithLockById(id)
+        PreorderVariant variant = repository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "프리오더 옵션을 찾을 수 없어."));
         validateSellable(variant.getPreorder());
         try {
@@ -72,7 +72,7 @@ public class PreorderVariantService {
 
     @Transactional
     public void release(Long id, long quantity) {
-        PreorderVariant variant = repository.findWithLockById(id)
+        PreorderVariant variant = repository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "프리오더 옵션을 찾을 수 없어."));
         variant.release(quantity);
         inventoryService.release(variant.getProductSku().getId(), quantity);
@@ -81,7 +81,7 @@ public class PreorderVariantService {
 
     @Transactional
     public void commit(Long id, long quantity) {
-        PreorderVariant variant = repository.findWithLockById(id)
+        PreorderVariant variant = repository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "프리오더 옵션을 찾을 수 없어."));
         inventoryService.commit(variant.getProductSku().getId(), quantity);
     }
