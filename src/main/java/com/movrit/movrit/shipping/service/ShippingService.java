@@ -30,6 +30,7 @@ public class ShippingService {
     }
 
     public List<ShippingDtos.Response> findMine(Long memberId) { return shippingRepository.findAllByOrderPreorderProductBrandSellerMemberIdOrderByIdDesc(memberId).stream().map(ShippingDtos.Response::from).toList(); }
+    public List<ShippingDtos.Response> findBuyerShipments(Long memberId) { return shippingRepository.findAllByOrderMemberIdOrderByIdDesc(memberId).stream().map(ShippingDtos.Response::from).toList(); }
 
     @Transactional public ShippingDtos.Response prepare(Long memberId, Long id) { Shipping s = owned(memberId, id); transit(s::prepare); return ShippingDtos.Response.from(s); }
     @Transactional public ShippingDtos.Response ship(Long memberId, Long id, ShippingDtos.ShipRequest request) {
