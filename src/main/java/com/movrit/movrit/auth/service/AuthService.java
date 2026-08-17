@@ -20,36 +20,16 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
 
     public LoginResponse login(LoginRequest request) {
-
-        // 1. 이메일로 회원 찾기
         Member member = memberRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "이메일 또는 비밀번호가 올바르지 않아."
-                ));
+                .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않아."));
 
-        // 2. 입력한 비밀번호와 DB의 암호화된 비밀번호 비교
-        if (!passwordEncoder.matches(
-                request.getPassword(),
-                member.getPasswordHash()
-        )) {
-            throw new IllegalArgumentException(
-                    "이메일 또는 비밀번호가 올바르지 않아."
-            );
+        if (!passwordEncoder.matches(request.getPassword(), member.getPasswordHash())) {
+            throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않아.");
         }
 
-        // 3. 이메일/비밀번호가 맞으면 JWT 생성
         String accessToken = jwtTokenProvider.createAccessToken(
-                member.getId(),
-                member.getEmail()
-        );
+                member.getId(), member.getEmail(), member.getRole());
 
-        // 4. 프론트에 로그인 결과 반환
-        return new LoginResponse(
-                accessToken,
-                "Bearer",
-                member.getId(),
-                member.getEmail(),
-                member.getName()
-        );
+        return new LoginResponse(accessToken, "Bearer", member.getId(), member.getEmail(), member.getName());
     }
 }
