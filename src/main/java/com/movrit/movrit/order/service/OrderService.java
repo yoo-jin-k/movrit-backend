@@ -32,7 +32,7 @@ public class OrderService {
     private final PreorderVariantService preorderVariantService;
 
     @Transactional
-    public OrderDtos.Response create(OrderDtos.CreateRequest request) {
+    public OrderDtos.Response create(Long memberId, OrderDtos.CreateRequest request) {
         String orderNumber = request.orderNumber().trim();
         String requestKey = request.requestKey().trim();
         if (orderRepository.existsByOrderNumber(orderNumber) || orderRepository.existsByRequestKey(requestKey)) {
@@ -41,8 +41,6 @@ public class OrderService {
 
         Preorder preorder = preorderService.getPreorder(request.preorderId());
         BigDecimal productAmount = BigDecimal.ZERO;
-
-        // 같은 트랜잭션 안에서 옵션 수량과 실제 재고를 먼저 예약한다.
         for (OrderDtos.ItemRequest item : request.items()) {
             PreorderVariant variant = preorderVariantService.reserve(item.preorderVariantId(), item.quantity());
             if (!variant.getPreorder().getId().equals(preorder.getId())) {
@@ -59,7 +57,7 @@ public class OrderService {
         Order order = Order.builder()
                 .orderNumber(orderNumber)
                 .requestKey(requestKey)
-                .member(memberService.getMember(request.memberId()))
+                .member(memberService.getMember(memberId))
                 .preorder(preorder)
                 .attributionId(request.attributionId())
                 .acquisitionSource(request.acquisitionSource().trim())
@@ -99,12 +97,21 @@ public class OrderService {
         return orderRepository.findAll().stream().map(OrderDtos.Response::from).toList();
     }
 
+    public List<OrderDtos.Response> findMine(Long memberId) {
+        return orderRepository.findAllByMemberIdOrderByCreatedAtDesc(memberId).stream()
+                .map(OrderDtos.Response::from).toList();
+    }
+
     public List<OrderDtos.Response> findBySellerId(Long sellerId) {
         return orderRepository.findAllByPreorderSellerId(sellerId).stream().map(OrderDtos.Response::from).toList();
     }
 
     public OrderDtos.Response findById(Long id) {
         return OrderDtos.Response.from(getOrder(id));
+    }
+
+    public OrderDtos.Response findMineById(Long memberId, Long id) {
+        return OrderDtos.Response.from(getMine(memberId, id));
     }
 
     @Transactional
@@ -117,6 +124,12 @@ public class OrderService {
         order.update(request.status(), request.receiverName().trim(), request.receiverPhone().trim(),
                 request.postalCode(), request.address1().trim(), request.address2(), request.paidAt(), request.cancelledAt());
         return OrderDtos.Response.from(order);
+    }
+
+    @Transactional
+    public void cancelMine(Long memberId, Long id) {
+        getMine(memberId, id);
+        cancel(id);
     }
 
     @Transactional
@@ -179,5 +192,13 @@ public class OrderService {
     public Order getOrder(Long id) {
         return orderRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "주문을 찾을 수 없어."));
+    }
+
+    private Order getMine(Long memberId, Long id) {
+        Order order = getOrder(id);
+        if (!order.getMember().getId().equals(memberId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인 주문만 조회할 수 있어.");
+        }
+        return order;
     }
 }
