@@ -2,8 +2,8 @@ package com.movrit.movrit.settlement.dto;
 
 import com.movrit.movrit.settlement.entity.Settlement;
 import com.movrit.movrit.settlement.entity.SettlementStatus;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
@@ -14,27 +14,7 @@ public final class SettlementDtos {
 
     public record CreateRequest(
             @NotNull Long preorderId,
-            @NotBlank String settlementNumber,
-            @NotNull SettlementStatus status,
-            @NotNull @DecimalMin("0") BigDecimal grossAmount,
-            @NotNull @DecimalMin("0") BigDecimal refundAmount,
-            @NotNull @DecimalMin("0") BigDecimal platformFeeAmount,
-            @NotNull @DecimalMin("0") BigDecimal netAmount,
-            @NotBlank String currency,
-            LocalDateTime calculatedAt,
-            LocalDateTime confirmedAt,
-            LocalDateTime paidAt
-    ) {}
-
-    public record UpdateRequest(
-            @NotNull SettlementStatus status,
-            @NotNull @DecimalMin("0") BigDecimal grossAmount,
-            @NotNull @DecimalMin("0") BigDecimal refundAmount,
-            @NotNull @DecimalMin("0") BigDecimal platformFeeAmount,
-            @NotNull @DecimalMin("0") BigDecimal netAmount,
-            LocalDateTime calculatedAt,
-            LocalDateTime confirmedAt,
-            LocalDateTime paidAt
+            @NotNull @DecimalMin("0") @DecimalMax("100") BigDecimal platformFeeRate
     ) {}
 
     public record Response(
