@@ -5,6 +5,7 @@ import com.movrit.movrit.preorder.entity.Preorder;
 import com.movrit.movrit.preorder.entity.PreorderStatus;
 import com.movrit.movrit.preorder.repository.PreorderRepository;
 import com.movrit.movrit.product.entity.Product;
+import com.movrit.movrit.product.entity.ProductVariant;
 import com.movrit.movrit.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -25,9 +27,11 @@ public class PreorderService {
     @Transactional
     public PreorderDtos.Response create(Long memberId, PreorderDtos.CreateRequest request) {
         Product product = productService.getOwnedProduct(memberId, request.productId());
+        Set<ProductVariant> saleVariants = productService.getOwnedVariants(memberId, product.getId(), request.variantIds());
         validatePeriod(request.startAt(), request.endAt());
         validateQuantityRules(request.targetQuantity(), request.maxQuantity(),
                 request.minOrderQuantity(), request.maxOrderQuantityPerMember());
+        validateStockPolicy(saleVariants, request.targetQuantity(), request.maxQuantity());
 
         Preorder preorder = Preorder.builder()
                 .product(product)
@@ -46,6 +50,7 @@ public class PreorderService {
                 .shippingExpectedAt(request.shippingExpectedAt())
                 .status(PreorderStatus.DRAFT)
                 .build();
+        preorder.replaceSaleVariants(saleVariants);
 
         return PreorderDtos.Response.from(preorderRepository.save(preorder));
     }
@@ -73,14 +78,19 @@ public class PreorderService {
     @Transactional
     public PreorderDtos.Response update(Long memberId, Long id, PreorderDtos.UpdateRequest request) {
         Preorder preorder = getOwnedPreorder(memberId, id);
+        Set<ProductVariant> saleVariants = productService.getOwnedVariants(memberId, preorder.getProduct().getId(), request.variantIds());
         validatePeriod(request.startAt(), request.endAt());
         validateQuantityRules(request.targetQuantity(), request.maxQuantity(),
                 request.minOrderQuantity(), request.maxOrderQuantityPerMember());
+        validateStockPolicy(saleVariants, request.targetQuantity(), request.maxQuantity());
         try {
             preorder.update(request.title().trim(), request.description(), request.preorderPrice(),
                     request.currency().trim().toUpperCase(), request.targetQuantity(), request.maxQuantity(),
                     request.minOrderQuantity(), request.maxOrderQuantityPerMember(), request.startAt(), request.endAt(),
                     request.productionExpectedAt(), request.shippingExpectedAt());
+            preorder.replaceSaleVariants(saleVariants);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
         }
@@ -174,6 +184,16 @@ public class PreorderService {
         }
         if (maxPerMember != null && maxPerMember < minOrder) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "회원별 최대 주문 수량은 최소 주문 수량보다 작을 수 없어.");
+        }
+    }
+
+    private void validateStockPolicy(Set<ProductVariant> variants, Long target, Long max) {
+        long available = variants.stream().mapToLong(ProductVariant::getAvailableQuantity).sum();
+        if (available < target) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "선택한 SKU의 판매 가능 재고가 목표 수량보다 적어.");
+        }
+        if (max != null && max > available) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "최대 판매 수량이 선택한 SKU의 판매 가능 재고보다 많아.");
         }
     }
 }
