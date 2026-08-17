@@ -1,23 +1,24 @@
 package com.movrit.movrit.auth.service;
 
-import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDateTime;
+import com.movrit.movrit.auth.dto.KakaoUserInfo;
 import com.movrit.movrit.member.entity.AuthProvider;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.entity.MemberRole;
+import com.movrit.movrit.member.entity.MemberSocialAccount;
 import com.movrit.movrit.member.entity.MemberStatus;
 import com.movrit.movrit.member.repository.MemberRepository;
-import com.movrit.movrit.auth.dto.KakaoUserInfo;
+import com.movrit.movrit.member.repository.MemberSocialAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import com.movrit.movrit.member.entity.MemberSocialAccount;
-import com.movrit.movrit.member.repository.MemberSocialAccountRepository;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Service
@@ -35,6 +36,15 @@ public class KakaoAuthService {
 
     @Value("${kakao.redirect-uri}")
     private String redirectUri;
+
+    public String getLoginUrl(String state) {
+        String url = "https://kauth.kakao.com/oauth/authorize"
+                + "?response_type=code"
+                + "&client_id=" + clientId
+                + "&redirect_uri=" + redirectUri;
+
+        return state == null ? url : url + "&state=" + state;
+    }
 
     public String getAccessToken(String code) {
         RestTemplate restTemplate = new RestTemplate();
@@ -57,8 +67,7 @@ public class KakaoAuthService {
                 Map.class
         );
 
-        Map responseBody = response.getBody();
-        return (String) responseBody.get("access_token");
+        return (String) response.getBody().get("access_token");
     }
 
     public KakaoUserInfo getUserInfo(String accessToken) {
@@ -110,7 +119,6 @@ public class KakaoAuthService {
                             .passwordHash(null)
                             .name(nickname)
                             .phone(null)
-                            // 소셜 가입도 일반 가입과 동일하게 USER 권한으로 시작한다.
                             .role(MemberRole.USER)
                             .status(MemberStatus.ACTIVE)
                             .lastLoginAt(LocalDateTime.now())
@@ -118,15 +126,49 @@ public class KakaoAuthService {
 
                     Member savedMember = memberRepository.save(member);
 
-                    MemberSocialAccount socialAccount = MemberSocialAccount.builder()
-                            .member(savedMember)
-                            .provider(AuthProvider.KAKAO)
-                            .providerId(providerId)
-                            .email(null)
-                            .build();
+                    socialAccountRepository.save(
+                            MemberSocialAccount.builder()
+                                    .member(savedMember)
+                                    .provider(AuthProvider.KAKAO)
+                                    .providerId(providerId)
+                                    .email(null)
+                                    .build()
+                    );
 
-                    socialAccountRepository.save(socialAccount);
                     return savedMember;
                 });
+    }
+
+    /**
+     * 로그인한 MOVRIT 회원에게 카카오 로그인 수단을 추가한다.
+     * 이미 다른 회원에게 연결된 카카오 계정은 자동 이전하지 않는다.
+     */
+    @Transactional
+    public void linkAccount(Long memberId, KakaoUserInfo userInfo) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어."));
+
+        String providerId = String.valueOf(userInfo.getProviderId());
+        var existing = socialAccountRepository.findByProviderAndProviderId(AuthProvider.KAKAO, providerId);
+
+        if (existing.isPresent()) {
+            if (existing.get().getMember().getId().equals(memberId)) {
+                return;
+            }
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이 카카오 계정은 이미 다른 MOVRIT 계정에 연결되어 있어.");
+        }
+
+        if (socialAccountRepository.existsByMemberIdAndProvider(memberId, AuthProvider.KAKAO)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 카카오 계정이 연결되어 있어.");
+        }
+
+        socialAccountRepository.save(
+                MemberSocialAccount.builder()
+                        .member(member)
+                        .provider(AuthProvider.KAKAO)
+                        .providerId(providerId)
+                        .email(null)
+                        .build()
+        );
     }
 }
