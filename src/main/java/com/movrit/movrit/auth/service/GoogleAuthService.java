@@ -6,9 +6,9 @@ import org.springframework.stereotype.Service;
 import com.movrit.movrit.auth.dto.GoogleUserInfo;
 import com.movrit.movrit.member.entity.AuthProvider;
 import com.movrit.movrit.member.entity.Member;
+import com.movrit.movrit.member.entity.MemberRole;
 import com.movrit.movrit.member.entity.MemberStatus;
 import com.movrit.movrit.member.repository.MemberRepository;
-
 import org.springframework.http.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
@@ -37,7 +37,6 @@ public class GoogleAuthService {
     private String redirectUri;
 
     public String getLoginUrl() {
-
         return "https://accounts.google.com/o/oauth2/v2/auth"
                 + "?client_id=" + clientId
                 + "&redirect_uri=" + redirectUri
@@ -46,7 +45,6 @@ public class GoogleAuthService {
     }
 
     public String getAccessToken(String code) {
-
         RestTemplate restTemplate = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
@@ -59,8 +57,7 @@ public class GoogleAuthService {
         body.add("redirect_uri", redirectUri);
         body.add("grant_type", "authorization_code");
 
-        HttpEntity<MultiValueMap<String, String>> request =
-                new HttpEntity<>(body, headers);
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
         ResponseEntity<Map> response = restTemplate.postForEntity(
                 "https://oauth2.googleapis.com/token",
@@ -71,9 +68,7 @@ public class GoogleAuthService {
         return (String) response.getBody().get("access_token");
     }
 
-
     public GoogleUserInfo getUserInfo(String accessToken) {
-
         RestTemplate restTemplate = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
@@ -94,35 +89,22 @@ public class GoogleAuthService {
         String email = (String) body.get("email");
         String name = (String) body.get("name");
 
-        return new GoogleUserInfo(
-                providerId,
-                email,
-                name
-        );
+        return new GoogleUserInfo(providerId, email, name);
     }
-
 
     @Transactional
     public Member loginOrSignup(GoogleUserInfo userInfo) {
-
         String providerId = userInfo.getProviderId();
 
         return socialAccountRepository
-                .findByProviderAndProviderId(
-                        AuthProvider.GOOGLE,
-                        providerId
-                )
+                .findByProviderAndProviderId(AuthProvider.GOOGLE, providerId)
                 .map(socialAccount -> {
-
                     Member member = socialAccount.getMember();
                     member.updateLastLoginAt();
-
                     return member;
                 })
                 .orElseGet(() -> {
-
                     String name = userInfo.getName();
-
                     if (name == null || name.isBlank()) {
                         name = "구글회원";
                     }
@@ -132,23 +114,22 @@ public class GoogleAuthService {
                             .passwordHash(null)
                             .name(name)
                             .phone(null)
+                            // 소셜 가입 경로로 관리자 권한이 생성되지 않도록 USER로 고정한다.
+                            .role(MemberRole.USER)
                             .status(MemberStatus.ACTIVE)
                             .lastLoginAt(LocalDateTime.now())
                             .build();
 
-                    Member savedMember =
-                            memberRepository.save(member);
+                    Member savedMember = memberRepository.save(member);
 
-                    MemberSocialAccount socialAccount =
-                            MemberSocialAccount.builder()
-                                    .member(savedMember)
-                                    .provider(AuthProvider.GOOGLE)
-                                    .providerId(providerId)
-                                    .email(userInfo.getEmail())
-                                    .build();
+                    MemberSocialAccount socialAccount = MemberSocialAccount.builder()
+                            .member(savedMember)
+                            .provider(AuthProvider.GOOGLE)
+                            .providerId(providerId)
+                            .email(userInfo.getEmail())
+                            .build();
 
                     socialAccountRepository.save(socialAccount);
-
                     return savedMember;
                 });
     }
