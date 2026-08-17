@@ -47,7 +47,9 @@ public class OrderService {
         Member member = memberService.getMember(memberId);
         Preorder preorder = preorderService.getPreorder(request.preorderId());
         ProductVariant variant = productService.getVariant(request.productVariantId());
-        if (!variant.getProduct().getId().equals(preorder.getProduct().getId()) || !variant.isActive()) {
+        if (!variant.getProduct().getId().equals(preorder.getProduct().getId())
+                || !preorder.canSellVariant(variant.getId())
+                || !variant.isActive()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "프리오더에서 판매 중인 SKU가 아니야.");
         }
         if (preorder.getMaxOrderQuantityPerMember() != null
