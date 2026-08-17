@@ -7,6 +7,7 @@ import com.movrit.movrit.creator.entity.CreatorCampaignStatus;
 import com.movrit.movrit.creator.entity.CreatorStatus;
 import com.movrit.movrit.creator.repository.CreatorCampaignRepository;
 import com.movrit.movrit.creator.repository.CreatorRepository;
+import com.movrit.movrit.member.entity.MemberRole;
 import com.movrit.movrit.member.service.MemberService;
 import com.movrit.movrit.preorder.entity.Preorder;
 import com.movrit.movrit.preorder.repository.PreorderRepository;
@@ -83,6 +84,7 @@ public class CreatorService {
     public CreatorDtos.Response approve(Long creatorId) {
         Creator creator = getCreator(creatorId);
         creator.approve();
+        creator.getMember().changeRole(MemberRole.CREATOR);
         return CreatorDtos.Response.from(creator);
     }
 
