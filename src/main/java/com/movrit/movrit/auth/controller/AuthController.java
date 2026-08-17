@@ -36,6 +36,9 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+    public record RefreshRequest(String refreshToken) {}
+    @PostMapping("/refresh") public LoginResponse refresh(@RequestBody RefreshRequest r){return authService.refresh(r.refreshToken());}
+    @PostMapping("/logout") public ResponseEntity<Void> logout(@RequestBody RefreshRequest r){authService.logout(r.refreshToken());return ResponseEntity.noContent().build();}
 
     @GetMapping("/google/login-url")
     public ResponseEntity<String> googleLoginUrl() {
