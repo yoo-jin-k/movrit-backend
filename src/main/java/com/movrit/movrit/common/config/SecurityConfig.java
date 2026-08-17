@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -45,15 +46,11 @@ public class SecurityConfig {
                                 "/api/auth/logout",
                                 "/api/auth/kakao/**",
                                 "/api/auth/google/**",
-                                "/api/preorders/open",
-                                "/api/preorders/browse",
-                                "/api/preorders/*",
-                                "/api/products/*/variants",
-                                "/api/collaborations/campaigns/open",
-                                "/api/collaborations/referrals/*/click",
                                 "/uploads/**",
                                 "/error"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/preorders/open","/api/preorders/browse","/api/preorders/*","/api/products/*/variants","/api/collaborations/campaigns/open").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/collaborations/referrals/*/click").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
