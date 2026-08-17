@@ -30,6 +30,14 @@ public class Member extends BaseEntity {
     @Column(length = 20)
     private String phone;
 
+    /**
+     * 시스템 접근 권한만 관리한다.
+     * 판매자 여부는 SellerProfile 승인 상태로 판단하므로 판매자가 되어도 role은 USER일 수 있다.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private MemberRole role;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private MemberStatus status;
@@ -51,6 +59,10 @@ public class Member extends BaseEntity {
 
     public void updateLastLoginAt() {
         this.lastLoginAt = LocalDateTime.now();
+    }
+
+    public boolean isAdmin() {
+        return this.role == MemberRole.ADMIN;
     }
 
     public void withdraw() {
