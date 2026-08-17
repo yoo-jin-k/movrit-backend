@@ -1,5 +1,6 @@
 package com.movrit.movrit.member.service;
 
+import com.movrit.movrit.member.entity.AuthProvider;
 import com.movrit.movrit.member.dto.MemberSignupRequest;
 import com.movrit.movrit.member.dto.MemberSignupResponse;
 import com.movrit.movrit.member.dto.MemberUpdateRequest;
@@ -35,6 +36,8 @@ public class MemberService {
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .name(request.name().trim())
                 .phone(normalizePhone(request.phone()))
+                .authProvider(AuthProvider.LOCAL)
+                .providerId(null)
                 .status(MemberStatus.ACTIVE)
                 .build();
 
