@@ -30,7 +30,6 @@ public class Preorder extends BaseEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    /** 프리오더에서 실제 판매 허용한 SKU만 주문할 수 있다. */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "preorder_variant",
@@ -53,11 +52,9 @@ public class Preorder extends BaseEntity {
     @Column(nullable = false, length = 3, columnDefinition = "char(3)")
     private String currency;
 
-    // 목표 수량에 도달하면 프리오더 성공 판단에 사용한다.
     @Column(name = "target_quantity", nullable = false)
     private Long targetQuantity;
 
-    // 전체 판매 상한. null이면 별도 상한 없이 SKU 재고를 기준으로 판매한다.
     @Column(name = "max_quantity")
     private Long maxQuantity;
 
@@ -100,8 +97,12 @@ public class Preorder extends BaseEntity {
                        Long targetQuantity, Long maxQuantity, Long minOrderQuantity,
                        Long maxOrderQuantityPerMember, LocalDateTime startAt, LocalDateTime endAt,
                        LocalDateTime productionExpectedAt, LocalDateTime shippingExpectedAt) {
-        if (status == PreorderStatus.OPEN || status == PreorderStatus.SUCCESS || status == PreorderStatus.FAILED) {
-            throw new IllegalStateException("판매가 시작되거나 종료된 프리오더의 핵심 조건은 수정할 수 없어.");
+        if (status == PreorderStatus.REVIEW || status == PreorderStatus.CANCEL_REQUESTED
+                || status == PreorderStatus.OPEN || status == PreorderStatus.CLOSED
+                || status == PreorderStatus.SUCCESS || status == PreorderStatus.FAILED
+                || status == PreorderStatus.PRODUCTION || status == PreorderStatus.SHIPPING
+                || status == PreorderStatus.COMPLETED || status == PreorderStatus.CANCELLED) {
+            throw new IllegalStateException("검토 중이거나 판매가 시작된 프리오더의 핵심 조건은 수정할 수 없어.");
         }
         this.title = title;
         this.description = description;
@@ -118,9 +119,8 @@ public class Preorder extends BaseEntity {
     }
 
     public void replaceSaleVariants(Collection<ProductVariant> variants) {
-        if (status == PreorderStatus.OPEN || status == PreorderStatus.CLOSED
-                || status == PreorderStatus.SUCCESS || status == PreorderStatus.FAILED) {
-            throw new IllegalStateException("판매가 시작된 프리오더의 SKU 구성은 변경할 수 없어.");
+        if (status != PreorderStatus.DRAFT && status != PreorderStatus.SCHEDULED) {
+            throw new IllegalStateException("초안 또는 승인된 예약 상태에서만 SKU 구성을 수정할 수 있어.");
         }
         if (variants == null || variants.isEmpty()) {
             throw new IllegalArgumentException("판매할 SKU를 하나 이상 선택해줘.");
@@ -133,15 +133,36 @@ public class Preorder extends BaseEntity {
         return saleVariants.stream().anyMatch(variant -> variant.getId().equals(variantId));
     }
 
-    public void schedule() {
-        if (status != PreorderStatus.DRAFT) throw new IllegalStateException("초안 상태에서만 판매 예약할 수 있어.");
-        if (saleVariants.isEmpty()) throw new IllegalStateException("판매할 SKU를 하나 이상 연결해줘.");
-        this.status = PreorderStatus.SCHEDULED;
+    /** 판매자가 관리자 검토를 요청한다. */
+    public void requestReview() {
+        if (status != PreorderStatus.DRAFT) {
+            throw new IllegalStateException("초안 상태에서만 검토를 요청할 수 있어.");
+        }
+        if (saleVariants.isEmpty()) {
+            throw new IllegalStateException("판매할 SKU를 하나 이상 연결해줘.");
+        }
+        status = PreorderStatus.REVIEW;
+    }
+
+    /** 관리자가 검토를 승인해 판매 예약 상태로 전환한다. */
+    public void approveReview() {
+        if (status != PreorderStatus.REVIEW) {
+            throw new IllegalStateException("검토 중인 프리오더만 승인할 수 있어.");
+        }
+        status = PreorderStatus.SCHEDULED;
+    }
+
+    /** 관리자가 수정을 요청하면 판매자가 다시 편집할 수 있도록 초안으로 돌린다. */
+    public void requestChanges() {
+        if (status != PreorderStatus.REVIEW) {
+            throw new IllegalStateException("검토 중인 프리오더만 수정 요청할 수 있어.");
+        }
+        status = PreorderStatus.DRAFT;
     }
 
     public void open(LocalDateTime now) {
-        if (status != PreorderStatus.SCHEDULED && status != PreorderStatus.DRAFT) {
-            throw new IllegalStateException("예약 또는 초안 상태에서만 판매를 시작할 수 있어.");
+        if (status != PreorderStatus.SCHEDULED) {
+            throw new IllegalStateException("관리자 검토가 승인된 예약 상태에서만 판매를 시작할 수 있어.");
         }
         if (saleVariants.isEmpty()) throw new IllegalStateException("판매할 SKU를 하나 이상 연결해줘.");
         if (saleVariants.stream().noneMatch(variant -> variant.isActive() && variant.getAvailableQuantity() > 0)) {
@@ -157,18 +178,44 @@ public class Preorder extends BaseEntity {
         this.status = PreorderStatus.CLOSED;
     }
 
-    /** 마감 후 목표 수량 달성 여부를 확정한다. */
     public void finalizeResult() {
         if (status != PreorderStatus.CLOSED) throw new IllegalStateException("마감된 프리오더만 결과를 확정할 수 있어.");
         this.status = orderedQuantity >= targetQuantity ? PreorderStatus.SUCCESS : PreorderStatus.FAILED;
     }
 
+    /**
+     * 판매 전에는 즉시 취소하고, 판매 중에는 관리자 승인 대기로 전환한다.
+     */
     public void cancel(String reason) {
-        if (status == PreorderStatus.SUCCESS || status == PreorderStatus.FAILED) {
-            throw new IllegalStateException("결과가 확정된 프리오더는 취소할 수 없어.");
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("취소 사유를 입력해줘.");
         }
-        this.status = PreorderStatus.CANCELLED;
-        this.cancellationReason = reason;
+        if (status == PreorderStatus.DRAFT || status == PreorderStatus.REVIEW || status == PreorderStatus.SCHEDULED) {
+            status = PreorderStatus.CANCELLED;
+            cancellationReason = reason;
+            return;
+        }
+        if (status == PreorderStatus.OPEN) {
+            status = PreorderStatus.CANCEL_REQUESTED;
+            cancellationReason = reason;
+            return;
+        }
+        throw new IllegalStateException("현재 상태에서는 프리오더 취소를 요청할 수 없어.");
+    }
+
+    public void approveCancellation() {
+        if (status != PreorderStatus.CANCEL_REQUESTED) {
+            throw new IllegalStateException("취소 승인 대기 프리오더가 아니야.");
+        }
+        status = PreorderStatus.CANCELLED;
+    }
+
+    public void rejectCancellation() {
+        if (status != PreorderStatus.CANCEL_REQUESTED) {
+            throw new IllegalStateException("취소 승인 대기 프리오더가 아니야.");
+        }
+        status = PreorderStatus.OPEN;
+        cancellationReason = null;
     }
 
     public void startProduction() {
@@ -201,7 +248,9 @@ public class Preorder extends BaseEntity {
     }
 
     public void softDelete() {
-        if (status == PreorderStatus.OPEN) throw new IllegalStateException("판매 중인 프리오더는 삭제할 수 없어.");
+        if (status == PreorderStatus.OPEN || status == PreorderStatus.CANCEL_REQUESTED) {
+            throw new IllegalStateException("판매 중이거나 취소 심사 중인 프리오더는 삭제할 수 없어.");
+        }
         this.deletedAt = LocalDateTime.now();
     }
 }
