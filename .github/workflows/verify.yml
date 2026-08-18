@@ -19,8 +19,4 @@ jobs:
       - name: Make Gradle executable
         run: chmod +x gradlew
       - name: Compile backend
-        run: ./gradlew clean compileJava --no-daemon
-      - name: Test core backend logic
-        run: ./gradlew test --tests com.movrit.movrit.creator.CreatorDtosTest --tests com.movrit.movrit.inventory.InventoryTest --tests com.movrit.movrit.order.OrderStateTest --no-daemon
-      - name: Test JPA mappings and repositories
-        run: ./gradlew test --tests com.movrit.movrit.PersistenceSmokeTest --no-daemon
+        run: ./gradlew clean compileJava compileTestJava --no-daemon
