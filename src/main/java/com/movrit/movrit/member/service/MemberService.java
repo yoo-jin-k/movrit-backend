@@ -36,8 +36,7 @@ public class MemberService {
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .name(request.name().trim())
                 .phone(normalizePhone(request.phone()))
-                // 회원가입 요청에서 관리자 권한을 받을 수 없도록 서버가 USER로 고정한다.
-                .role(MemberRole.USER)
+                .role(MemberRole.BUYER)
                 .status(MemberStatus.ACTIVE)
                 .build();
 
@@ -50,7 +49,11 @@ public class MemberService {
                 .map(MemberSignupResponse::from)
                 .toList();
     }
-    public List<MemberSignupResponse> findAllForAdmin(Long adminId){getAdmin(adminId);return findAll();}
+
+    public List<MemberSignupResponse> findAllForAdmin(Long adminId) {
+        getAdmin(adminId);
+        return findAll();
+    }
 
     public MemberSignupResponse findById(Long id) {
         return MemberSignupResponse.from(getMember(id));
@@ -62,7 +65,18 @@ public class MemberService {
         member.updateProfile(request.name().trim(), normalizePhone(request.phone()));
         return MemberSignupResponse.from(member);
     }
-    @Transactional public MemberSignupResponse updateStatus(Long adminId,Long id,MemberStatus status){getAdmin(adminId);Member m=getMember(id);try{m.changeStatus(status);}catch(IllegalStateException e){throw new ResponseStatusException(HttpStatus.CONFLICT,e.getMessage());}return MemberSignupResponse.from(m);}
+
+    @Transactional
+    public MemberSignupResponse updateStatus(Long adminId, Long id, MemberStatus status) {
+        getAdmin(adminId);
+        Member member = getMember(id);
+        try {
+            member.changeStatus(status);
+        } catch (IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+        }
+        return MemberSignupResponse.from(member);
+    }
 
     @Transactional
     public void delete(Long id) {
@@ -73,7 +87,7 @@ public class MemberService {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어."));
         if (member.getDeletedAt() != null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어.");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어."));
         }
         return member;
     }
