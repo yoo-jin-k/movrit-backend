@@ -1,11 +1,13 @@
 package com.movrit.movrit.member.entity;
 
 /**
- * MOVRIT 시스템 권한을 나타낸다.
- * 구매자·판매자·크리에이터 같은 서비스 역할은 별도 프로필/관계로 관리하고,
- * 여기서는 시스템 접근 권한만 USER와 ADMIN으로 구분한다.
+ * MOVRIT 회원 역할.
+ * 구매자(BUYER)를 기본 역할로 두고, 판매자 승인 시 BRAND,
+ * 인플루언서 승인 시 CREATOR, 운영 계정은 ADMIN을 사용한다.
  */
 public enum MemberRole {
-    USER,
+    BUYER,
+    CREATOR,
+    BRAND,
     ADMIN
 }
