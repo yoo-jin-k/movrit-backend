@@ -6,7 +6,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -18,13 +21,15 @@ public class ProductController {
     private final ProductService productService;
 
     @PostMapping
-    public ResponseEntity<ProductDtos.Response> create(@Valid @RequestBody ProductDtos.CreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(productService.create(request));
+    public ResponseEntity<ProductDtos.Response> create(@AuthenticationPrincipal Jwt jwt,
+                                                       @Valid @RequestBody ProductDtos.CreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(productService.create(memberId(jwt), request));
     }
 
-    @GetMapping
-    public List<ProductDtos.Response> findAll() {
-        return productService.findAll();
+    @GetMapping("/mine")
+    public List<ProductDtos.Response> findMine(@AuthenticationPrincipal Jwt jwt) {
+        return productService.findMine(memberId(jwt));
     }
 
     @GetMapping("/{id}")
@@ -33,13 +38,65 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    public ProductDtos.Response update(@PathVariable Long id, @Valid @RequestBody ProductDtos.UpdateRequest request) {
-        return productService.update(id, request);
+    public ProductDtos.Response update(@AuthenticationPrincipal Jwt jwt,
+                                       @PathVariable Long id,
+                                       @Valid @RequestBody ProductDtos.UpdateRequest request) {
+        return productService.update(memberId(jwt), id, request);
+    }
+
+    @PostMapping("/{id}/thumbnail")
+    public ProductDtos.Response uploadThumbnail(@AuthenticationPrincipal Jwt jwt,
+                                                @PathVariable Long id,
+                                                @RequestParam("file") MultipartFile file) {
+        return productService.uploadThumbnail(memberId(jwt), id, file);
+    }
+
+    @PostMapping("/{id}/variants")
+    public ProductDtos.VariantResponse createVariant(@AuthenticationPrincipal Jwt jwt,
+                                                     @PathVariable Long id,
+                                                     @Valid @RequestBody ProductDtos.VariantCreateRequest request) {
+        return productService.createVariant(memberId(jwt), id, request);
+    }
+
+    @GetMapping("/{id}/variants")
+    public List<ProductDtos.VariantResponse> findVariants(@PathVariable Long id) {
+        return productService.findVariants(id);
+    }
+
+    @PatchMapping("/variants/{variantId}/restock")
+    public ProductDtos.VariantResponse restock(@AuthenticationPrincipal Jwt jwt,
+                                               @PathVariable Long variantId,
+                                               @Valid @RequestBody ProductDtos.StockRequest request) {
+        return productService.restock(memberId(jwt), variantId, request.quantity());
+    }
+
+    @PatchMapping("/variants/{variantId}/safety-stock")
+    public ProductDtos.VariantResponse updateSafetyStock(@AuthenticationPrincipal Jwt jwt,
+                                                         @PathVariable Long variantId,
+                                                         @Valid @RequestBody ProductDtos.SafetyStockRequest request) {
+        return productService.updateSafetyStock(memberId(jwt), variantId, request.quantity());
+    }
+
+    @PutMapping("/variants/{variantId}")
+    public ProductDtos.VariantResponse updateVariant(@AuthenticationPrincipal Jwt jwt,
+                                                      @PathVariable Long variantId,
+                                                      @Valid @RequestBody ProductDtos.VariantUpdateRequest request) {
+        return productService.updateVariant(memberId(jwt), variantId, request);
+    }
+
+    @DeleteMapping("/variants/{variantId}")
+    public ProductDtos.VariantResponse deactivateVariant(@AuthenticationPrincipal Jwt jwt,
+                                                          @PathVariable Long variantId) {
+        return productService.deactivateVariant(memberId(jwt), variantId);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        productService.delete(id);
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        productService.delete(memberId(jwt), id);
         return ResponseEntity.noContent().build();
+    }
+
+    private Long memberId(Jwt jwt) {
+        return Long.valueOf(jwt.getSubject());
     }
 }

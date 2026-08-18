@@ -17,6 +17,7 @@ public class SellerProfile extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 일반 회원이 판매자 등록을 신청하면 회원 1명당 하나의 판매자 프로필을 갖는다.
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "member_id", nullable = false, unique = true)
     private Member member;
@@ -33,8 +34,10 @@ public class SellerProfile extends BaseEntity {
     @Column(name = "representative_name")
     private String representativeName;
 
-    @Column(nullable = false)
-    private String status;
+    // 문자열 대신 enum을 사용해 잘못된 상태값이 DB에 저장되는 것을 막는다.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private SellerStatus status;
 
     @Column(name = "settlement_bank_code")
     private String settlementBankCode;
@@ -42,14 +45,26 @@ public class SellerProfile extends BaseEntity {
     @Column(name = "settlement_account_masked")
     private String settlementAccountMasked;
 
-    public void update(String businessName, String brandName, String businessNumber, String representativeName,
-                       String status, String settlementBankCode, String settlementAccountMasked) {
+    public void updateApplication(String businessName, String brandName, String businessNumber,
+                                  String representativeName, String settlementBankCode,
+                                  String settlementAccountMasked) {
         this.businessName = businessName;
         this.brandName = brandName;
         this.businessNumber = businessNumber;
         this.representativeName = representativeName;
-        this.status = status;
         this.settlementBankCode = settlementBankCode;
         this.settlementAccountMasked = settlementAccountMasked;
+    }
+
+    public void approve() {
+        this.status = SellerStatus.APPROVED;
+    }
+
+    public void reject() {
+        this.status = SellerStatus.REJECTED;
+    }
+
+    public void suspend() {
+        this.status = SellerStatus.SUSPENDED;
     }
 }

@@ -4,6 +4,7 @@ import com.movrit.movrit.member.entity.AuthProvider;
 import com.movrit.movrit.member.entity.MemberSocialAccount;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface MemberSocialAccountRepository
@@ -13,4 +14,8 @@ public interface MemberSocialAccountRepository
             AuthProvider provider,
             String providerId
     );
+
+    List<MemberSocialAccount> findAllByMemberId(Long memberId);
+
+    boolean existsByMemberIdAndProvider(Long memberId, AuthProvider provider);
 }

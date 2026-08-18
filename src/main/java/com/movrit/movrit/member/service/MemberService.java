@@ -4,6 +4,7 @@ import com.movrit.movrit.member.dto.MemberSignupRequest;
 import com.movrit.movrit.member.dto.MemberSignupResponse;
 import com.movrit.movrit.member.dto.MemberUpdateRequest;
 import com.movrit.movrit.member.entity.Member;
+import com.movrit.movrit.member.entity.MemberRole;
 import com.movrit.movrit.member.entity.MemberStatus;
 import com.movrit.movrit.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,8 @@ public class MemberService {
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .name(request.name().trim())
                 .phone(normalizePhone(request.phone()))
+                // 회원가입 요청에서 관리자 권한을 받을 수 없도록 서버가 USER로 고정한다.
+                .role(MemberRole.USER)
                 .status(MemberStatus.ACTIVE)
                 .build();
 
@@ -47,6 +50,7 @@ public class MemberService {
                 .map(MemberSignupResponse::from)
                 .toList();
     }
+    public List<MemberSignupResponse> findAllForAdmin(Long adminId){getAdmin(adminId);return findAll();}
 
     public MemberSignupResponse findById(Long id) {
         return MemberSignupResponse.from(getMember(id));
@@ -58,6 +62,7 @@ public class MemberService {
         member.updateProfile(request.name().trim(), normalizePhone(request.phone()));
         return MemberSignupResponse.from(member);
     }
+    @Transactional public MemberSignupResponse updateStatus(Long adminId,Long id,MemberStatus status){getAdmin(adminId);Member m=getMember(id);try{m.changeStatus(status);}catch(IllegalStateException e){throw new ResponseStatusException(HttpStatus.CONFLICT,e.getMessage());}return MemberSignupResponse.from(m);}
 
     @Transactional
     public void delete(Long id) {
@@ -69,6 +74,14 @@ public class MemberService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어."));
         if (member.getDeletedAt() != null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어.");
+        }
+        return member;
+    }
+
+    public Member getAdmin(Long memberId) {
+        Member member = getMember(memberId);
+        if (!member.isAdmin()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자 권한이 필요해.");
         }
         return member;
     }

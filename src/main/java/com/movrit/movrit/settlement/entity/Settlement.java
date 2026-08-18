@@ -70,4 +70,21 @@ public class Settlement extends BaseEntity {
         this.confirmedAt = confirmedAt;
         this.paidAt = paidAt;
     }
+
+    public void confirm() {
+        if (status != SettlementStatus.PENDING) throw new IllegalStateException("정산 대기 상태에서만 확정할 수 있어.");
+        this.status = SettlementStatus.CONFIRMED;
+        this.confirmedAt = LocalDateTime.now();
+    }
+
+    public void pay() {
+        if (status != SettlementStatus.CONFIRMED) throw new IllegalStateException("확정된 정산만 지급 완료할 수 있어.");
+        this.status = SettlementStatus.PAID;
+        this.paidAt = LocalDateTime.now();
+    }
+
+    public void cancel() {
+        if (status == SettlementStatus.PAID) throw new IllegalStateException("지급 완료된 정산은 취소할 수 없어.");
+        this.status = SettlementStatus.CANCELLED;
+    }
 }

@@ -26,6 +26,11 @@ public final class ShippingDtos {
             LocalDateTime deliveredAt
     ) {}
 
+    public record ShipRequest(
+            @NotNull String courierCode,
+            @NotNull String trackingNumber
+    ) {}
+
     public record Response(
             Long id,
             Long orderId,

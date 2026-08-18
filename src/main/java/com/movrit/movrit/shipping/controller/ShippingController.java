@@ -1,44 +1,22 @@
 package com.movrit.movrit.shipping.controller;
-
 import com.movrit.movrit.shipping.dto.ShippingDtos;
 import com.movrit.movrit.shipping.service.ShippingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
-@RestController
-@RequiredArgsConstructor
-@RequestMapping("/api/shipments")
+@RestController @RequiredArgsConstructor @RequestMapping("/api/shipments")
 public class ShippingController {
     private final ShippingService shippingService;
-
-    @PostMapping
-    public ResponseEntity<ShippingDtos.Response> create(@Valid @RequestBody ShippingDtos.CreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(shippingService.create(request));
-    }
-
-    @GetMapping
-    public List<ShippingDtos.Response> findAll() {
-        return shippingService.findAll();
-    }
-
-    @GetMapping("/{id}")
-    public ShippingDtos.Response findById(@PathVariable Long id) {
-        return shippingService.findById(id);
-    }
-
-    @PutMapping("/{id}")
-    public ShippingDtos.Response update(@PathVariable Long id, @Valid @RequestBody ShippingDtos.UpdateRequest request) {
-        return shippingService.update(id, request);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        shippingService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
+    @PostMapping("/orders/{orderId}") public ResponseEntity<ShippingDtos.Response> create(@AuthenticationPrincipal Jwt jwt, @PathVariable Long orderId) { return ResponseEntity.status(HttpStatus.CREATED).body(shippingService.create(id(jwt), orderId)); }
+    @GetMapping("/mine") public List<ShippingDtos.Response> mine(@AuthenticationPrincipal Jwt jwt) { return shippingService.findMine(id(jwt)); }
+    @GetMapping("/buyer") public List<ShippingDtos.Response> buyer(@AuthenticationPrincipal Jwt jwt) { return shippingService.findBuyerShipments(id(jwt)); }
+    @PatchMapping("/{shippingId}/prepare") public ShippingDtos.Response prepare(@AuthenticationPrincipal Jwt jwt, @PathVariable Long shippingId) { return shippingService.prepare(id(jwt), shippingId); }
+    @PatchMapping("/{shippingId}/ship") public ShippingDtos.Response ship(@AuthenticationPrincipal Jwt jwt, @PathVariable Long shippingId, @Valid @RequestBody ShippingDtos.ShipRequest request) { return shippingService.ship(id(jwt), shippingId, request); }
+    @PatchMapping("/{shippingId}/deliver") public ShippingDtos.Response deliver(@AuthenticationPrincipal Jwt jwt, @PathVariable Long shippingId) { return shippingService.deliver(id(jwt), shippingId); }
+    private Long id(Jwt jwt) { return Long.valueOf(jwt.getSubject()); }
 }

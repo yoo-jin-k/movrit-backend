@@ -1,5 +1,6 @@
 package com.movrit.movrit.product.entity;
 
+import com.movrit.movrit.brand.entity.Brand;
 import com.movrit.movrit.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,8 +20,9 @@ public class Product extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "seller_id", nullable = false)
-    private Long sellerId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "brand_id", nullable = false)
+    private Brand brand;
 
     @Column(nullable = false)
     private String name;
@@ -32,6 +34,9 @@ public class Product extends BaseEntity {
 
     @Column(name = "normal_price", nullable = false)
     private BigDecimal normalPrice;
+
+    @Column(name = "thumbnail_url", length = 500)
+    private String thumbnailUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -46,6 +51,10 @@ public class Product extends BaseEntity {
         this.category = category;
         this.normalPrice = normalPrice;
         this.status = status;
+    }
+
+    public void updateThumbnail(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
     }
 
     public void softDelete() {

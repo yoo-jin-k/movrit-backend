@@ -1,0 +1,2 @@
+package com.movrit.movrit.admin.dto;import java.math.BigDecimal;import java.util.List;
+public final class AdminDtos{private AdminDtos(){}public record Summary(long members,long sellers,long creators,long preorders,long orders,long payments,long collaborations,long pendingSettlements,BigDecimal paidGmv){}public record Item(Long id,String type,String title,String status,String detail){}public record Dashboard(Summary summary,List<Item> preorders,List<Item> orders,List<Item> payments,List<Item> collaborations,List<Item> settlements){}}
