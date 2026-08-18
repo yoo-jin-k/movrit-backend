@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/** 비밀번호 찾기/재설정 API 요청·응답 모델. */
 public final class PasswordResetDtos {
     private PasswordResetDtos() {}
 
