@@ -58,6 +58,17 @@ public class Member extends BaseEntity {
         this.role = role;
     }
 
+    public void changeStatus(MemberStatus status) {
+        if (this.status == MemberStatus.WITHDRAWN) {
+            throw new IllegalStateException("탈퇴 회원의 상태는 변경할 수 없어.");
+        }
+        this.status = status;
+    }
+
+    public boolean isAdmin() {
+        return role == MemberRole.ADMIN;
+    }
+
     public void updateLastLoginAt() {
         this.lastLoginAt = LocalDateTime.now();
     }
