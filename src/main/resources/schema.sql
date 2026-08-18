@@ -85,5 +85,19 @@ CREATE TABLE IF NOT EXISTS influencer_campaign (
         CHECK (commission_rate >= 0 AND commission_rate <= 100)
 );
 
+CREATE TABLE IF NOT EXISTS preorder_favorite (
+    id BIGSERIAL PRIMARY KEY,
+    member_id BIGINT NOT NULL,
+    preorder_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_preorder_favorite_member FOREIGN KEY (member_id) REFERENCES member(id),
+    CONSTRAINT fk_preorder_favorite_preorder FOREIGN KEY (preorder_id) REFERENCES preorder(id),
+    CONSTRAINT uk_preorder_favorite_member_preorder UNIQUE (member_id, preorder_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_preorder_favorite_member_id ON preorder_favorite(member_id);
+CREATE INDEX IF NOT EXISTS idx_preorder_favorite_preorder_id ON preorder_favorite(preorder_id);
+
 CREATE UNIQUE INDEX IF NOT EXISTS uk_orders_order_number_idx ON orders(order_number);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_orders_request_key_idx ON orders(request_key);
