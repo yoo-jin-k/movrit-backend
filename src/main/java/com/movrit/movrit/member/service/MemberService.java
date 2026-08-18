@@ -87,7 +87,7 @@ public class MemberService {
         Member member = memberRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어."));
         if (member.getDeletedAt() != null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어."));
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없어.");
         }
         return member;
     }
