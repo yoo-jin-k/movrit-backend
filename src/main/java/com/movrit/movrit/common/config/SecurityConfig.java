@@ -52,7 +52,14 @@ public class SecurityConfig {
                                 "/uploads/**",
                                 "/error"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/preorders/open","/api/preorders/browse","/api/preorders/*","/api/products/*/variants","/api/collaborations/campaigns/open").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/preorders/open",
+                                "/api/preorders/browse",
+                                "/api/preorders/*",
+                                "/api/products/*/variants",
+                                "/api/collaborations/campaigns/open",
+                                "/api/reviews/products/*"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/collaborations/referrals/*/click").permitAll()
                         .anyRequest().authenticated()
                 )
