@@ -10,4 +10,5 @@ public interface PreorderFavoriteRepository extends JpaRepository<PreorderFavori
     boolean existsByMemberIdAndPreorderId(Long memberId, Long preorderId);
     Optional<PreorderFavorite> findByMemberIdAndPreorderId(Long memberId, Long preorderId);
     List<PreorderFavorite> findAllByMemberIdOrderByIdDesc(Long memberId);
+    List<PreorderFavorite> findAllByPreorderId(Long preorderId);
 }
