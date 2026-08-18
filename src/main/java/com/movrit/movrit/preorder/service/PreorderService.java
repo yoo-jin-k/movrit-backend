@@ -1,5 +1,7 @@
 package com.movrit.movrit.preorder.service;
 
+import com.movrit.movrit.favorite.repository.PreorderFavoriteRepository;
+import com.movrit.movrit.notification.service.NotificationService;
 import com.movrit.movrit.preorder.dto.PreorderDtos;
 import com.movrit.movrit.preorder.entity.Preorder;
 import com.movrit.movrit.preorder.entity.PreorderStatus;
@@ -23,6 +25,8 @@ import java.util.Set;
 public class PreorderService {
     private final PreorderRepository preorderRepository;
     private final ProductService productService;
+    private final PreorderFavoriteRepository favoriteRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public PreorderDtos.Response create(Long memberId, PreorderDtos.CreateRequest request) {
@@ -70,11 +74,31 @@ public class PreorderService {
                 .map(PreorderDtos.Response::from)
                 .toList();
     }
-    public List<PreorderDtos.Response> browse(String keyword,String category,PreorderStatus status){
-        Set<PreorderStatus> publicStatuses=Set.of(PreorderStatus.SCHEDULED,PreorderStatus.OPEN,PreorderStatus.SUCCESS,PreorderStatus.FAILED,PreorderStatus.PRODUCTION,PreorderStatus.SHIPPING,PreorderStatus.COMPLETED);
-        if(status!=null&&!publicStatuses.contains(status))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"공개 조회할 수 없는 상태야.");
-        String q=keyword==null?"":keyword.trim().toLowerCase();
-        return preorderRepository.findAll().stream().filter(p->p.getDeletedAt()==null&&publicStatuses.contains(p.getStatus())).filter(p->status==null||p.getStatus()==status).filter(p->category==null||category.isBlank()||category.equalsIgnoreCase(p.getProduct().getCategory())).filter(p->q.isBlank()||p.getTitle().toLowerCase().contains(q)||p.getProduct().getName().toLowerCase().contains(q)||p.getProduct().getBrand().getName().toLowerCase().contains(q)).map(PreorderDtos.Response::from).toList();
+
+    public List<PreorderDtos.Response> browse(String keyword, String category, PreorderStatus status) {
+        Set<PreorderStatus> publicStatuses = Set.of(
+                PreorderStatus.SCHEDULED,
+                PreorderStatus.OPEN,
+                PreorderStatus.SUCCESS,
+                PreorderStatus.FAILED,
+                PreorderStatus.PRODUCTION,
+                PreorderStatus.SHIPPING,
+                PreorderStatus.COMPLETED
+        );
+        if (status != null && !publicStatuses.contains(status)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "공개 조회할 수 없는 상태야.");
+        }
+        String q = keyword == null ? "" : keyword.trim().toLowerCase();
+        return preorderRepository.findAll().stream()
+                .filter(p -> p.getDeletedAt() == null && publicStatuses.contains(p.getStatus()))
+                .filter(p -> status == null || p.getStatus() == status)
+                .filter(p -> category == null || category.isBlank() || category.equalsIgnoreCase(p.getProduct().getCategory()))
+                .filter(p -> q.isBlank()
+                        || p.getTitle().toLowerCase().contains(q)
+                        || p.getProduct().getName().toLowerCase().contains(q)
+                        || p.getProduct().getBrand().getName().toLowerCase().contains(q))
+                .map(PreorderDtos.Response::from)
+                .toList();
     }
 
     public PreorderDtos.Response findById(Long id) {
@@ -111,28 +135,62 @@ public class PreorderService {
     @Transactional
     public PreorderDtos.Response open(Long memberId, Long id) {
         Preorder preorder = getOwnedPreorder(memberId, id);
-        return applyTransition(preorder, value -> value.open(LocalDateTime.now()));
+        PreorderDtos.Response response = applyTransition(preorder, value -> value.open(LocalDateTime.now()));
+        notifyFavorites(preorder, "PREORDER_OPEN", "찜한 프리오더가 오픈했어", preorder.getTitle() + " 판매가 시작됐어.");
+        return response;
     }
 
     @Transactional
     public PreorderDtos.Response close(Long memberId, Long id) {
-        return applyTransition(getOwnedPreorder(memberId, id), Preorder::close);
+        Preorder preorder = getOwnedPreorder(memberId, id);
+        PreorderDtos.Response response = applyTransition(preorder, Preorder::close);
+        notifyFavorites(preorder, "PREORDER_CLOSED", "찜한 프리오더가 마감됐어", preorder.getTitle() + " 판매가 마감됐어.");
+        return response;
     }
 
     @Transactional
     public PreorderDtos.Response finalizeResult(Long memberId, Long id) {
-        return applyTransition(getOwnedPreorder(memberId, id), Preorder::finalizeResult);
+        Preorder preorder = getOwnedPreorder(memberId, id);
+        PreorderDtos.Response response = applyTransition(preorder, Preorder::finalizeResult);
+        if (preorder.getStatus() == PreorderStatus.SUCCESS) {
+            notifyFavorites(preorder, "PREORDER_SUCCESS", "프리오더 목표 달성!", preorder.getTitle() + " 프리오더가 성공했어.");
+        } else {
+            notifyFavorites(preorder, "PREORDER_FAILED", "프리오더 결과 안내", preorder.getTitle() + " 프리오더가 목표 수량에 도달하지 못했어.");
+        }
+        return response;
     }
 
     @Transactional
     public PreorderDtos.Response cancel(Long memberId, Long id, String reason) {
         Preorder preorder = getOwnedPreorder(memberId, id);
-        return applyTransition(preorder, value -> value.cancel(reason.trim()));
+        PreorderDtos.Response response = applyTransition(preorder, value -> value.cancel(reason.trim()));
+        notifyFavorites(preorder, "PREORDER_CANCELLED", "프리오더 취소 안내", preorder.getTitle() + " 프리오더가 취소됐어.");
+        return response;
     }
 
-    @Transactional public PreorderDtos.Response startProduction(Long memberId,Long id){return applyTransition(getOwnedPreorder(memberId,id),Preorder::startProduction);}
-    @Transactional public PreorderDtos.Response startShipping(Long memberId,Long id){return applyTransition(getOwnedPreorder(memberId,id),Preorder::startShipping);}
-    @Transactional public PreorderDtos.Response complete(Long memberId,Long id){return applyTransition(getOwnedPreorder(memberId,id),Preorder::complete);}
+    @Transactional
+    public PreorderDtos.Response startProduction(Long memberId, Long id) {
+        Preorder preorder = getOwnedPreorder(memberId, id);
+        PreorderDtos.Response response = applyTransition(preorder, Preorder::startProduction);
+        notifyFavorites(preorder, "PREORDER_PRODUCTION", "생산이 시작됐어", preorder.getTitle() + " 상품 생산이 시작됐어.");
+        return response;
+    }
+
+    @Transactional
+    public PreorderDtos.Response startShipping(Long memberId, Long id) {
+        Preorder preorder = getOwnedPreorder(memberId, id);
+        PreorderDtos.Response response = applyTransition(preorder, Preorder::startShipping);
+        notifyFavorites(preorder, "PREORDER_SHIPPING", "배송 단계로 넘어갔어", preorder.getTitle() + " 상품이 배송 단계로 변경됐어.");
+        return response;
+    }
+
+    @Transactional
+    public PreorderDtos.Response complete(Long memberId, Long id) {
+        Preorder preorder = getOwnedPreorder(memberId, id);
+        PreorderDtos.Response response = applyTransition(preorder, Preorder::complete);
+        notifyFavorites(preorder, "PREORDER_COMPLETED", "프리오더가 완료됐어", preorder.getTitle() + " 프리오더가 완료됐어.");
+        return response;
+    }
 
     @Transactional
     public void delete(Long memberId, Long id) {
@@ -190,6 +248,19 @@ public class PreorderService {
         } catch (IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
         }
+    }
+
+    private void notifyFavorites(Preorder preorder, String type, String title, String message) {
+        favoriteRepository.findAllByPreorderId(preorder.getId()).forEach(favorite ->
+                notificationService.send(
+                        favorite.getMember().getId(),
+                        type,
+                        title,
+                        message,
+                        "PREORDER",
+                        preorder.getId()
+                )
+        );
     }
 
     private void validatePeriod(LocalDateTime startAt, LocalDateTime endAt) {
