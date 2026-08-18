@@ -127,9 +127,10 @@ public class PreorderService {
         return PreorderDtos.Response.from(preorder);
     }
 
+    /** 기존 /schedule API는 호환성을 유지하되 이제 관리자 검토 요청 의미로 사용한다. */
     @Transactional
     public PreorderDtos.Response schedule(Long memberId, Long id) {
-        return applyTransition(getOwnedPreorder(memberId, id), Preorder::schedule);
+        return applyTransition(getOwnedPreorder(memberId, id), Preorder::requestReview);
     }
 
     @Transactional
@@ -163,8 +164,10 @@ public class PreorderService {
     @Transactional
     public PreorderDtos.Response cancel(Long memberId, Long id, String reason) {
         Preorder preorder = getOwnedPreorder(memberId, id);
-        PreorderDtos.Response response = applyTransition(preorder, value -> value.cancel(reason.trim()));
-        notifyFavorites(preorder, "PREORDER_CANCELLED", "프리오더 취소 안내", preorder.getTitle() + " 프리오더가 취소됐어.");
+        PreorderDtos.Response response = applyTransition(preorder, value -> value.cancel(reason == null ? null : reason.trim()));
+        if (preorder.getStatus() == PreorderStatus.CANCELLED) {
+            notifyFavorites(preorder, "PREORDER_CANCELLED", "프리오더 취소 안내", preorder.getTitle() + " 프리오더가 취소됐어.");
+        }
         return response;
     }
 
@@ -211,7 +214,6 @@ public class PreorderService {
         return preorder;
     }
 
-    /** 주문 수량을 검사하고 늘리는 동안 다른 주문이 같은 프리오더 수량을 바꾸지 못하게 한다. */
     public Preorder getPreorderForOrder(Long id) {
         Preorder preorder = preorderRepository.findLockedById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "프리오더를 찾을 수 없어."));
@@ -245,6 +247,8 @@ public class PreorderService {
         try {
             transition.accept(preorder);
             return PreorderDtos.Response.from(preorder);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
         }
