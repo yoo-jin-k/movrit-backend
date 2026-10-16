@@ -58,6 +58,7 @@ public class SecurityConfig {
                                 "/api/collaborations/campaigns/open",
                                 "/api/campaigns/*/application-form"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/collaborations/campaigns/*").permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/collaborations/referrals/*/click").permitAll()
                         .anyRequest().authenticated()
                 )
