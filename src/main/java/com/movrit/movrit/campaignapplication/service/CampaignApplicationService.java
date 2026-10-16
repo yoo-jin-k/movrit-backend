@@ -4,7 +4,10 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos;
-import com.movrit.movrit.campaignapplication.entity.*;
+import com.movrit.movrit.campaignapplication.entity.CampaignApplication;
+import com.movrit.movrit.campaignapplication.entity.CampaignApplicationForm;
+import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
+import com.movrit.movrit.campaignapplication.entity.FulfillmentType;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationFormRepository;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
 import com.movrit.movrit.audit.service.AuditLogService;
@@ -22,7 +25,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -81,6 +89,7 @@ public class CampaignApplicationService {
         CampaignApplicationForm form = getFormEntity(campaignId);
         Creator creator = creatorService.getByMember(memberId);
 
+        validateCreatorEligibility(creator, campaign);
         if (applicationRepository.existsByCampaignIdAndCreatorId(campaignId, creator.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 이 캠페인에 신청하셨습니다.");
         }
@@ -137,8 +146,10 @@ public class CampaignApplicationService {
     @Transactional
     public CampaignApplicationDtos.Response select(Long memberId, Long applicationId) {
         CampaignApplication application = getSellerApplication(memberId, applicationId);
+        Campaign lockedCampaign = campaignRepository.findByIdForUpdate(application.getCampaign().getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "캠페인을 찾을 수 없습니다."));
         long selectedCount = applicationRepository.countByCampaignIdAndStatusIn(
-                application.getCampaign().getId(),
+                lockedCampaign.getId(),
                 List.of(
                         CampaignApplicationStatus.SELECTED,
                         CampaignApplicationStatus.ACTIVE,
@@ -147,7 +158,7 @@ public class CampaignApplicationService {
                         CampaignApplicationStatus.COMPLETED
                 )
         );
-        if (selectedCount >= application.getCampaign().getRecruitmentCount()) {
+        if (selectedCount >= lockedCampaign.getRecruitmentCount()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "캠페인 모집 인원이 모두 선정되었습니다.");
         }
         CampaignApplicationDtos.Response response = transition(application, CampaignApplication::select);
@@ -213,6 +224,15 @@ public class CampaignApplicationService {
     private void validateDefinition(CampaignApplicationDtos.FormSaveRequest request) {
         requireUniqueIds(request.questions().stream().map(CampaignApplicationDtos.QuestionDefinition::id).toList(), "질문 ID");
         requireUniqueIds(request.agreements().stream().map(CampaignApplicationDtos.AgreementDefinition::id).toList(), "동의 문서 ID");
+    }
+
+    private void validateCreatorEligibility(Creator creator, Campaign campaign) {
+        if (!"ACTIVE".equals(creator.getStatus()) && !"APPROVED".equals(creator.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "승인된 크리에이터만 캠페인에 신청할 수 있습니다.");
+        }
+        if (creator.getFollowerCount() < campaign.getMinFollowerCount()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "캠페인의 최소 팔로워 조건을 충족하지 못했습니다.");
+        }
     }
 
     private void validateApplication(
