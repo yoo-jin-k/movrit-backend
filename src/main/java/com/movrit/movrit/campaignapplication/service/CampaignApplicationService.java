@@ -7,11 +7,13 @@ import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos;
 import com.movrit.movrit.campaignapplication.entity.*;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationFormRepository;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
+import com.movrit.movrit.audit.service.AuditLogService;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
 import com.movrit.movrit.creator.entity.Creator;
 import com.movrit.movrit.creator.service.CreatorService;
 import com.movrit.movrit.product.service.ProductService;
+import com.movrit.movrit.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -34,6 +36,8 @@ public class CampaignApplicationService {
     private final CreatorService creatorService;
     private final ProductService productService;
     private final ObjectMapper objectMapper;
+    private final NotificationService notificationService;
+    private final AuditLogService auditLogService;
 
     @Transactional
     public CampaignApplicationDtos.FormResponse saveForm(
@@ -103,7 +107,13 @@ public class CampaignApplicationService {
                 .submittedAt(LocalDateTime.now())
                 .build();
         try {
-            return response(applicationRepository.saveAndFlush(application));
+            CampaignApplication saved = applicationRepository.saveAndFlush(application);
+            Long sellerMemberId = campaign.getPreorder().getProduct().getBrand().getSeller().getMember().getId();
+            notificationService.send(sellerMemberId, "CAMPAIGN_APPLICATION", "새 캠페인 신청이 접수되었습니다.",
+                    creator.getNickname() + "님이 캠페인에 신청하셨습니다.", "CAMPAIGN_APPLICATION", saved.getId());
+            auditLogService.record(memberId, "CAMPAIGN_APPLICATION_SUBMITTED", "CAMPAIGN_APPLICATION", saved.getId(),
+                    null, "{\"status\":\"SUBMITTED\"}", null);
+            return response(saved);
         } catch (DataIntegrityViolationException exception) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 이 캠페인에 신청하셨습니다.");
         }
@@ -140,12 +150,17 @@ public class CampaignApplicationService {
         if (selectedCount >= application.getCampaign().getRecruitmentCount()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "캠페인 모집 인원이 모두 선정되었습니다.");
         }
-        return transition(application, CampaignApplication::select);
+        CampaignApplicationDtos.Response response = transition(application, CampaignApplication::select);
+        notifyCreatorAndAudit(memberId, application, "신청이 선정되었습니다.", "CAMPAIGN_APPLICATION_SELECTED", "SELECTED", null);
+        return response;
     }
 
     @Transactional
     public CampaignApplicationDtos.Response reject(Long memberId, Long applicationId) {
-        return transition(getSellerApplication(memberId, applicationId), CampaignApplication::reject);
+        CampaignApplication application = getSellerApplication(memberId, applicationId);
+        CampaignApplicationDtos.Response response = transition(application, CampaignApplication::reject);
+        notifyCreatorAndAudit(memberId, application, "신청이 선정되지 않았습니다.", "CAMPAIGN_APPLICATION_REJECTED", "REJECTED", null);
+        return response;
     }
 
     @Transactional
@@ -153,7 +168,13 @@ public class CampaignApplicationService {
         CampaignApplication application = applicationRepository
                 .findByIdAndCreatorMemberId(applicationId, memberId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
-        return transition(application, CampaignApplication::activate);
+        CampaignApplicationDtos.Response response = transition(application, CampaignApplication::activate);
+        Long sellerMemberId = application.getCampaign().getPreorder().getProduct().getBrand().getSeller().getMember().getId();
+        notificationService.send(sellerMemberId, "CAMPAIGN_APPLICATION", "캠페인 참여가 확정되었습니다.",
+                application.getCreator().getNickname() + "님이 참여를 확정하셨습니다.", "CAMPAIGN_APPLICATION", application.getId());
+        auditLogService.record(memberId, "CAMPAIGN_APPLICATION_ACTIVATED", "CAMPAIGN_APPLICATION", application.getId(),
+                "{\"status\":\"SELECTED\"}", "{\"status\":\"ACTIVE\"}", null);
+        return response;
     }
 
     @Transactional
@@ -165,7 +186,14 @@ public class CampaignApplicationService {
         CampaignApplication application = applicationRepository
                 .findByIdAndCreatorMemberId(applicationId, memberId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
-        return transition(application, value -> value.cancel(request.reason().trim()));
+        CampaignApplicationStatus previousStatus = application.getStatus();
+        CampaignApplicationDtos.Response response = transition(application, value -> value.cancel(request.reason().trim()));
+        Long sellerMemberId = application.getCampaign().getPreorder().getProduct().getBrand().getSeller().getMember().getId();
+        notificationService.send(sellerMemberId, "CAMPAIGN_APPLICATION", "캠페인 참여가 취소되었습니다.",
+                application.getCreator().getNickname() + "님이 참여를 취소하셨습니다.", "CAMPAIGN_APPLICATION", application.getId());
+        auditLogService.record(memberId, "CAMPAIGN_APPLICATION_CANCELLED", "CAMPAIGN_APPLICATION", application.getId(),
+                "{\"status\":\"" + previousStatus + "\"}", "{\"status\":\"CANCELLED\"}", request.reason().trim());
+        return response;
     }
 
     private void validateDefinition(CampaignApplicationDtos.FormSaveRequest request) {
@@ -346,6 +374,14 @@ public class CampaignApplicationService {
         } catch (IllegalStateException exception) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, exception.getMessage());
         }
+    }
+
+    private void notifyCreatorAndAudit(Long actorMemberId, CampaignApplication application, String title,
+                                       String action, String nextStatus, String reason) {
+        notificationService.send(application.getCreator().getMember().getId(), "CAMPAIGN_APPLICATION", title,
+                application.getCampaign().getTitle(), "CAMPAIGN_APPLICATION", application.getId());
+        auditLogService.record(actorMemberId, action, "CAMPAIGN_APPLICATION", application.getId(),
+                "{\"status\":\"SUBMITTED\"}", "{\"status\":\"" + nextStatus + "\"}", reason);
     }
 
     private String contactValue(
