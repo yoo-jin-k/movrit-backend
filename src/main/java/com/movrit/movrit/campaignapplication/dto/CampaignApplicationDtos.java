@@ -82,6 +82,7 @@ public final class CampaignApplicationDtos {
             LocalDateTime submittedAt,
             LocalDateTime respondedAt,
             LocalDateTime cancelledAt,
-            String cancellationReason
+            String cancellationReason,
+            LocalDateTime experienceConfirmedAt
     ) {}
 }

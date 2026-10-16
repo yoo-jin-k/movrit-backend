@@ -88,6 +88,9 @@ public class CampaignApplication extends BaseEntity {
     @Column(name = "cancellation_reason")
     private String cancellationReason;
 
+    @Column(name = "experience_confirmed_at")
+    private LocalDateTime experienceConfirmedAt;
+
     public void select() {
         requireStatus(CampaignApplicationStatus.SUBMITTED, "접수된 신청만 선정할 수 있습니다.");
         status = CampaignApplicationStatus.SELECTED;
@@ -103,6 +106,35 @@ public class CampaignApplication extends BaseEntity {
     public void activate() {
         requireStatus(CampaignApplicationStatus.SELECTED, "선정된 신청만 참여를 확정할 수 있습니다.");
         status = CampaignApplicationStatus.ACTIVE;
+    }
+
+    /** 배송형은 샘플 수령, 방문형은 방문 완료를 참여자가 직접 확인합니다. */
+    public void confirmExperience() {
+        requireStatus(CampaignApplicationStatus.ACTIVE, "진행 중인 캠페인만 체험 완료를 확인할 수 있습니다.");
+        if (experienceConfirmedAt == null) {
+            experienceConfirmedAt = LocalDateTime.now();
+        }
+    }
+
+    public void markContentSubmitted() {
+        if (experienceConfirmedAt == null) {
+            throw new IllegalStateException("체험 완료 확인 후 콘텐츠를 제출해 주세요.");
+        }
+        if (status != CampaignApplicationStatus.ACTIVE
+                && status != CampaignApplicationStatus.REVISION_REQUESTED) {
+            throw new IllegalStateException("진행 중이거나 수정 요청된 캠페인만 콘텐츠를 제출할 수 있습니다.");
+        }
+        status = CampaignApplicationStatus.CONTENT_SUBMITTED;
+    }
+
+    public void requestContentRevision() {
+        requireStatus(CampaignApplicationStatus.CONTENT_SUBMITTED, "제출된 콘텐츠에만 수정을 요청할 수 있습니다.");
+        status = CampaignApplicationStatus.REVISION_REQUESTED;
+    }
+
+    public void completeContentReview() {
+        requireStatus(CampaignApplicationStatus.CONTENT_SUBMITTED, "제출된 콘텐츠만 승인할 수 있습니다.");
+        status = CampaignApplicationStatus.COMPLETED;
     }
 
     /** 금전 상태와 무관한 캠페인 참여만 취소하며 주문·결제 데이터는 변경하지 않습니다. */

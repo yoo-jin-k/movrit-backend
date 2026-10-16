@@ -196,6 +196,20 @@ public class CampaignApplicationService {
         return response;
     }
 
+    @Transactional
+    public CampaignApplicationDtos.Response confirmExperience(Long memberId, Long applicationId) {
+        CampaignApplication application = applicationRepository
+                .findByIdAndCreatorMemberId(applicationId, memberId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
+        CampaignApplicationDtos.Response response = transition(application, CampaignApplication::confirmExperience);
+        Long sellerMemberId = application.getCampaign().getPreorder().getProduct().getBrand().getSeller().getMember().getId();
+        notificationService.send(sellerMemberId, "CAMPAIGN_EXPERIENCE", "체험 완료가 확인되었습니다.",
+                application.getCreator().getNickname() + "님이 체험 완료를 확인하셨습니다.", "CAMPAIGN_APPLICATION", application.getId());
+        auditLogService.record(memberId, "CAMPAIGN_EXPERIENCE_CONFIRMED", "CAMPAIGN_APPLICATION", application.getId(),
+                null, "{\"experienceConfirmed\":true}", null);
+        return response;
+    }
+
     private void validateDefinition(CampaignApplicationDtos.FormSaveRequest request) {
         requireUniqueIds(request.questions().stream().map(CampaignApplicationDtos.QuestionDefinition::id).toList(), "질문 ID");
         requireUniqueIds(request.agreements().stream().map(CampaignApplicationDtos.AgreementDefinition::id).toList(), "동의 문서 ID");
@@ -360,7 +374,8 @@ public class CampaignApplicationService {
                 application.getSubmittedAt(),
                 application.getRespondedAt(),
                 application.getCancelledAt(),
-                application.getCancellationReason()
+                application.getCancellationReason(),
+                application.getExperienceConfirmedAt()
         );
     }
 

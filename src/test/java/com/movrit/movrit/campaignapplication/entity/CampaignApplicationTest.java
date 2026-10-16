@@ -48,6 +48,15 @@ class CampaignApplicationTest {
                 .hasMessage("접수·선정·진행 상태에서만 참여를 취소할 수 있습니다.");
     }
 
+    @Test
+    void contentCannotBeSubmittedBeforeExperienceConfirmation() {
+        CampaignApplication application = application(CampaignApplicationStatus.ACTIVE);
+
+        assertThatThrownBy(application::markContentSubmitted)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("체험 완료 확인 후 콘텐츠를 제출해 주세요.");
+    }
+
     private CampaignApplication application(CampaignApplicationStatus status) {
         return CampaignApplication.builder()
                 .status(status)

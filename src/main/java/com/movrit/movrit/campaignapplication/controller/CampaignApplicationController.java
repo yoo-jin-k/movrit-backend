@@ -85,6 +85,14 @@ public class CampaignApplicationController {
         return service.cancel(memberId(jwt), applicationId, request);
     }
 
+    @PatchMapping("/applications/{applicationId}/experience-confirm")
+    public CampaignApplicationDtos.Response confirmExperience(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long applicationId
+    ) {
+        return service.confirmExperience(memberId(jwt), applicationId);
+    }
+
     private Long memberId(Jwt jwt) {
         return Long.valueOf(jwt.getSubject());
     }
