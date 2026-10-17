@@ -37,6 +37,8 @@
 
 `POST /api/campaigns/{campaignId}/applications`
 
+신규 화면은 위 신청 API를 사용합니다. 이전 호환 경로 `POST /api/collaborations/campaigns/{campaignId}/apply`도 서버 이메일 인증과 크리에이터·채널·팔로워·모집기간 조건을 검증하지만, 질문·동의·배송 정보가 필요한 현재 신청 화면에는 사용하지 않습니다.
+
 ```json
 {
   "fulfillmentType": "DELIVERY",
