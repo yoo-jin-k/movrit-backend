@@ -34,4 +34,18 @@ class CampaignContentSubmissionTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("검토 대기 중인 콘텐츠에만 수정을 요청할 수 있습니다.");
     }
+
+    @Test
+    void brandApprovalWaitsForOperatorApproval() {
+        CampaignContentSubmission submission = CampaignContentSubmission.builder()
+                .status(ContentSubmissionStatus.SUBMITTED)
+                .revisionCount(0)
+                .build();
+
+        submission.approveByBrand("브랜드 검토를 마쳤습니다.");
+
+        assertThat(submission.getStatus()).isEqualTo(ContentSubmissionStatus.BRAND_APPROVED);
+        submission.approveByOperator("최종 승인했습니다.");
+        assertThat(submission.getStatus()).isEqualTo(ContentSubmissionStatus.APPROVED);
+    }
 }

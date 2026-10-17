@@ -67,9 +67,28 @@ public class CampaignContentSubmission extends BaseEntity {
         reviewedAt = LocalDateTime.now();
     }
 
-    public void approve(String comment) {
+    /** 브랜드 검토는 운영자 최종 승인과 분리해 캠페인을 바로 완료하지 않습니다. */
+    public void approveByBrand(String comment) {
         if (status != ContentSubmissionStatus.SUBMITTED) {
             throw new IllegalStateException("검토 대기 중인 콘텐츠만 승인할 수 있습니다.");
+        }
+        status = ContentSubmissionStatus.BRAND_APPROVED;
+        reviewComment = comment;
+        reviewedAt = LocalDateTime.now();
+    }
+
+    public void requestRevisionByOperator(String comment) {
+        if (status != ContentSubmissionStatus.SUBMITTED && status != ContentSubmissionStatus.BRAND_APPROVED) {
+            throw new IllegalStateException("검토 중인 콘텐츠에만 수정을 요청할 수 있습니다.");
+        }
+        status = ContentSubmissionStatus.REVISION_REQUESTED;
+        reviewComment = comment;
+        reviewedAt = LocalDateTime.now();
+    }
+
+    public void approveByOperator(String comment) {
+        if (status != ContentSubmissionStatus.SUBMITTED && status != ContentSubmissionStatus.BRAND_APPROVED) {
+            throw new IllegalStateException("검토 중인 콘텐츠만 최종 승인할 수 있습니다.");
         }
         status = ContentSubmissionStatus.APPROVED;
         reviewComment = comment;

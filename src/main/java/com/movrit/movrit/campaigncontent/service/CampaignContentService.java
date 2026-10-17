@@ -8,6 +8,7 @@ import com.movrit.movrit.campaigncontent.entity.CampaignContentSubmission;
 import com.movrit.movrit.campaigncontent.entity.ContentSubmissionStatus;
 import com.movrit.movrit.campaigncontent.repository.CampaignContentSubmissionRepository;
 import com.movrit.movrit.notification.service.NotificationService;
+import com.movrit.movrit.member.service.MemberService;
 import com.movrit.movrit.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,6 +29,7 @@ public class CampaignContentService {
     private final ProductService productService;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
+    private final MemberService memberService;
 
     @Transactional
     public CampaignContentDtos.Response submit(
@@ -95,19 +97,57 @@ public class CampaignContentService {
             CampaignContentDtos.ApproveRequest request
     ) {
         CampaignContentSubmission submission = getOwnedSubmission(memberId, submissionId);
-        transitionSubmission(submission, value -> value.approve(normalize(request.comment())));
+        transitionSubmission(submission, value -> value.approveByBrand(normalize(request.comment())));
+        notifyCreatorAndAudit(memberId, submission, "브랜드 콘텐츠 검토가 완료되었습니다.",
+                "CAMPAIGN_CONTENT_BRAND_APPROVED", "BRAND_APPROVED", normalize(request.comment()));
+        return response(submission);
+    }
+
+    public List<CampaignContentDtos.Response> findOperatorContents(Long memberId) {
+        memberService.getAdmin(memberId);
+        return submissionRepository.findAllByOrderByIdDesc().stream().map(this::response).toList();
+    }
+
+    @Transactional
+    public CampaignContentDtos.Response requestRevisionByOperator(
+            Long memberId,
+            Long submissionId,
+            CampaignContentDtos.ReviewRequest request
+    ) {
+        memberService.getAdmin(memberId);
+        CampaignContentSubmission submission = getSubmission(submissionId);
+        transitionSubmission(submission, value -> value.requestRevisionByOperator(request.comment().trim()));
+        transitionApplication(submission.getApplication(), CampaignApplication::requestContentRevision);
+        notifyCreatorAndAudit(memberId, submission, "운영자 콘텐츠 수정 요청이 도착했습니다.",
+                "CAMPAIGN_CONTENT_OPERATOR_REVISION_REQUESTED", "REVISION_REQUESTED", request.comment().trim());
+        return response(submission);
+    }
+
+    @Transactional
+    public CampaignContentDtos.Response approveByOperator(
+            Long memberId,
+            Long submissionId,
+            CampaignContentDtos.ApproveRequest request
+    ) {
+        memberService.getAdmin(memberId);
+        CampaignContentSubmission submission = getSubmission(submissionId);
+        transitionSubmission(submission, value -> value.approveByOperator(normalize(request.comment())));
         transitionApplication(submission.getApplication(), CampaignApplication::completeContentReview);
-        notifyCreatorAndAudit(memberId, submission, "콘텐츠 검토가 완료되었습니다.",
-                "CAMPAIGN_CONTENT_APPROVED", "APPROVED", normalize(request.comment()));
+        notifyCreatorAndAudit(memberId, submission, "콘텐츠 최종 검토가 완료되었습니다.",
+                "CAMPAIGN_CONTENT_OPERATOR_APPROVED", "APPROVED", normalize(request.comment()));
         return response(submission);
     }
 
     private CampaignContentSubmission getOwnedSubmission(Long memberId, Long submissionId) {
-        CampaignContentSubmission submission = submissionRepository.findById(submissionId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "콘텐츠 제출 내역을 찾을 수 없습니다."));
+        CampaignContentSubmission submission = getSubmission(submissionId);
         productService.getOwnedProduct(memberId,
                 submission.getApplication().getCampaign().getPreorder().getProduct().getId());
         return submission;
+    }
+
+    private CampaignContentSubmission getSubmission(Long submissionId) {
+        return submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "콘텐츠 제출 내역을 찾을 수 없습니다."));
     }
 
     private void notifyCreatorAndAudit(Long actorMemberId, CampaignContentSubmission submission, String title,

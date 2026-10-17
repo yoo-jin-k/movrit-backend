@@ -12,4 +12,6 @@ public interface CampaignContentSubmissionRepository extends JpaRepository<Campa
     List<CampaignContentSubmission> findAllByApplicationCreatorMemberIdOrderByIdDesc(Long memberId);
 
     List<CampaignContentSubmission> findAllByApplicationCampaignPreorderProductBrandSellerMemberIdOrderByIdDesc(Long memberId);
+
+    List<CampaignContentSubmission> findAllByOrderByIdDesc();
 }
