@@ -60,6 +60,26 @@ public class CampaignApplicationService {
             Long campaignId,
             CampaignApplicationDtos.FormSaveRequest request
     ) {
+        return saveForm(sellerMemberId, campaignId, request, null, false);
+    }
+
+    @Transactional
+    public CampaignApplicationDtos.FormResponse saveFormWithExpectedVersion(
+            Long sellerMemberId,
+            Long campaignId,
+            CampaignApplicationDtos.FormSaveRequest request,
+            Long expectedVersion
+    ) {
+        return saveForm(sellerMemberId, campaignId, request, expectedVersion, true);
+    }
+
+    private CampaignApplicationDtos.FormResponse saveForm(
+            Long sellerMemberId,
+            Long campaignId,
+            CampaignApplicationDtos.FormSaveRequest request,
+            Long expectedVersion,
+            boolean requireExpectedVersion
+    ) {
         Campaign campaign = getOwnedCampaign(sellerMemberId, campaignId);
         validateDefinition(request);
 
@@ -72,6 +92,10 @@ public class CampaignApplicationService {
                         .version(1L)
                         .build());
         if (form.getId() != null) {
+            if (requireExpectedVersion && !form.getVersion().equals(expectedVersion)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "캠페인 신청서가 변경되었습니다. 다시 조회해 주세요.");
+            }
             form.replace(
                     write(request.allowedFulfillmentTypes()),
                     write(request.questions()),

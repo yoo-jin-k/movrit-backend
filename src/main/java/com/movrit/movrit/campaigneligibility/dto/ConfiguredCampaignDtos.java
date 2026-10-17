@@ -21,6 +21,7 @@ public final class ConfiguredCampaignDtos {
     public record UpdateRequest(
             @NotNull @Valid CampaignManagementDtos.UpdateRequest campaign,
             @Valid CampaignApplicationDtos.FormSaveRequest applicationForm,
+            Long expectedApplicationFormVersion,
             @NotNull RequirementMode requirementMode,
             @Valid CampaignEligibilityDtos.RequirementSaveRequest requirement,
             Long expectedRequirementVersion

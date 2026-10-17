@@ -42,7 +42,8 @@ public class ConfiguredCampaignService {
         var campaign = campaignManagementService.update(memberId, campaignId, request.campaign());
         CampaignApplicationDtos.FormResponse applicationForm = request.applicationForm() == null
                 ? campaignApplicationService.getForm(campaignId)
-                : campaignApplicationService.saveForm(memberId, campaignId, request.applicationForm());
+                : campaignApplicationService.saveFormWithExpectedVersion(
+                        memberId, campaignId, request.applicationForm(), request.expectedApplicationFormVersion());
         CampaignEligibilityDtos.RequirementResponse requirement;
         if (request.requirementMode() == ConfiguredCampaignDtos.RequirementMode.NONE) {
             CampaignEligibilityDtos.RequirementResponse current = eligibilityPolicyService.find(campaignId);
