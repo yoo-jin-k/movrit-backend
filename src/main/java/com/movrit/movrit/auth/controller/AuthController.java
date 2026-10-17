@@ -6,8 +6,10 @@ import com.movrit.movrit.auth.service.*;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.service.MemberService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -18,6 +20,7 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -31,6 +34,22 @@ public class AuthController {
     private final MemberService memberService;
     private final SocialLinkStateService socialLinkStateService;
     private final SocialAccountService socialAccountService;
+
+    @Value("${app.frontend-base-url}")
+    private String frontendBaseUrl;
+
+    private static final Set<String> ALLOWED_FRONTEND_BASE_URLS = Set.of(
+            "http://localhost:5173",
+            "http://localhost:5174"
+    );
+
+    /** OAuth 토큰이 승인되지 않은 주소로 전달되지 않도록 시작 시점에 확인합니다. */
+    @PostConstruct
+    void validateFrontendBaseUrl() {
+        if (!ALLOWED_FRONTEND_BASE_URLS.contains(frontendBaseUrl)) {
+            throw new IllegalStateException("허용되지 않은 프론트 OAuth 리디렉션 주소입니다.");
+        }
+    }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -133,7 +152,7 @@ public class AuthController {
                 member.getEmail()
         );
 
-        String redirectUrl = "http://localhost:5173/oauth/callback?token="
+        String redirectUrl = frontendBaseUrl + "/oauth/callback?token="
                 + URLEncoder.encode(movritAccessToken, StandardCharsets.UTF_8);
 
         response.sendRedirect(redirectUrl);
@@ -145,7 +164,7 @@ public class AuthController {
             boolean success,
             String message
     ) throws IOException {
-        StringBuilder url = new StringBuilder("http://localhost:5173/social-link/callback")
+        StringBuilder url = new StringBuilder(frontendBaseUrl + "/social-link/callback")
                 .append("?provider=").append(provider)
                 .append("&success=").append(success);
 
