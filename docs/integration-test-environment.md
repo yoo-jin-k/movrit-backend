@@ -35,6 +35,26 @@ java -jar build/libs/movrit-0.0.1-SNAPSHOT.jar --spring.profiles.active=integrat
 - 이메일 인증 메일 요청은 SMTP 미설정 환경에서 `503 SERVICE_UNAVAILABLE`이 정상입니다. 기존 QA 회원의 DB 인증 상태는 실제 메일 발송 성공을 의미하지 않습니다.
 - 다른 회원의 challenge 접근 검수는 SMTP가 설정돼 실제 challenge를 만들 수 있는 격리 환경에서 진행합니다. 현재 통합 실행본에서는 발송 단계가 `503`으로 끝나므로 소유권 테스트용 challenge가 생성되지 않습니다.
 
+### 로컬 QA 계정 접근
+
+현재 실행 호스트에는 회원 `12`로 발급한 로그인 응답이 `/private/tmp/movrit-qa-login.json`에 있으며 파일 권한은 소유자 읽기·쓰기(`600`)로 제한합니다. 비밀번호와 토큰 값은 채팅, 문서, 명령 출력에 복사하지 않습니다.
+
+```shell
+token=$(jq -r '.accessToken' /private/tmp/movrit-qa-login.json)
+curl -H "Authorization: Bearer $token" http://127.0.0.1:18080/api/auth/me
+```
+
+`/api/auth/me`가 `200`과 회원 `12`를 반환할 때만 이 파일을 사용합니다. `401`이면 임의 비밀번호 변경이나 새 권한 부여를 하지 말고, 계정 소유자가 로컬 로그인으로 파일을 다시 발급해야 합니다.
+
+### 허용된 fixture 변경 범위
+
+- DB는 반드시 `movrit_integration`만 사용합니다. `movrit`과 운영 DB는 변경하지 않습니다.
+- 인증 전 상태는 회원 `12`의 `member.email_verified_at`만 일시적으로 `NULL`로 바꿉니다. 확인이 끝나면 원래의 인증 시각을 보관해 둔 값으로 복원하고, 임의의 현재 시각으로 덮어쓰지 않습니다.
+- 미인증 차단 확인은 신청 이력이 없는 캠페인 `10`을 사용합니다. 캠페인 `9`는 이미 중복 신청 fixture가 있어 이메일 단독 차단 검수에 사용하지 않습니다.
+- 신청 생성은 회원 `12`의 크리에이터 `7`과 캠페인 `10` 조합에 한 번만 허용합니다. 실행 직전에 해당 조합의 신청이 없는지 확인하고, 이미 있으면 새 신청을 만들지 않습니다.
+- 새 신청의 응답 `id`를 QA 기록에 남깁니다. 정리가 필요하면 그 실행에서 생성한 정확한 `id`만 대상으로 하며 기존 캠페인 신청, 폼, 콘텐츠, 알림, 감사 기록을 일괄 삭제하지 않습니다.
+- QA 완료 후 회원 `12`는 이메일 인증 완료 상태여야 합니다. 캠페인 `10` 신청은 통합 검수 증거로 유지할 수 있으며, 유지한 경우 이후 테스트에서는 `ALREADY_APPLIED`가 정상입니다.
+
 주요 확인 순서는 다음과 같습니다.
 
 1. `GET /api/campaigns/{campaignId}/eligibility`에서 미인증 회원이 `EMAIL_VERIFICATION_REQUIRED`로 차단되는지 확인합니다.
