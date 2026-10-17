@@ -4,7 +4,6 @@ import com.movrit.movrit.collaboration.dto.CampaignPresentationDtos;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
 import com.movrit.movrit.collaboration.repository.CampaignDetailImageRepository;
-import com.movrit.movrit.common.file.LocalFileStorageService;
 import com.movrit.movrit.preorder.entity.Preorder;
 import com.movrit.movrit.product.entity.Product;
 import com.movrit.movrit.product.service.ProductService;
@@ -22,7 +21,7 @@ class CampaignPresentationServiceTest {
     private final CampaignRepository campaigns = mock(CampaignRepository.class);
     private final CampaignDetailImageRepository detailImages = mock(CampaignDetailImageRepository.class);
     private final ProductService products = mock(ProductService.class);
-    private final LocalFileStorageService files = mock(LocalFileStorageService.class);
+    private final CampaignImageStorageService files = mock(CampaignImageStorageService.class);
     private final CampaignPresentationService service = new CampaignPresentationService(campaigns, detailImages, products, files);
 
     @Test
@@ -63,6 +62,27 @@ class CampaignPresentationServiceTest {
 
         verify(detailImages).save(org.mockito.ArgumentMatchers.argThat(saved ->
                 saved.getDisplayOrder() == 2 && "사용 모습".equals(saved.getAltText())));
+    }
+
+    @Test
+    void rejectsLongDescriptionBeforeWritingFileOrDatabase() {
+        Campaign campaign = campaign();
+        when(campaigns.findById(10L)).thenReturn(Optional.of(campaign));
+        var file = new MockMultipartFile("file", "detail.png", "image/png", new byte[]{1});
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.uploadDetail(1L, 10L, file, "가".repeat(201)))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
+        org.mockito.Mockito.verifyNoInteractions(files);
+        org.mockito.Mockito.verify(detailImages, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void acceptsDescriptionAtTwoHundredCharacterBoundary() {
+        Campaign campaign = campaign();
+        when(campaigns.findById(10L)).thenReturn(Optional.of(campaign));
+        var file = new MockMultipartFile("file", "detail.png", "image/png", new byte[]{1});
+        when(files.storeImage(file, "campaigns/10/detail")).thenReturn("/uploads/detail.png");
+        service.uploadDetail(1L, 10L, file, "가".repeat(200));
+        verify(detailImages).save(org.mockito.ArgumentMatchers.argThat(saved -> saved.getAltText().length() == 200));
     }
 
     private Campaign campaign() {

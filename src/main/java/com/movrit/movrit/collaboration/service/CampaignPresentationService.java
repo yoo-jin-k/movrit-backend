@@ -5,7 +5,6 @@ import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.entity.CampaignDetailImage;
 import com.movrit.movrit.collaboration.repository.CampaignDetailImageRepository;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
-import com.movrit.movrit.common.file.LocalFileStorageService;
 import com.movrit.movrit.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,7 +21,7 @@ public class CampaignPresentationService {
     private final CampaignRepository campaignRepository;
     private final CampaignDetailImageRepository detailImageRepository;
     private final ProductService productService;
-    private final LocalFileStorageService fileStorageService;
+    private final CampaignImageStorageService fileStorageService;
 
     public CampaignPresentationDtos.Response find(Long campaignId) {
         return response(get(campaignId));
@@ -48,11 +47,15 @@ public class CampaignPresentationService {
     @Transactional
     public CampaignPresentationDtos.Response uploadDetail(Long memberId, Long campaignId, MultipartFile file, String altText) {
         Campaign campaign = owned(memberId, campaignId);
+        String description = normalize(altText);
+        if (description != null && description.codePointCount(0, description.length()) > 200) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지 설명은 200자 이하여야 합니다.");
+        }
         long count = detailImageRepository.countByCampaignId(campaignId);
         if (count >= 5) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "상세 이미지는 최대 5장까지 등록할 수 있습니다.");
         String url = fileStorageService.storeImage(file, "campaigns/" + campaignId + "/detail");
         detailImageRepository.save(CampaignDetailImage.builder().campaign(campaign).imageUrl(url)
-                .displayOrder((int) count).altText(normalize(altText)).build());
+                .displayOrder((int) count).altText(description).build());
         if (count == 0) campaign.updateDetailImage(url);
         return response(campaign);
     }
