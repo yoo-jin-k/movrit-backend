@@ -17,6 +17,8 @@ import java.util.List;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({CollaborationController.class, CampaignManagementController.class})
@@ -52,5 +54,14 @@ class SecurityConfigTest {
         mockMvc.perform(get("/api/collaborations/campaigns/seller")
                         .with(jwt().jwt(token -> token.subject("42"))))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void qaFrontendOriginIsAllowed() throws Exception {
+        mockMvc.perform(options("/api/collaborations/campaigns/10")
+                        .header("Origin", "http://localhost:5174")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5174"));
     }
 }
