@@ -50,14 +50,11 @@ curl -H "Authorization: Bearer $token" http://127.0.0.1:18080/api/auth/me
 
 - DB는 반드시 `movrit_integration`만 사용합니다. `movrit`과 운영 DB는 변경하지 않습니다.
 - 인증 전 상태는 회원 `12`의 `member.email_verified_at`만 일시적으로 `NULL`로 바꿉니다. 확인이 끝나면 원래의 인증 시각을 보관해 둔 값으로 복원하고, 임의의 현재 시각으로 덮어쓰지 않습니다.
-- 미인증 차단 확인은 신청 이력이 없는 캠페인 `10`을 사용합니다. 캠페인 `9`는 이미 중복 신청 fixture가 있어 이메일 단독 차단 검수에 사용하지 않습니다.
-- 신청 생성은 회원 `12`의 크리에이터 `7`과 캠페인 `10` 조합에 한 번만 허용합니다. 실행 직전에 해당 조합의 신청이 없는지 확인하고, 이미 있으면 새 신청을 만들지 않습니다.
+- 캠페인 `10`은 회원 `12`의 미인증 차단 후 인증 복원·신청 성공 검수를 완료했습니다. 신청 ID `9`가 있으므로 이후 조회에서 `ALREADY_APPLIED`가 정상이며 새 신청을 만들지 않습니다.
+- 캠페인 `9`도 기존 신청 fixture가 있어 이메일 단독 차단 검수에 사용하지 않습니다. 미인증 단독 검증을 반복하려면 기존 데이터를 변경하지 말고 별도의 격리 회원·캠페인을 준비합니다.
 - 새 신청의 응답 `id`를 QA 기록에 남깁니다. 정리가 필요하면 그 실행에서 생성한 정확한 `id`만 대상으로 하며 기존 캠페인 신청, 폼, 콘텐츠, 알림, 감사 기록을 일괄 삭제하지 않습니다.
 - QA 완료 후 회원 `12`는 이메일 인증 완료 상태여야 합니다. 캠페인 `10` 신청은 통합 검수 증거로 유지할 수 있으며, 유지한 경우 이후 테스트에서는 `ALREADY_APPLIED`가 정상입니다.
 
 주요 확인 순서는 다음과 같습니다.
 
-1. `GET /api/campaigns/{campaignId}/eligibility`에서 미인증 회원이 `EMAIL_VERIFICATION_REQUIRED`로 차단되는지 확인합니다.
-2. 같은 회원을 통합 DB에서 인증 완료 fixture로 바꾼 뒤 `emailVerified=true`, `identityVerified=false`, `canApply=true`를 확인합니다.
-3. 최신 `formVersion`으로 신청하고 `201`, `emailVerified=true`, `identityVerified=false`를 확인합니다.
-4. 같은 회원과 캠페인으로 다시 조회해 `ALREADY_APPLIED`, `canApply=false`를 확인합니다.
+완료된 검수 결과는 캠페인 `10` 기준으로 미인증 시 `EMAIL_VERIFICATION_REQUIRED`, 원래 인증 시각 복원 후 신청 `201`, 응답의 `emailVerified=true`·`identityVerified=false`, 후속 조회의 `ALREADY_APPLIED`·`canApply=false`입니다.
