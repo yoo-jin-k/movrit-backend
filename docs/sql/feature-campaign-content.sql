@@ -16,5 +16,8 @@ CREATE TABLE IF NOT EXISTS campaign_content_submission (
     CONSTRAINT ck_campaign_content_revision_count CHECK (revision_count >= 0)
 );
 
+ALTER TABLE campaign_content_submission
+    ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
+
 CREATE INDEX IF NOT EXISTS idx_campaign_content_status
     ON campaign_content_submission(status, id DESC);

@@ -208,7 +208,7 @@ public class CampaignApplicationService {
         return applicationRepository
                 .findAllByCampaignPreorderProductBrandSellerMemberIdOrderByIdDesc(memberId)
                 .stream()
-                .map(this::response)
+                .map(this::sellerResponse)
                 .toList();
     }
 
@@ -494,7 +494,18 @@ public class CampaignApplicationService {
     }
 
     private CampaignApplicationDtos.Response response(CampaignApplication application) {
+        return response(application, false);
+    }
+
+    private CampaignApplicationDtos.Response sellerResponse(CampaignApplication application) {
+        boolean hideContact = application.getStatus() == CampaignApplicationStatus.SUBMITTED
+                || application.getStatus() == CampaignApplicationStatus.REJECTED;
+        return response(application, hideContact);
+    }
+
+    private CampaignApplicationDtos.Response response(CampaignApplication application, boolean hideContact) {
         CampaignApplicationDtos.ShippingContact contact = application.getFulfillmentType() == FulfillmentType.DELIVERY
+                && !hideContact
                 ? new CampaignApplicationDtos.ShippingContact(
                         application.getRecipientName(),
                         application.getRecipientPhone(),

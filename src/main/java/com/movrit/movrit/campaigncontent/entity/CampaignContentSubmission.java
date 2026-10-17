@@ -44,6 +44,10 @@ public class CampaignContentSubmission extends BaseEntity {
     @Column(name = "reviewed_at")
     private LocalDateTime reviewedAt;
 
+    @Version
+    @Column(nullable = false)
+    private Long version;
+
     /** 수정 제출은 기존 이력을 덮어쓰되 횟수와 최신 제출 시각을 보존합니다. */
     public void resubmit(String contentUrl, String note) {
         if (status != ContentSubmissionStatus.REVISION_REQUESTED) {

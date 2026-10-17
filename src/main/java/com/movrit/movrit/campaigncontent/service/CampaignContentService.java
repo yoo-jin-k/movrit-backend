@@ -53,6 +53,7 @@ public class CampaignContentService {
                     .submittedAt(LocalDateTime.now())
                     .build());
         } else {
+            requireVersion(submission, request.expectedVersion());
             transitionSubmission(submission, value -> value.resubmit(request.contentUrl().trim(), normalize(request.note())));
             transitionApplication(application, CampaignApplication::markContentSubmitted);
         }
@@ -83,6 +84,7 @@ public class CampaignContentService {
             CampaignContentDtos.ReviewRequest request
     ) {
         CampaignContentSubmission submission = getOwnedSubmission(memberId, submissionId);
+        requireVersion(submission, request.expectedVersion());
         transitionSubmission(submission, value -> value.requestRevision(request.comment().trim()));
         transitionApplication(submission.getApplication(), CampaignApplication::requestContentRevision);
         notifyCreatorAndAudit(memberId, submission, "콘텐츠 수정 요청이 도착했습니다.",
@@ -97,6 +99,7 @@ public class CampaignContentService {
             CampaignContentDtos.ApproveRequest request
     ) {
         CampaignContentSubmission submission = getOwnedSubmission(memberId, submissionId);
+        requireVersion(submission, request.expectedVersion());
         transitionSubmission(submission, value -> value.approveByBrand(normalize(request.comment())));
         notifyCreatorAndAudit(memberId, submission, "브랜드 콘텐츠 검토가 완료되었습니다.",
                 "CAMPAIGN_CONTENT_BRAND_APPROVED", "BRAND_APPROVED", normalize(request.comment()));
@@ -116,6 +119,7 @@ public class CampaignContentService {
     ) {
         memberService.getAdmin(memberId);
         CampaignContentSubmission submission = getSubmission(submissionId);
+        requireVersion(submission, request.expectedVersion());
         transitionSubmission(submission, value -> value.requestRevisionByOperator(request.comment().trim()));
         transitionApplication(submission.getApplication(), CampaignApplication::requestContentRevision);
         notifyCreatorAndAudit(memberId, submission, "운영자 콘텐츠 수정 요청이 도착했습니다.",
@@ -131,6 +135,7 @@ public class CampaignContentService {
     ) {
         memberService.getAdmin(memberId);
         CampaignContentSubmission submission = getSubmission(submissionId);
+        requireVersion(submission, request.expectedVersion());
         transitionSubmission(submission, value -> value.approveByOperator(normalize(request.comment())));
         transitionApplication(submission.getApplication(), CampaignApplication::completeContentReview);
         notifyCreatorAndAudit(memberId, submission, "콘텐츠 최종 검토가 완료되었습니다.",
@@ -188,6 +193,7 @@ public class CampaignContentService {
                 submission.getNote(),
                 submission.getStatus(),
                 submission.getRevisionCount(),
+                submission.getVersion(),
                 submission.getReviewComment(),
                 submission.getSubmittedAt(),
                 submission.getReviewedAt()
@@ -196,6 +202,13 @@ public class CampaignContentService {
 
     private Long sellerMemberId(CampaignApplication application) {
         return application.getCampaign().getPreorder().getProduct().getBrand().getSeller().getMember().getId();
+    }
+
+    private void requireVersion(CampaignContentSubmission submission, Long expectedVersion) {
+        if (!java.util.Objects.equals(submission.getVersion(), expectedVersion)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "콘텐츠 제출 상태가 변경되었습니다. 다시 조회해 주세요.");
+        }
     }
 
     private String normalize(String value) {
