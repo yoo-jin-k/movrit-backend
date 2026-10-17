@@ -41,6 +41,16 @@
 | 조건 저장 | `PUT /api/campaigns/{campaignId}/eligibility-requirement` | 캠페인 소유 판매자만 생성·수정 |
 | 조건 삭제 | `DELETE /api/campaigns/{campaignId}/eligibility-requirement` | 조건 없는 캠페인으로 전환 |
 
+브랜드 작성 화면은 캠페인과 조건이 따로 저장되어 일부만 공개되는 것을 막기 위해 다음 원자적 API를 사용합니다.
+
+- `POST /api/campaigns/configured`: 캠페인과 `requirementMode`(`NONE` 또는 `SINGLE`)를 한 번에 생성
+- `PATCH /api/campaigns/configured/{campaignId}`: 캠페인 본문과 조건을 한 번에 수정하거나 해제
+- `SINGLE`이면 `requirement`가 필수이고 `NONE`이면 `requirement`를 보내지 않습니다.
+
+현재 확정되어 지원하는 조합은 `INSTAGRAM` + `FOLLOWER_COUNT`입니다. 최소값은 브랜드가 캠페인마다 0 이상의 값으로 정하며 `500`은 테스트 예시일 뿐 기본값이나 플랫폼 공통 기준이 아닙니다. 네이버 방문자 조건은 집계기간 정책이 확정되기 전까지 저장을 거절합니다.
+
+조건 응답에는 `id`와 `version`이 포함됩니다. 수정 요청의 `requirement.expectedVersion`, 해제 요청의 `expectedRequirementVersion`이 최신 값과 다르면 `409`를 반환합니다. 삭제 후 재생성도 `id`가 달라지므로 신청 화면은 두 값을 함께 비교합니다.
+
 - 조건이 없으면 채널 프로필이나 지표 없이 신청할 수 있습니다.
 - 지표 조건은 `channelType`, `metricType`, `minimumValue`, 선택적 `measurementPeriod`로 구성합니다.
 - 조건이 있는데 대응 지표가 없으면 `CHANNEL_METRIC_REQUIRED`입니다.
@@ -62,6 +72,10 @@
 - 추가 필드: `channelProfileExists`, `campaignRequirement`, `metricEvaluation`
 
 서버는 신청 POST에서도 동일 조건을 다시 검증합니다. 로그인, 이메일 인증, 모집기간, 중복 신청, 폼 버전, 질문·동의·배송 검증은 유지합니다. 별도 크리에이터 승인 상태는 공통 신청 조건에서 제거합니다.
+
+신청 요청은 eligibility에서 받은 `expectedEligibilityRequirementId`와 `expectedEligibilityRequirementVersion`을 함께 전송합니다. 조건이 없을 때는 둘 다 `null`입니다. 신청 직전에 조건이 수정·해제·재생성되면 `409`로 최신 조건 재확인을 요구합니다. 신청서 질문 변경의 `formVersion`과 캠페인 조건의 `version`은 서로 독립적으로 관리합니다.
+
+접수된 신청에는 당시 조건 JSON과 조건 버전을 저장합니다. 이후 브랜드가 조건을 바꾸더라도 기존 신청을 자동 탈락시키거나 상태를 변경하지 않으며, 신규 신청만 최신 활성 조건으로 판정합니다.
 
 신청 저장 시 기존 `campaign_application.creator_id` 호환을 위해 내부 사용자 채널 프로필을 자동 준비할 수 있지만, 이는 권한 승격이나 공개 인플루언서 승인을 의미하지 않습니다. 판매자·운영자 권한 검증은 기존대로 유지합니다.
 

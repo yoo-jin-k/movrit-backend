@@ -76,6 +76,8 @@ public final class CampaignApplicationDtos {
     public record CreateRequest(
             @NotBlank String message,
             @NotNull Long expectedFormVersion,
+            Long expectedEligibilityRequirementId,
+            Long expectedEligibilityRequirementVersion,
             @NotNull FulfillmentType fulfillmentType,
             @Valid ShippingContact shippingContact,
             @NotNull List<@Valid Answer> answers,
@@ -112,6 +114,8 @@ public final class CampaignApplicationDtos {
             List<Answer> answers,
             List<AgreementAcceptance> agreementAcceptances,
             Long formVersion,
+            CampaignEligibilityDtos.RequirementResponse eligibilityRequirementSnapshot,
+            Long eligibilityRequirementVersion,
             boolean identityVerificationConfigured,
             boolean identityVerified,
             boolean emailVerified,

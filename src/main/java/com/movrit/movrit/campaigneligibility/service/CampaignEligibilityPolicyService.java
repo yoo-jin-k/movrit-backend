@@ -63,16 +63,28 @@ public class CampaignEligibilityPolicyService {
         Campaign campaign = ownedCampaign(sellerMemberId, campaignId);
         String channelType = request.channelType().trim().toUpperCase();
         String metricType = request.metricType().trim().toUpperCase();
+        validateSupportedMetric(channelType, metricType, request.measurementPeriod());
         CampaignEligibilityRequirement requirement = requirementRepository.findByCampaignId(campaignId)
                 .orElseGet(() -> CampaignEligibilityRequirement.builder().campaign(campaign).build());
+        if (requirement.getId() == null && request.expectedVersion() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "캠페인 조건이 변경되었습니다. 다시 조회해 주세요.");
+        }
+        if (requirement.getId() != null && !requirement.getVersion().equals(request.expectedVersion())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "캠페인 조건이 변경되었습니다. 다시 조회해 주세요.");
+        }
         requirement.update(channelType, metricType, request.minimumValue(), normalize(request.measurementPeriod()));
         return response(requirementRepository.save(requirement));
     }
 
     @Transactional
-    public void delete(Long sellerMemberId, Long campaignId) {
+    public void delete(Long sellerMemberId, Long campaignId, Long expectedVersion) {
         ownedCampaign(sellerMemberId, campaignId);
-        requirementRepository.deleteByCampaignId(campaignId);
+        CampaignEligibilityRequirement requirement = requirementRepository.findByCampaignId(campaignId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "캠페인 조건이 없습니다."));
+        if (!requirement.getVersion().equals(expectedVersion)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "캠페인 조건이 변경되었습니다. 다시 조회해 주세요.");
+        }
+        requirementRepository.delete(requirement);
     }
 
     public CampaignEligibilityDtos.RequirementResponse find(Long campaignId) {
@@ -94,8 +106,18 @@ public class CampaignEligibilityPolicyService {
     private CampaignEligibilityDtos.RequirementResponse response(CampaignEligibilityRequirement requirement) {
         return new CampaignEligibilityDtos.RequirementResponse(
                 requirement.getId(), requirement.getCampaign().getId(), requirement.getChannelType(),
-                requirement.getMetricType(), requirement.getMinimumValue(), requirement.getMeasurementPeriod()
+                requirement.getMetricType(), requirement.getMinimumValue(), requirement.getMeasurementPeriod(),
+                requirement.getVersion()
         );
+    }
+
+    private void validateSupportedMetric(String channelType, String metricType, String measurementPeriod) {
+        if (!"INSTAGRAM".equals(channelType) || !"FOLLOWER_COUNT".equals(metricType)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "현재 지원하는 캠페인 조건은 인스타그램 팔로워 수입니다.");
+        }
+        if (measurementPeriod != null && !measurementPeriod.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "팔로워 수 조건에는 집계 기간을 입력하지 않습니다.");
+        }
     }
 
     private Campaign ownedCampaign(Long memberId, Long campaignId) {

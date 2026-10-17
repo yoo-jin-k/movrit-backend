@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -36,8 +37,9 @@ public class CampaignEligibilityRequirementController {
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> delete(@AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {
-        service.delete(memberId(jwt), campaignId);
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId,
+                                       @RequestParam Long expectedVersion) {
+        service.delete(memberId(jwt), campaignId, expectedVersion);
         return ResponseEntity.noContent().build();
     }
 

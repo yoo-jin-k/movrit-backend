@@ -24,6 +24,9 @@ public class CampaignEligibilityRequirement extends BaseEntity {
     private Long minimumValue;
     @Column(name = "measurement_period", length = 40)
     private String measurementPeriod;
+    @Version
+    @Column(nullable = false)
+    private Long version;
 
     public void update(String channelType, String metricType, Long minimumValue, String measurementPeriod) {
         this.channelType = channelType;

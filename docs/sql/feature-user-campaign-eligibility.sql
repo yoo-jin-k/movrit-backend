@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS campaign_eligibility_requirement (
     metric_type VARCHAR(40) NOT NULL,
     minimum_value BIGINT NOT NULL,
     measurement_period VARCHAR(40),
+    version BIGINT NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     CONSTRAINT ck_campaign_eligibility_minimum CHECK (minimum_value >= 0)
@@ -35,3 +36,12 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON member_channel_metric TO movrit_user;
 GRANT SELECT, INSERT, UPDATE, DELETE ON campaign_eligibility_requirement TO movrit_user;
 GRANT USAGE, SELECT ON SEQUENCE member_channel_metric_id_seq TO movrit_user;
 GRANT USAGE, SELECT ON SEQUENCE campaign_eligibility_requirement_id_seq TO movrit_user;
+
+ALTER TABLE campaign_eligibility_requirement
+    ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
+
+ALTER TABLE campaign_application
+    ADD COLUMN IF NOT EXISTS eligibility_requirement_snapshot_json TEXT;
+
+ALTER TABLE campaign_application
+    ADD COLUMN IF NOT EXISTS eligibility_requirement_version BIGINT;

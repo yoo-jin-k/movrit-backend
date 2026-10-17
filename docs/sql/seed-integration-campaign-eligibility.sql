@@ -1,8 +1,8 @@
 -- 프론트에서 조건 있음/없음과 확인 상태를 함께 검수하기 위한 통합 DB 전용 데이터입니다.
 INSERT INTO campaign_eligibility_requirement (
-    campaign_id, channel_type, metric_type, minimum_value, measurement_period, created_at, updated_at
+    campaign_id, channel_type, metric_type, minimum_value, measurement_period, version, created_at, updated_at
 )
-SELECT 12, 'INSTAGRAM', 'FOLLOWER_COUNT', 500, NULL, NOW(), NOW()
+SELECT 12, 'INSTAGRAM', 'FOLLOWER_COUNT', 500, NULL, 0, NOW(), NOW()
 WHERE EXISTS (SELECT 1 FROM collaboration_campaign WHERE id = 12)
 ON CONFLICT (campaign_id) DO UPDATE SET
     channel_type = EXCLUDED.channel_type,
@@ -81,9 +81,9 @@ WHERE campaign.title = '[QA] 채널 지표 499/500 경계 검수'
 ON CONFLICT (campaign_id) DO NOTHING;
 
 INSERT INTO campaign_eligibility_requirement (
-    campaign_id, channel_type, metric_type, minimum_value, measurement_period, created_at, updated_at
+    campaign_id, channel_type, metric_type, minimum_value, measurement_period, version, created_at, updated_at
 )
-SELECT campaign.id, 'INSTAGRAM', 'FOLLOWER_COUNT', 500, NULL, NOW(), NOW()
+SELECT campaign.id, 'INSTAGRAM', 'FOLLOWER_COUNT', 500, NULL, 0, NOW(), NOW()
 FROM collaboration_campaign campaign
 WHERE campaign.title = '[QA] 채널 지표 499/500 경계 검수'
 ON CONFLICT (campaign_id) DO UPDATE SET

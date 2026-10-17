@@ -67,6 +67,13 @@ public class CampaignApplication extends BaseEntity {
     @Column(name = "form_version", nullable = false)
     private Long formVersion;
 
+    /** 이후 조건이 바뀌어도 신청 당시 판정 근거를 보존합니다. */
+    @Column(name = "eligibility_requirement_snapshot_json", columnDefinition = "TEXT")
+    private String eligibilityRequirementSnapshotJson;
+
+    @Column(name = "eligibility_requirement_version")
+    private Long eligibilityRequirementVersion;
+
     @Column(name = "identity_verification_configured", nullable = false)
     private boolean identityVerificationConfigured;
 

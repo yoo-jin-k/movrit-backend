@@ -116,6 +116,8 @@ class CampaignApplicationEligibilityTest {
         CampaignApplicationDtos.CreateRequest request = new CampaignApplicationDtos.CreateRequest(
                 "신청합니다.",
                 3L,
+                null,
+                null,
                 com.movrit.movrit.campaignapplication.entity.FulfillmentType.DELIVERY,
                 new CampaignApplicationDtos.ShippingContact(
                         "통합검수", "010-0000-0000", "06236", "서울특별시 강남구 테헤란로 1", null

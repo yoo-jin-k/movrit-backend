@@ -127,7 +127,8 @@ public class CampaignApplicationService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "신청 조건이 변경되었습니다. 최신 신청서를 다시 확인해 주세요.");
         }
-        validateEligibility(member, campaign);
+        CampaignEligibilityPolicyService.Evaluation eligibility = validateEligibility(member, campaign);
+        validateExpectedRequirement(request, eligibility.requirement());
         if (applicationRepository.existsByCampaignIdAndCreatorMemberId(campaignId, memberId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 이 캠페인에 신청하셨습니다.");
         }
@@ -148,6 +149,10 @@ public class CampaignApplicationService {
                 .answersJson(write(request.answers()))
                 .agreementAcceptancesJson(write(request.agreementAcceptances()))
                 .formVersion(form.getVersion())
+                .eligibilityRequirementSnapshotJson(
+                        eligibility.requirement() == null ? null : write(eligibility.requirement()))
+                .eligibilityRequirementVersion(
+                        eligibility.requirement() == null ? null : eligibility.requirement().version())
                 // 본인 인증 공급자가 정해지기 전에는 인증 완료로 간주하지 않습니다.
                 .identityVerificationConfigured(false)
                 .identityVerified(false)
@@ -272,13 +277,14 @@ public class CampaignApplicationService {
         }
     }
 
-    private void validateEligibility(Member member, Campaign campaign) {
+    private CampaignEligibilityPolicyService.Evaluation validateEligibility(Member member, Campaign campaign) {
         if (!member.isEmailVerified()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "이메일 소유 확인 후 캠페인에 신청할 수 있습니다.");
         }
-        String reason = eligibilityPolicyService.evaluate(member.getId(), campaign.getId()).blockingReason();
-        if (reason == null) return;
+        CampaignEligibilityPolicyService.Evaluation evaluation = eligibilityPolicyService.evaluate(member.getId(), campaign.getId());
+        String reason = evaluation.blockingReason();
+        if (reason == null) return evaluation;
         String message = switch (reason) {
             case "CHANNEL_METRIC_REQUIRED" -> "캠페인 신청에 필요한 채널 지표를 먼저 등록해 주세요.";
             case "CHANNEL_METRIC_UNVERIFIED" -> "캠페인 신청에 필요한 채널 지표가 아직 확인되지 않았습니다.";
@@ -286,6 +292,19 @@ public class CampaignApplicationService {
             default -> "캠페인 신청 조건을 확인해 주세요.";
         };
         throw new ResponseStatusException(HttpStatus.CONFLICT, message);
+    }
+
+    private void validateExpectedRequirement(
+            CampaignApplicationDtos.CreateRequest request,
+            com.movrit.movrit.campaigneligibility.dto.CampaignEligibilityDtos.RequirementResponse current
+    ) {
+        Long currentId = current == null ? null : current.id();
+        Long currentVersion = current == null ? null : current.version();
+        if (!java.util.Objects.equals(request.expectedEligibilityRequirementId(), currentId)
+                || !java.util.Objects.equals(request.expectedEligibilityRequirementVersion(), currentVersion)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "캠페인 신청 조건이 변경되었습니다. 최신 조건을 다시 확인해 주세요.");
+        }
     }
 
     private List<String> campaignEligibilityReasons(
@@ -476,6 +495,9 @@ public class CampaignApplicationService {
                 read(application.getAnswersJson(), new TypeReference<>() {}),
                 read(application.getAgreementAcceptancesJson(), new TypeReference<>() {}),
                 application.getFormVersion(),
+                application.getEligibilityRequirementSnapshotJson() == null ? null : read(
+                        application.getEligibilityRequirementSnapshotJson(), new TypeReference<>() {}),
+                application.getEligibilityRequirementVersion(),
                 application.isIdentityVerificationConfigured(),
                 application.isIdentityVerified(),
                 application.isEmailVerified(),
