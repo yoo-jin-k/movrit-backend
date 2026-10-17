@@ -73,7 +73,8 @@ public class CampaignEligibilityPolicyService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "캠페인 조건이 변경되었습니다. 다시 조회해 주세요.");
         }
         requirement.update(channelType, metricType, request.minimumValue(), normalize(request.measurementPeriod()));
-        return response(requirementRepository.save(requirement));
+        // @Version 값은 flush 시점에 증가하므로 응답을 만들기 전에 DB 반영을 끝냅니다.
+        return response(requirementRepository.saveAndFlush(requirement));
     }
 
     @Transactional
