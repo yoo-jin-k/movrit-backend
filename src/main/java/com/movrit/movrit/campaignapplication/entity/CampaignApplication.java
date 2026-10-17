@@ -73,6 +73,10 @@ public class CampaignApplication extends BaseEntity {
     @Column(name = "identity_verified", nullable = false)
     private boolean identityVerified;
 
+    /** 신청 시점에 서버가 확인한 이메일 소유 상태를 기록합니다. */
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
     @Column(name = "channel_ready", nullable = false)
     private boolean channelReady;
 

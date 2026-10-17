@@ -32,6 +32,14 @@ public class CampaignApplicationController {
         return service.getForm(campaignId);
     }
 
+    @GetMapping("/{campaignId}/eligibility")
+    public CampaignApplicationDtos.EligibilityResponse eligibility(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long campaignId
+    ) {
+        return service.getEligibility(memberId(jwt), campaignId);
+    }
+
     @PostMapping("/{campaignId}/applications")
     public ResponseEntity<CampaignApplicationDtos.Response> apply(
             @AuthenticationPrincipal Jwt jwt,

@@ -20,11 +20,16 @@
 
 실명 본인 인증과 이메일 소유 확인은 별도 상태입니다. `emailVerified=true`여도 `identityVerified`는 계속 `false`입니다.
 
+실명 인증 공급자가 연결되기 전까지 캠페인 신청은 서버가 확인한 이메일 소유 상태를 임시 자격 조건으로 사용합니다. 클라이언트가 보내는 인증 여부는 받지 않으며, `Member.emailVerifiedAt`만 판단 근거로 사용합니다.
+
 | 기능 | Method / URL | 계약 |
 |---|---|---|
 | 상태 조회 | `GET /api/email-verifications/status` | `emailVerified`, `emailVerifiedAt`, `identityVerified`, `applicationEligibilityPolicy` |
+| 캠페인 신청 가능 여부 | `GET /api/campaigns/{campaignId}/eligibility` | 폼 버전, 이메일·채널·중복 여부, `canApply`, `blockingReasons` |
 | 인증 메일 요청·재발송 | `POST /api/email-verifications/requests` | 성공 시 `202`, `challengeId`, `maskedEmail`, `expiresAt` |
 | 번호 확인 | `POST /api/email-verifications/confirm` | body: `{"challengeId":1,"code":"123456"}` |
+
+신청 가능 여부 응답의 `applicationEligibilityPolicy`는 현재 `EMAIL_TEMPORARY`입니다. 차단 사유 코드는 `CAMPAIGN_NOT_OPEN`, `CREATOR_NOT_APPROVED`, `FOLLOWER_REQUIREMENT_NOT_MET`, `CHANNEL_REQUIRED`, `EMAIL_VERIFICATION_REQUIRED`, `ALREADY_APPLIED`입니다. 신청 API는 이 조회 결과와 별개로 모집 기간, 크리에이터 승인·팔로워, 폼 버전, 채널, 중복, 이메일 인증을 다시 검증합니다.
 
 인증 번호는 10분간 유효하고 한 번만 사용할 수 있습니다. 재발송 간격은 60초, 시간당 발송은 5회, 번호 확인 실패는 요청당 5회로 제한합니다. 요청 시 로그인 계정의 현재 이메일로만 발송하며 임의 수신 주소를 받지 않습니다. 이메일이 변경되면 이전 인증 요청과 확인 상태를 사용할 수 없습니다. SMTP 설정이 없으면 요청 API는 `503`을 반환하며 발송 성공을 흉내 내지 않습니다.
 
@@ -53,7 +58,7 @@
 }
 ```
 
-`DELIVERY`는 수령인·연락처·우편번호·기본 주소가 필수입니다. `VISIT`은 `shippingContact`를 보내면 안 됩니다. 서버가 폼 버전, 질문 ID·형식·길이·선택지와 동의 문서의 ID·필수 여부·버전을 검증합니다. 본인 인증 제공자가 구성되기 전에는 실제 신청 성공을 허용하지 않습니다.
+`DELIVERY`는 수령인·연락처·우편번호·기본 주소가 필수입니다. `VISIT`은 `shippingContact`를 보내면 안 됩니다. 서버가 폼 버전, 질문 ID·형식·길이·선택지와 동의 문서의 ID·필수 여부·버전을 검증합니다. 현재는 활동 채널과 이메일 소유 확인이 완료된 크리에이터만 신청할 수 있으며, 실명 인증 완료로 표시하지 않습니다.
 
 | 기능 | Method / URL |
 |---|---|

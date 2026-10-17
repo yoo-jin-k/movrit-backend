@@ -79,6 +79,28 @@ public class CampaignApplicationService {
         return formResponse(getFormEntity(campaignId));
     }
 
+    public CampaignApplicationDtos.EligibilityResponse getEligibility(Long memberId, Long campaignId) {
+        Campaign campaign = getCampaign(campaignId);
+        CampaignApplicationForm form = getFormEntity(campaignId);
+        Creator creator = creatorService.getByMember(memberId);
+        List<String> reasons = eligibilityReasons(creator, campaign);
+        boolean alreadyApplied = applicationRepository.existsByCampaignIdAndCreatorId(campaignId, creator.getId());
+        if (alreadyApplied) {
+            reasons.add("ALREADY_APPLIED");
+        }
+        return new CampaignApplicationDtos.EligibilityResponse(
+                campaignId,
+                form.getVersion(),
+                "EMAIL_TEMPORARY",
+                creator.getMember().isEmailVerified(),
+                false,
+                hasChannel(creator),
+                alreadyApplied,
+                reasons.isEmpty(),
+                List.copyOf(reasons)
+        );
+    }
+
     @Transactional
     public CampaignApplicationDtos.Response apply(
             Long memberId,
@@ -117,7 +139,8 @@ public class CampaignApplicationService {
                 // 본인 인증 공급자가 정해지기 전에는 인증 완료로 간주하지 않습니다.
                 .identityVerificationConfigured(false)
                 .identityVerified(false)
-                .channelReady(creator.getSnsUrl() != null && !creator.getSnsUrl().isBlank())
+                .emailVerified(creator.getMember().isEmailVerified())
+                .channelReady(hasChannel(creator))
                 .submittedAt(LocalDateTime.now())
                 .build();
         try {
@@ -248,11 +271,38 @@ public class CampaignApplicationService {
 
     /** 클라이언트 표시값이 아니라 서버에 연결된 인증 증거만 신청 자격으로 인정합니다. */
     private void validateConfiguredEvidence(Creator creator) {
-        if (creator.getSnsUrl() == null || creator.getSnsUrl().isBlank()) {
+        if (!hasChannel(creator)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "활동 채널 정보를 먼저 등록해 주세요.");
         }
-        throw new ResponseStatusException(HttpStatus.CONFLICT,
-                "본인 인증 제공자가 아직 구성되지 않아 신청을 완료할 수 없습니다.");
+        if (!creator.getMember().isEmailVerified()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "이메일 소유 확인 후 캠페인에 신청할 수 있습니다.");
+        }
+    }
+
+    private List<String> eligibilityReasons(Creator creator, Campaign campaign) {
+        List<String> reasons = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+        if (!campaign.isOpen() || now.isBefore(campaign.getStartAt()) || !now.isBefore(campaign.getEndAt())) {
+            reasons.add("CAMPAIGN_NOT_OPEN");
+        }
+        if (!"ACTIVE".equals(creator.getStatus()) && !"APPROVED".equals(creator.getStatus())) {
+            reasons.add("CREATOR_NOT_APPROVED");
+        }
+        if (creator.getFollowerCount() < campaign.getMinFollowerCount()) {
+            reasons.add("FOLLOWER_REQUIREMENT_NOT_MET");
+        }
+        if (!hasChannel(creator)) {
+            reasons.add("CHANNEL_REQUIRED");
+        }
+        if (!creator.getMember().isEmailVerified()) {
+            reasons.add("EMAIL_VERIFICATION_REQUIRED");
+        }
+        return reasons;
+    }
+
+    private boolean hasChannel(Creator creator) {
+        return creator.getSnsUrl() != null && !creator.getSnsUrl().isBlank();
     }
 
     private void validateApplication(
@@ -424,6 +474,7 @@ public class CampaignApplicationService {
                 application.getFormVersion(),
                 application.isIdentityVerificationConfigured(),
                 application.isIdentityVerified(),
+                application.isEmailVerified(),
                 application.isChannelReady(),
                 notices,
                 application.getSubmittedAt(),

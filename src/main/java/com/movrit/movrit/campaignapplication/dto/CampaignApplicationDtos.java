@@ -83,6 +83,18 @@ public final class CampaignApplicationDtos {
 
     public record CancelRequest(@NotBlank String reason) {}
 
+    public record EligibilityResponse(
+            Long campaignId,
+            Long formVersion,
+            String applicationEligibilityPolicy,
+            boolean emailVerified,
+            boolean identityVerified,
+            boolean channelReady,
+            boolean alreadyApplied,
+            boolean canApply,
+            List<String> blockingReasons
+    ) {}
+
     public record Response(
             Long id,
             Long campaignId,
@@ -98,6 +110,7 @@ public final class CampaignApplicationDtos {
             Long formVersion,
             boolean identityVerificationConfigured,
             boolean identityVerified,
+            boolean emailVerified,
             boolean channelReady,
             List<String> readinessNotices,
             LocalDateTime submittedAt,
