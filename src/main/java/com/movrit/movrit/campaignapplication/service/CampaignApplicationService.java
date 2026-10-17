@@ -89,11 +89,16 @@ public class CampaignApplicationService {
         CampaignApplicationForm form = getFormEntity(campaignId);
         Creator creator = creatorService.getByMember(memberId);
 
+        if (!form.getVersion().equals(request.expectedFormVersion())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "신청 조건이 변경되었습니다. 최신 신청서를 다시 확인해 주세요.");
+        }
         validateCreatorEligibility(creator, campaign);
         if (applicationRepository.existsByCampaignIdAndCreatorId(campaignId, creator.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 이 캠페인에 신청하셨습니다.");
         }
         validateApplication(form, request);
+        validateConfiguredEvidence(creator);
 
         CampaignApplication application = CampaignApplication.builder()
                 .campaign(campaign)
@@ -224,6 +229,12 @@ public class CampaignApplicationService {
     private void validateDefinition(CampaignApplicationDtos.FormSaveRequest request) {
         requireUniqueIds(request.questions().stream().map(CampaignApplicationDtos.QuestionDefinition::id).toList(), "질문 ID");
         requireUniqueIds(request.agreements().stream().map(CampaignApplicationDtos.AgreementDefinition::id).toList(), "동의 문서 ID");
+        boolean invalidChoice = request.questions().stream()
+                .anyMatch(question -> question.type() == CampaignApplicationDtos.QuestionType.SINGLE_CHOICE
+                        && question.options().isEmpty());
+        if (invalidChoice) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "단일 선택 질문에는 선택지가 필요합니다.");
+        }
     }
 
     private void validateCreatorEligibility(Creator creator, Campaign campaign) {
@@ -233,6 +244,15 @@ public class CampaignApplicationService {
         if (creator.getFollowerCount() < campaign.getMinFollowerCount()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "캠페인의 최소 팔로워 조건을 충족하지 못했습니다.");
         }
+    }
+
+    /** 클라이언트 표시값이 아니라 서버에 연결된 인증 증거만 신청 자격으로 인정합니다. */
+    private void validateConfiguredEvidence(Creator creator) {
+        if (creator.getSnsUrl() == null || creator.getSnsUrl().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "활동 채널 정보를 먼저 등록해 주세요.");
+        }
+        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                "본인 인증 제공자가 아직 구성되지 않아 신청을 완료할 수 없습니다.");
     }
 
     private void validateApplication(
@@ -266,6 +286,21 @@ public class CampaignApplicationService {
                 .anyMatch(question -> isBlank(answers.get(question.id())));
         if (missingRequiredAnswer) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "필수 질문에 모두 답변해 주세요.");
+        }
+
+        for (CampaignApplicationDtos.QuestionDefinition question : questions) {
+            String value = answers.get(question.id());
+            if (value == null) {
+                continue;
+            }
+            if (question.maxLength() != null && value.length() > question.maxLength()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        question.label() + " 답변은 " + question.maxLength() + "자 이내로 입력해 주세요.");
+            }
+            if (question.type() == CampaignApplicationDtos.QuestionType.SINGLE_CHOICE
+                    && !question.options().contains(value)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "질문의 선택지에 없는 답변입니다.");
+            }
         }
 
         validateAgreements(form, request.agreementAcceptances());

@@ -10,7 +10,7 @@
 | 캠페인 상세 | `GET /api/collaborations/campaigns/{campaignId}` | 목록 필드와 `productId`, `productName`, `mission`, `channelGuide`, `scheduleGuide`, `deliveryGuide`, `visitGuide`, `caution`, `submissionRequirement` |
 | 신청 폼 | `GET /api/campaigns/{campaignId}/application-form` | `campaignId`, `version`, `allowedFulfillmentTypes`, `questions`, `agreements` |
 
-`allowedFulfillmentTypes`는 `DELIVERY`, `VISIT` 중 하나 이상입니다. 질문은 `id`, `label`, `required`, 동의 문서는 `id`, `title`, `version`, `required`를 가집니다.
+`allowedFulfillmentTypes`는 `DELIVERY`, `VISIT` 중 하나 이상입니다. 질문은 `id`, `label`, `required`, `type`, `options`, `maxLength`, 동의 문서는 `id`, `title`, `version`, `required`, `body`를 가집니다.
 
 ## 크리에이터 신청과 진행
 
@@ -21,6 +21,7 @@
 ```json
 {
   "fulfillmentType": "DELIVERY",
+  "expectedFormVersion": 1,
   "message": "꼼꼼하게 리뷰하겠습니다.",
   "shippingContact": {
     "recipientName": "김체험",
@@ -38,7 +39,7 @@
 }
 ```
 
-`DELIVERY`는 수령인·연락처·우편번호·기본 주소가 필수입니다. `VISIT`은 `shippingContact`를 보내면 안 됩니다. 서버가 폼 질문과 동의 문서의 ID·필수 여부·버전을 검증합니다.
+`DELIVERY`는 수령인·연락처·우편번호·기본 주소가 필수입니다. `VISIT`은 `shippingContact`를 보내면 안 됩니다. 서버가 폼 버전, 질문 ID·형식·길이·선택지와 동의 문서의 ID·필수 여부·버전을 검증합니다. 본인 인증 제공자가 구성되기 전에는 실제 신청 성공을 허용하지 않습니다.
 
 | 기능 | Method / URL |
 |---|---|

@@ -1,25 +1,45 @@
 package com.movrit.movrit.campaignapplication.dto;
 
-import com.movrit.movrit.campaignapplication.entity.*;
+import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
+import com.movrit.movrit.campaignapplication.entity.FulfillmentType;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public final class CampaignApplicationDtos {
     private CampaignApplicationDtos() {}
 
+    public enum QuestionType {
+        TEXT,
+        TEXTAREA,
+        SINGLE_CHOICE
+    }
+
     public record QuestionDefinition(
             @NotBlank String id,
             @NotBlank String label,
-            boolean required
-    ) {}
+            boolean required,
+            @NotNull QuestionType type,
+            @NotNull List<@NotBlank String> options,
+            @Positive Integer maxLength
+    ) {
+        public QuestionDefinition {
+            type = type == null ? QuestionType.TEXT : type;
+            options = options == null ? List.of() : List.copyOf(options);
+        }
+    }
 
     public record AgreementDefinition(
             @NotBlank String id,
             @NotBlank String title,
             @NotBlank String version,
-            boolean required
+            boolean required,
+            @NotBlank @Size(max = 20000) String body
     ) {}
 
     public record FormSaveRequest(
@@ -54,6 +74,7 @@ public final class CampaignApplicationDtos {
 
     public record CreateRequest(
             @NotBlank String message,
+            @NotNull Long expectedFormVersion,
             @NotNull FulfillmentType fulfillmentType,
             @Valid ShippingContact shippingContact,
             @NotNull List<@Valid Answer> answers,

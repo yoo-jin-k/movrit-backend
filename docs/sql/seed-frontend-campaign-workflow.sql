@@ -20,8 +20,8 @@ INSERT INTO campaign_application_form (
 )
 SELECT campaign.id,
        CASE WHEN campaign.id = 11 THEN '["VISIT"]' ELSE '["DELIVERY"]' END,
-       '[{"id":"experience","label":"관련 경험을 알려 주세요.","required":true},{"id":"plan","label":"콘텐츠 계획을 알려 주세요.","required":true}]',
-       '[{"id":"privacy","title":"개인정보 수집 및 이용","version":"2026-10-01","required":true}]',
+       '[{"id":"experience","label":"관련 경험을 알려 주세요.","required":true,"type":"TEXTAREA","options":[],"maxLength":1000},{"id":"plan","label":"콘텐츠 계획을 알려 주세요.","required":true,"type":"TEXTAREA","options":[],"maxLength":1000}]',
+       '[{"id":"privacy","title":"개인정보 수집 및 이용","version":"2026-10-01","required":true,"body":"캠페인 운영 및 상품 배송을 위해 신청 정보와 배송 정보를 수집합니다."}]',
        1, NOW(), NOW()
 FROM collaboration_campaign campaign
 WHERE campaign.id IN (9, 10, 11, 12)
