@@ -50,7 +50,7 @@
 | 콘텐츠 제출·수정 제출 | `POST /api/campaign-contents/applications/{applicationId}` body: `{"contentUrl":"https://...","note":"..."}` |
 | 내 콘텐츠 목록 | `GET /api/campaign-contents/mine` |
 
-신청 상태는 `SUBMITTED`, `SELECTED`, `REJECTED`, `ACTIVE`, `CONTENT_SUBMITTED`, `REVISION_REQUESTED`, `COMPLETED`, `CANCELLED`입니다. 콘텐츠 상태는 `SUBMITTED`, `REVISION_REQUESTED`, `APPROVED`입니다.
+신청 상태는 `SUBMITTED`, `SELECTED`, `REJECTED`, `ACTIVE`, `CONTENT_SUBMITTED`, `REVISION_REQUESTED`, `COMPLETED`, `CANCELLED`입니다. 콘텐츠 상태는 `SUBMITTED`, `REVISION_REQUESTED`, `BRAND_APPROVED`, `APPROVED`입니다. `BRAND_APPROVED`는 브랜드 검토가 끝났지만 운영자 최종 승인을 기다리는 상태입니다.
 
 ## 판매자 운영
 
@@ -65,7 +65,9 @@
 | 선정 / 미선정 | `PATCH /api/campaigns/applications/{applicationId}/select`, `PATCH /api/campaigns/applications/{applicationId}/reject` |
 | 받은 콘텐츠 목록 | `GET /api/campaign-contents/seller` |
 | 수정 요청 | `PATCH /api/campaign-contents/{submissionId}/request-revision` body: `{"comment":"..."}` |
-| 콘텐츠 승인 | `PATCH /api/campaign-contents/{submissionId}/approve` body: `{"comment":"..."}` |
+| 브랜드 검토 완료 | `PATCH /api/campaign-contents/{submissionId}/approve` body: `{"comment":"..."}` |
+
+운영자는 `GET /api/admin/campaign-contents`로 전체 제출물을 조회합니다. 최종 수정 요청은 `PATCH /api/admin/campaign-contents/{submissionId}/request-revision`, 최종 승인은 `PATCH /api/admin/campaign-contents/{submissionId}/approve`입니다. 두 변경 API의 본문은 각각 판매자 API와 같은 `comment` 형식을 사용합니다.
 
 상세 수정 본문은 상세 응답의 편집 필드 가운데 `title`, `minFollowerCount`, `recruitmentCount`, `startAt`, `endAt`이 필수입니다. 신청 이력이 있는 캠페인은 삭제 대신 모집 종료를 사용합니다.
 
@@ -77,7 +79,7 @@
 | 알림 읽음 | `PATCH /api/notifications/{id}/read`, `PATCH /api/notifications/read-all` |
 | 문의 등록 / 내 문의 | `POST /api/inquiries`, `GET /api/inquiries/mine` |
 
-오류는 Spring 기본 Problem Detail 형식을 사용하며 HTTP 상태를 우선 처리합니다. 입력 오류는 `400`, 인증 누락은 `401`, 소유권·역할 오류는 `403`, 대상 없음은 `404`, 중복 신청·잘못된 상태 전이는 `409`입니다. 화면에는 응답의 `detail`을 우선 표시하고 없으면 상태별 기본 안내를 사용합니다.
+오류는 Problem Detail 형식을 사용하며 HTTP 상태를 우선 처리합니다. 입력 오류는 `400`, 인증 누락은 `401`, 소유권·역할 오류는 `403`, 대상 없음은 `404`, 중복 신청·잘못된 상태 전이는 `409`입니다. 업무 오류 안내는 `detail`, 본문 검증 오류는 `fieldErrors`에 포함됩니다.
 
 ## 로컬 샘플 데이터
 
