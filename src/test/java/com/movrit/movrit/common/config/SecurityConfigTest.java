@@ -64,4 +64,13 @@ class SecurityConfigTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5174"));
     }
+
+    @Test
+    void qaFrontendLoopbackOriginIsAllowed() throws Exception {
+        mockMvc.perform(options("/api/auth/login")
+                        .header("Origin", "http://127.0.0.1:5174")
+                        .header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://127.0.0.1:5174"));
+    }
 }
