@@ -67,6 +67,18 @@ public class Campaign extends BaseEntity {
     @Column(name = "visit_guide", columnDefinition = "TEXT")
     private String visitGuide;
 
+    @Column(name = "representative_image_url", length = 1000)
+    private String representativeImageUrl;
+
+    @Column(name = "detail_image_url", length = 1000)
+    private String detailImageUrl;
+
+    @Column(name = "visit_place_name", length = 200)
+    private String visitPlaceName;
+
+    @Column(name = "visit_address", length = 500)
+    private String visitAddress;
+
     @Column(columnDefinition = "TEXT")
     private String caution;
 
@@ -160,6 +172,19 @@ public class Campaign extends BaseEntity {
 
     public void close() {
         open = false;
+    }
+
+    public void updatePresentation(String visitPlaceName, String visitAddress) {
+        this.visitPlaceName = visitPlaceName;
+        this.visitAddress = visitAddress;
+    }
+
+    public void updateRepresentativeImage(String imageUrl) {
+        this.representativeImageUrl = imageUrl;
+    }
+
+    public void updateDetailImage(String imageUrl) {
+        this.detailImageUrl = imageUrl;
     }
 
     private void validateSchedule(

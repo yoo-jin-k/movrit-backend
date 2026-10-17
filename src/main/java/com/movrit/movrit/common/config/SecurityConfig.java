@@ -65,6 +65,10 @@ public class SecurityConfig {
                                 "^/api/collaborations/campaigns/[0-9]+$",
                                 HttpMethod.GET.name()
                         )).permitAll()
+                        .requestMatchers(new RegexRequestMatcher(
+                                "^/api/campaigns/[0-9]+/presentation$",
+                                HttpMethod.GET.name()
+                        )).permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/collaborations/referrals/*/click").permitAll()
                         .anyRequest().authenticated()
                 )

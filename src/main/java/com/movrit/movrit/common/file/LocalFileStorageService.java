@@ -39,14 +39,14 @@ public class LocalFileStorageService {
         Path targetDirectory = rootPath.resolve(directory).normalize();
 
         if (!targetDirectory.startsWith(rootPath)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 업로드 경로야.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 업로드 경로입니다.");
         }
 
         try {
             Files.createDirectories(targetDirectory);
             Files.copy(file.getInputStream(), targetDirectory.resolve(storedName), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 저장에 실패했어.");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 저장에 실패했습니다.");
         }
 
         return "/uploads/" + directory + "/" + storedName;
@@ -54,15 +54,15 @@ public class LocalFileStorageService {
 
     private String validateAndResolveExtension(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지 파일을 선택해줘.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지 파일을 선택해 주세요.");
         }
         if (file.getSize() > MAX_IMAGE_SIZE) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지는 5MB 이하만 업로드할 수 있어.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지는 5MB 이하만 업로드할 수 있습니다.");
         }
 
         String extension = EXTENSION_BY_CONTENT_TYPE.get(file.getContentType());
         if (extension == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "JPG, PNG, WEBP 이미지만 업로드할 수 있어.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "JPG, PNG, WEBP 이미지만 업로드할 수 있습니다.");
         }
         return extension;
     }

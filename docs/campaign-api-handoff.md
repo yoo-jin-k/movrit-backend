@@ -85,6 +85,18 @@
 | 받은 신청 목록 | `GET /api/campaigns/applications/seller` |
 | 선정 / 미선정 | `PATCH /api/campaigns/applications/{applicationId}/select`, `PATCH /api/campaigns/applications/{applicationId}/reject` |
 | 받은 콘텐츠 목록 | `GET /api/campaign-contents/seller` |
+
+## 캠페인 이미지와 방문 위치
+
+- 공개 조회: `GET /api/campaigns/{campaignId}/presentation`
+- 방문 장소 저장: `PUT /api/campaigns/{campaignId}/presentation/location`
+- 대표 이미지 업로드/삭제: `POST`, `DELETE /api/campaigns/{campaignId}/presentation/representative-image`
+- 상세 이미지 업로드/삭제: `POST`, `DELETE /api/campaigns/{campaignId}/presentation/detail-image`
+- 업로드 요청은 `multipart/form-data`의 `file` 필드를 사용합니다.
+- JPG, PNG, WEBP 형식과 파일당 5MB 이하만 허용합니다.
+- 쓰기와 삭제는 해당 캠페인 소유 판매자만 가능하고 공개 조회만 로그인 없이 허용합니다.
+- `visitPlaceName`과 `visitAddress`는 공개 장소 안내만 저장합니다. 담당자 연락처, 상세 수령정보, 개인 주소는 저장하지 않습니다.
+- 빈 문자열로 장소를 저장하거나 이미지 삭제 API를 호출하면 응답 값은 `null`이 됩니다. 기존 `visitGuide` 자유 텍스트는 호환을 위해 유지합니다.
 | 수정 요청 | `PATCH /api/campaign-contents/{submissionId}/request-revision` body: `{"comment":"..."}` |
 | 브랜드 검토 완료 | `PATCH /api/campaign-contents/{submissionId}/approve` body: `{"comment":"..."}` |
 
