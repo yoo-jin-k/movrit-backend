@@ -109,7 +109,7 @@ public class SellerProfileService {
 
     public SellerProfile getSellerByMemberId(Long memberId) {
         return sellerProfileRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "판매자 등록 신청 정보가 없어."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "판매자 등록 신청 정보를 찾을 수 없습니다."));
     }
 
     /** 이후 상품 등록 서비스에서 승인 여부를 검사할 때 사용할 공통 조회 메서드다. */

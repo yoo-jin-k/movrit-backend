@@ -89,7 +89,7 @@ public class BrandService {
         SellerProfile seller = sellerProfileService.getApprovedSeller(memberId);
         Brand brand = getBrand(brandId);
         if (!brand.getSeller().getId().equals(seller.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "내 브랜드만 관리할 수 있어.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인이 소유한 브랜드만 관리할 수 있습니다.");
         }
         return brand;
     }

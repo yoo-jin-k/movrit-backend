@@ -34,6 +34,10 @@ public class CampaignManagementService {
             CampaignManagementDtos.UpdateRequest request
     ) {
         Campaign campaign = getOwnedCampaign(memberId, campaignId);
+        if (!java.util.Objects.equals(campaign.getScheduleVersion(), request.expectedScheduleVersion())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "캠페인 일정이 변경되었습니다. 최신 일정을 다시 확인해 주세요.");
+        }
         try {
             campaign.update(
                     request.title().trim(),
