@@ -16,6 +16,7 @@ import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.service.MemberService;
 import com.movrit.movrit.notification.service.NotificationService;
 import com.movrit.movrit.product.service.ProductService;
+import com.movrit.movrit.seller.service.SellerProfileService;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 
@@ -108,6 +109,7 @@ class CampaignApplicationEligibilityTest {
                 memberService,
                 policyService,
                 metricService,
+                mock(SellerProfileService.class),
                 mock(ProductService.class),
                 new ObjectMapper(),
                 mock(NotificationService.class),
@@ -190,6 +192,7 @@ class CampaignApplicationEligibilityTest {
                 memberService,
                 policyService,
                 metricService,
+                mock(SellerProfileService.class),
                 mock(ProductService.class),
                 new ObjectMapper(),
                 mock(NotificationService.class),

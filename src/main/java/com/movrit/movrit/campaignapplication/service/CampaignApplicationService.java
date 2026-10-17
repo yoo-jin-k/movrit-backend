@@ -19,6 +19,7 @@ import com.movrit.movrit.creator.entity.Creator;
 import com.movrit.movrit.creator.service.CreatorService;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.service.MemberService;
+import com.movrit.movrit.seller.service.SellerProfileService;
 import com.movrit.movrit.product.service.ProductService;
 import com.movrit.movrit.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ public class CampaignApplicationService {
     private final MemberService memberService;
     private final CampaignEligibilityPolicyService eligibilityPolicyService;
     private final MemberChannelMetricService memberChannelMetricService;
+    private final SellerProfileService sellerProfileService;
     private final ProductService productService;
     private final ObjectMapper objectMapper;
     private final NotificationService notificationService;
@@ -205,6 +207,7 @@ public class CampaignApplicationService {
     }
 
     public List<CampaignApplicationDtos.Response> findSellerApplications(Long memberId) {
+        sellerProfileService.getApprovedSeller(memberId);
         return applicationRepository
                 .findAllByCampaignPreorderProductBrandSellerMemberIdOrderByIdDesc(memberId)
                 .stream()

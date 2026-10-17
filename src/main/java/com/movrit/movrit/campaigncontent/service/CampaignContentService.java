@@ -10,6 +10,7 @@ import com.movrit.movrit.campaigncontent.repository.CampaignContentSubmissionRep
 import com.movrit.movrit.notification.service.NotificationService;
 import com.movrit.movrit.member.service.MemberService;
 import com.movrit.movrit.product.service.ProductService;
+import com.movrit.movrit.seller.service.SellerProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class CampaignContentService {
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
     private final MemberService memberService;
+    private final SellerProfileService sellerProfileService;
 
     @Transactional
     public CampaignContentDtos.Response submit(
@@ -72,6 +74,7 @@ public class CampaignContentService {
     }
 
     public List<CampaignContentDtos.Response> findSellerContents(Long memberId) {
+        sellerProfileService.getApprovedSeller(memberId);
         return submissionRepository
                 .findAllByApplicationCampaignPreorderProductBrandSellerMemberIdOrderByIdDesc(memberId)
                 .stream().map(this::response).toList();
