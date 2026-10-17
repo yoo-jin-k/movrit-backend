@@ -43,9 +43,11 @@
 
 브랜드 작성 화면은 캠페인과 조건이 따로 저장되어 일부만 공개되는 것을 막기 위해 다음 원자적 API를 사용합니다.
 
-- `POST /api/campaigns/configured`: 캠페인과 `requirementMode`(`NONE` 또는 `SINGLE`)를 한 번에 생성
-- `PATCH /api/campaigns/configured/{campaignId}`: 캠페인 본문과 조건을 한 번에 수정하거나 해제
+- `POST /api/campaigns/configured`: 캠페인, 신청서, `requirementMode`(`NONE` 또는 `SINGLE`)를 한 번에 생성
+- `PATCH /api/campaigns/configured/{campaignId}`: 캠페인 본문과 조건을 한 번에 수정하거나 해제하며, `applicationForm`을 보내면 신청서도 함께 갱신
 - `SINGLE`이면 `requirement`가 필수이고 `NONE`이면 `requirement`를 보내지 않습니다.
+
+생성 요청의 `applicationForm`은 필수입니다. 브랜드가 참여 방식, 질문, 동의 문서를 명시하며 서버가 임의 질문이나 동의를 만들지 않습니다. 캠페인·신청서·조건 중 하나라도 저장에 실패하면 전체 생성을 롤백하므로, 신청서 없는 공개 캠페인이 생성되지 않습니다.
 
 현재 확정되어 지원하는 조합은 `INSTAGRAM` + `FOLLOWER_COUNT`입니다. 최소값은 브랜드가 캠페인마다 0 이상의 값으로 정하며 `500`은 테스트 예시일 뿐 기본값이나 플랫폼 공통 기준이 아닙니다. 네이버 방문자 조건은 집계기간 정책이 확정되기 전까지 저장을 거절합니다.
 

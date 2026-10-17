@@ -2,6 +2,8 @@ package com.movrit.movrit.campaigneligibility.service;
 
 import com.movrit.movrit.campaigneligibility.dto.CampaignEligibilityDtos;
 import com.movrit.movrit.campaigneligibility.dto.ConfiguredCampaignDtos;
+import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos;
+import com.movrit.movrit.campaignapplication.service.CampaignApplicationService;
 import com.movrit.movrit.collaboration.dto.CollaborationDtos;
 import com.movrit.movrit.collaboration.service.CampaignManagementService;
 import com.movrit.movrit.collaboration.service.CollaborationService;
@@ -17,15 +19,18 @@ public class ConfiguredCampaignService {
     private final CollaborationService collaborationService;
     private final CampaignManagementService campaignManagementService;
     private final CampaignEligibilityPolicyService eligibilityPolicyService;
+    private final CampaignApplicationService campaignApplicationService;
 
     /** 캠페인과 조건을 한 트랜잭션에서 저장해 조건만 누락된 공개 캠페인이 생기지 않게 합니다. */
     @Transactional
     public ConfiguredCampaignDtos.CreateResponse create(Long memberId, ConfiguredCampaignDtos.CreateRequest request) {
         validateMode(request.requirementMode(), request.requirement());
         CollaborationDtos.CampaignResponse campaign = collaborationService.createCampaign(memberId, request.campaign());
+        CampaignApplicationDtos.FormResponse applicationForm = campaignApplicationService.saveForm(
+                memberId, campaign.id(), request.applicationForm());
         CampaignEligibilityDtos.RequirementResponse requirement = request.requirementMode() == ConfiguredCampaignDtos.RequirementMode.SINGLE
                 ? eligibilityPolicyService.save(memberId, campaign.id(), request.requirement()) : null;
-        return new ConfiguredCampaignDtos.CreateResponse(campaign, requirement);
+        return new ConfiguredCampaignDtos.CreateResponse(campaign, applicationForm, requirement);
     }
 
     /** 캠페인 본문과 조건 변경 중 하나라도 실패하면 둘 다 이전 상태로 되돌립니다. */
@@ -35,6 +40,9 @@ public class ConfiguredCampaignService {
     ) {
         validateMode(request.requirementMode(), request.requirement());
         var campaign = campaignManagementService.update(memberId, campaignId, request.campaign());
+        CampaignApplicationDtos.FormResponse applicationForm = request.applicationForm() == null
+                ? campaignApplicationService.getForm(campaignId)
+                : campaignApplicationService.saveForm(memberId, campaignId, request.applicationForm());
         CampaignEligibilityDtos.RequirementResponse requirement;
         if (request.requirementMode() == ConfiguredCampaignDtos.RequirementMode.NONE) {
             CampaignEligibilityDtos.RequirementResponse current = eligibilityPolicyService.find(campaignId);
@@ -48,7 +56,7 @@ public class ConfiguredCampaignService {
                     && eligibilityPolicyService.find(campaignId) != null) conflict();
             requirement = eligibilityPolicyService.save(memberId, campaignId, request.requirement());
         }
-        return new ConfiguredCampaignDtos.UpdateResponse(campaign, requirement);
+        return new ConfiguredCampaignDtos.UpdateResponse(campaign, applicationForm, requirement);
     }
 
     private void validateMode(ConfiguredCampaignDtos.RequirementMode mode,
