@@ -69,13 +69,13 @@ curl -H "Authorization: Bearer $token" http://127.0.0.1:18080/api/auth/me
 - 크리에이터 ID: `8`
 - 비밀번호 파일: `/private/tmp/movrit-browser-qa-password.txt` (`600`)
 - 로그인 응답 파일: `/private/tmp/movrit-browser-qa-login.json` (`600`)
-- 신청 검수 대상: 캠페인 `10`; fixture 생성 직후에는 신청 이력이 없고 `canApply=true`입니다.
+- 신청 검수 대상: 캠페인 `10`; 정상 UI 로그인과 신청 1회를 완료해 신청 ID `10`이 생성됐습니다.
 
 비밀번호 파일의 값은 채팅·Git·화면 캡처에 복사하지 않고 로컬 로그인 UI에만 입력합니다. 이 회원의 `email_verified_at`과 크리에이터 `ACTIVE` 상태는 외부 메일 또는 실명 인증을 완료한 결과가 아니라 `movrit_integration` 전용 합성 상태입니다. `identityVerified`는 계속 `false`여야 합니다. 브라우저의 `/api` 프록시는 최신 검수 서버 `http://localhost:18080`을 향해야 하며, 현재 저장소 기본 Vite 설정의 `8080`과 혼동하지 않습니다.
 
 비밀번호 파일은 UI 자동 입력 시 줄바꿈이 비밀번호에 포함되지 않도록 끝 줄바꿈을 제거한 상태입니다. 파일 내용을 읽어 입력할 때 임의 공백이나 줄바꿈을 덧붙이지 않습니다.
 
-fixture는 반복 QA를 위해 기본적으로 보존합니다. 신청을 생성했다면 응답의 정확한 신청 ID를 기록하고 이후 `ALREADY_APPLIED`를 정상 결과로 취급합니다. 아직 신청을 생성하지 않은 상태에서 fixture 자체를 정리할 때만 다음 순서를 사용합니다.
+fixture는 반복 QA와 브라우저 검수 증거를 위해 보존합니다. 신청 ID `10`은 `SUBMITTED`, 폼 버전 `1`, `DELIVERY`, `emailVerified=true`, `identityVerified=false`로 확인됐습니다. 이후 eligibility의 `ALREADY_APPLIED`를 정상 결과로 취급하며 추가 신청을 만들지 않습니다. 이 fixture는 이미 신청이 생성됐으므로 아래 단순 계정 정리 절차를 사용하지 않습니다. 아래 절차는 신청을 생성하지 않은 새 fixture에만 적용합니다.
 
 1. 대상이 회원 `13`, 크리에이터 `8`, 이메일 `qa-browser-integration@movrit.local`인지 다시 확인합니다.
 2. `refresh_token`에서 회원 `13` 행, `influencer_profile`에서 크리에이터 `8` 행, `member_role`에서 회원 `13` 행을 순서대로 삭제합니다.
