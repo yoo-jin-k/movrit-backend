@@ -63,7 +63,7 @@ public class CampaignContentService {
                 application.getCreator().getNickname() + "님이 콘텐츠를 제출하셨습니다.", "CAMPAIGN_CONTENT", submission.getId());
         auditLogService.record(memberId, "CAMPAIGN_CONTENT_SUBMITTED", "CAMPAIGN_CONTENT", submission.getId(),
                 null, "{\"status\":\"SUBMITTED\"}", null);
-        return response(submission);
+        return flushedResponse(submission);
     }
 
     public List<CampaignContentDtos.Response> findMine(Long memberId) {
@@ -89,7 +89,7 @@ public class CampaignContentService {
         transitionApplication(submission.getApplication(), CampaignApplication::requestContentRevision);
         notifyCreatorAndAudit(memberId, submission, "콘텐츠 수정 요청이 도착했습니다.",
                 "CAMPAIGN_CONTENT_REVISION_REQUESTED", "REVISION_REQUESTED", request.comment().trim());
-        return response(submission);
+        return flushedResponse(submission);
     }
 
     @Transactional
@@ -103,7 +103,7 @@ public class CampaignContentService {
         transitionSubmission(submission, value -> value.approveByBrand(normalize(request.comment())));
         notifyCreatorAndAudit(memberId, submission, "브랜드 콘텐츠 검토가 완료되었습니다.",
                 "CAMPAIGN_CONTENT_BRAND_APPROVED", "BRAND_APPROVED", normalize(request.comment()));
-        return response(submission);
+        return flushedResponse(submission);
     }
 
     public List<CampaignContentDtos.Response> findOperatorContents(Long memberId) {
@@ -124,7 +124,7 @@ public class CampaignContentService {
         transitionApplication(submission.getApplication(), CampaignApplication::requestContentRevision);
         notifyCreatorAndAudit(memberId, submission, "운영자 콘텐츠 수정 요청이 도착했습니다.",
                 "CAMPAIGN_CONTENT_OPERATOR_REVISION_REQUESTED", "REVISION_REQUESTED", request.comment().trim());
-        return response(submission);
+        return flushedResponse(submission);
     }
 
     @Transactional
@@ -140,7 +140,7 @@ public class CampaignContentService {
         transitionApplication(submission.getApplication(), CampaignApplication::completeContentReview);
         notifyCreatorAndAudit(memberId, submission, "콘텐츠 최종 검토가 완료되었습니다.",
                 "CAMPAIGN_CONTENT_OPERATOR_APPROVED", "APPROVED", normalize(request.comment()));
-        return response(submission);
+        return flushedResponse(submission);
     }
 
     private CampaignContentSubmission getOwnedSubmission(Long memberId, Long submissionId) {
@@ -198,6 +198,12 @@ public class CampaignContentService {
                 submission.getSubmittedAt(),
                 submission.getReviewedAt()
         );
+    }
+
+    private CampaignContentDtos.Response flushedResponse(CampaignContentSubmission submission) {
+        // @Version 값은 flush 시 증가하므로 저장 응답을 만들기 전에 최신 값을 확정합니다.
+        submissionRepository.flush();
+        return response(submission);
     }
 
     private Long sellerMemberId(CampaignApplication application) {
