@@ -100,3 +100,87 @@ WHERE application.status IN ('CONTENT_SUBMITTED', 'REVISION_REQUESTED', 'COMPLET
       SELECT 1 FROM campaign_content_submission submission
       WHERE submission.application_id = application.id
   );
+
+-- 같은 판매자의 상품 상세와 재고 화면에서 옵션별 상태를 확인할 수 있게 보강합니다.
+INSERT INTO product_variant (
+    product_id, sku_code, option_name_1, option_value_1,
+    additional_price, on_hand_quantity, reserved_quantity,
+    safety_stock_quantity, sold_quantity, active, version, created_at, updated_at
+)
+SELECT product.id, variant.sku_code, variant.option_name, variant.option_value,
+       variant.additional_price, variant.on_hand_quantity, variant.reserved_quantity,
+       variant.safety_stock_quantity, variant.sold_quantity, variant.active, 0, NOW(), NOW()
+FROM (VALUES
+    ('에어핏 러닝 재킷', 'LUMENA-JACKET-S', '사이즈', 'S', 0::numeric, 42::bigint, 3::bigint, 5::bigint, 18::bigint, true),
+    ('에어핏 러닝 재킷', 'LUMENA-JACKET-L', '사이즈', 'L', 5000::numeric, 7::bigint, 5::bigint, 5::bigint, 36::bigint, true),
+    ('시카 데일리 선크림', 'LUMENA-SUN-DUO', '구성', '2개입', 18000::numeric, 65::bigint, 8::bigint, 10::bigint, 52::bigint, true)
+) AS variant(product_name, sku_code, option_name, option_value, additional_price,
+             on_hand_quantity, reserved_quantity, safety_stock_quantity, sold_quantity, active)
+JOIN product ON product.name = variant.product_name AND product.brand_id = 4
+WHERE NOT EXISTS (
+    SELECT 1 FROM product_variant existing WHERE existing.sku_code = variant.sku_code
+);
+
+INSERT INTO preorder_variant (
+    id, preorder_id, product_variant_id, preorder_price, target_quantity,
+    max_quantity, ordered_quantity, status, created_at, updated_at
+)
+SELECT nextval('preorder_variant_id_seq'), preorder.id, product_variant.id,
+       preorder.preorder_price + product_variant.additional_price,
+       GREATEST(10, preorder.target_quantity / 3),
+       LEAST(product_variant.on_hand_quantity, COALESCE(preorder.max_quantity, product_variant.on_hand_quantity)),
+       product_variant.sold_quantity, 'ACTIVE', NOW(), NOW()
+FROM preorder
+JOIN product_variant ON product_variant.product_id = preorder.product_id
+JOIN product ON product.id = preorder.product_id
+WHERE product.brand_id = 4
+  AND NOT EXISTS (
+      SELECT 1 FROM preorder_variant existing
+      WHERE existing.preorder_id = preorder.id
+        AND existing.product_variant_id = product_variant.id
+  );
+
+-- 찜과 알림 신청은 목록 카드의 카운트·선택 상태를 확인하는 데 사용합니다.
+INSERT INTO preorder_favorite (member_id, preorder_id, created_at, updated_at)
+SELECT sample.member_id, sample.preorder_id, NOW() - INTERVAL '2 days', NOW()
+FROM (VALUES (1::bigint, 9::bigint), (2::bigint, 9::bigint), (1::bigint, 10::bigint),
+             (3::bigint, 11::bigint), (2::bigint, 12::bigint)) AS sample(member_id, preorder_id)
+WHERE EXISTS (SELECT 1 FROM member WHERE id = sample.member_id)
+  AND EXISTS (SELECT 1 FROM preorder WHERE id = sample.preorder_id)
+ON CONFLICT (member_id, preorder_id) DO NOTHING;
+
+INSERT INTO preorder_interest (preorder_id, member_id, created_at)
+SELECT sample.preorder_id, sample.member_id, NOW() - INTERVAL '1 day'
+FROM (VALUES (9::bigint, 1::bigint), (10::bigint, 2::bigint),
+             (11::bigint, 3::bigint), (12::bigint, 1::bigint)) AS sample(preorder_id, member_id)
+WHERE EXISTS (SELECT 1 FROM member WHERE id = sample.member_id)
+  AND EXISTS (SELECT 1 FROM preorder WHERE id = sample.preorder_id)
+ON CONFLICT (preorder_id, member_id) DO NOTHING;
+
+-- 답변 전/완료 문의를 함께 두어 판매자 문의함의 상태 필터를 바로 점검할 수 있게 합니다.
+INSERT INTO inquiry (
+    id, member_id, preorder_id, category, title, content, status,
+    answer, answered_by_member_id, answered_at, created_at, updated_at
+)
+SELECT nextval('inquiry_id_seq'), sample.member_id, sample.preorder_id, sample.category,
+       sample.title, sample.content, sample.status, sample.answer,
+       CASE WHEN sample.answer IS NULL THEN NULL ELSE (
+           SELECT seller_profile.member_id FROM seller_profile WHERE seller_profile.id = 4
+       ) END,
+       CASE WHEN sample.answer IS NULL THEN NULL ELSE NOW() - INTERVAL '6 hours' END,
+       NOW() - sample.age, NOW()
+FROM (VALUES
+    (1::bigint, 9::bigint, 'PRODUCT', '민감성 피부도 사용할 수 있나요?',
+     '향료 포함 여부와 사용 시 주의사항이 궁금합니다.', 'OPEN', NULL::text, INTERVAL '12 hours'),
+    (2::bigint, 10::bigint, 'DELIVERY', '배송 예정일을 알고 싶어요',
+     '펀딩 성공 후 언제부터 순차 배송되나요?', 'ANSWERED',
+     '생산 완료 후 안내된 일정에 맞춰 순차 발송할 예정입니다.', INTERVAL '2 days')
+) AS sample(member_id, preorder_id, category, title, content, status, answer, age)
+WHERE EXISTS (SELECT 1 FROM member WHERE id = sample.member_id)
+  AND EXISTS (SELECT 1 FROM preorder WHERE id = sample.preorder_id)
+  AND NOT EXISTS (
+      SELECT 1 FROM inquiry existing
+      WHERE existing.member_id = sample.member_id
+        AND existing.preorder_id = sample.preorder_id
+        AND existing.title = sample.title
+  );
