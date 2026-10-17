@@ -3,6 +3,7 @@ package com.movrit.movrit.collaboration.service;
 import com.movrit.movrit.collaboration.dto.CampaignPresentationDtos;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
+import com.movrit.movrit.collaboration.repository.CampaignDetailImageRepository;
 import com.movrit.movrit.common.file.LocalFileStorageService;
 import com.movrit.movrit.preorder.entity.Preorder;
 import com.movrit.movrit.product.entity.Product;
@@ -19,9 +20,10 @@ import static org.mockito.Mockito.when;
 
 class CampaignPresentationServiceTest {
     private final CampaignRepository campaigns = mock(CampaignRepository.class);
+    private final CampaignDetailImageRepository detailImages = mock(CampaignDetailImageRepository.class);
     private final ProductService products = mock(ProductService.class);
     private final LocalFileStorageService files = mock(LocalFileStorageService.class);
-    private final CampaignPresentationService service = new CampaignPresentationService(campaigns, products, files);
+    private final CampaignPresentationService service = new CampaignPresentationService(campaigns, detailImages, products, files);
 
     @Test
     void ownerCanSavePublicVisitLocationWithoutPersonalContact() {
@@ -49,7 +51,22 @@ class CampaignPresentationServiceTest {
         assertThat(result.representativeImageUrl()).isEqualTo("/uploads/campaigns/10/representative/safe.png");
     }
 
+    @Test
+    void detailImageIsAddedInDisplayOrder() {
+        Campaign campaign = campaign();
+        var image = new MockMultipartFile("file", "detail.png", "image/png", new byte[]{1});
+        when(campaigns.findById(10L)).thenReturn(Optional.of(campaign));
+        when(detailImages.countByCampaignId(10L)).thenReturn(2L);
+        when(files.storeImage(image, "campaigns/10/detail")).thenReturn("/uploads/detail.png");
+
+        service.uploadDetail(1L, 10L, image, "사용 모습");
+
+        verify(detailImages).save(org.mockito.ArgumentMatchers.argThat(saved ->
+                saved.getDisplayOrder() == 2 && "사용 모습".equals(saved.getAltText())));
+    }
+
     private Campaign campaign() {
+        when(detailImages.findAllByCampaignIdOrderByDisplayOrderAsc(10L)).thenReturn(java.util.List.of());
         Product product = Product.builder().id(20L).build();
         Preorder preorder = Preorder.builder().id(30L).product(product).build();
         return Campaign.builder().id(10L).preorder(preorder).build();

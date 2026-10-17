@@ -47,10 +47,17 @@ public class CampaignPresentationController {
     @PostMapping("/detail-image")
     public CampaignPresentationDtos.Response uploadDetail(
             @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId,
-            @RequestParam("file") MultipartFile file
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "altText", required = false) String altText
     ) {
-        return service.uploadDetail(memberId(jwt), campaignId, file);
+        return service.uploadDetail(memberId(jwt), campaignId, file, altText);
     }
+
+    @PutMapping("/detail-images/order")
+    public CampaignPresentationDtos.Response reorderDetails(
+            @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId,
+            @Valid @RequestBody CampaignPresentationDtos.ReorderRequest request
+    ) { return service.reorderDetails(memberId(jwt), campaignId, request); }
 
     @DeleteMapping("/representative-image")
     public CampaignPresentationDtos.Response clearRepresentative(
