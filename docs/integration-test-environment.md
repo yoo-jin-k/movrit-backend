@@ -20,4 +20,24 @@ java -jar build/libs/movrit-0.0.1-SNAPSHOT.jar --spring.profiles.active=integrat
 - `GET /api/collaborations/campaigns/9` → `200`
 - `GET /api/campaigns/9/application-form` → `200`
 
-신청 폼은 질문 `type/options/maxLength`와 동의 문서 `body`를 반환합니다. 본인 인증 제공자가 아직 없으므로 인증된 크리에이터의 정상 형식 신청도 `409`로 차단하며, 프론트는 이를 성공으로 처리하면 안 됩니다.
+신청 폼은 질문 `type/options/maxLength`와 동의 문서 `body`를 반환합니다. 실명 인증 공급자가 연결되기 전에는 서버가 확인한 이메일 소유 상태를 임시 신청 조건으로 사용하며, 실명 인증 상태는 계속 `false`입니다.
+
+## 이메일 기반 캠페인 신청 QA
+
+- 실행 JAR 기준 커밋: `b5a2736`
+- 실행 DB: `movrit_integration`
+- 실행 주소: `http://127.0.0.1:18080`
+- 대상 캠페인: `9`는 이메일 인증 신청과 중복 신청이 이미 검증됐고, 추가 신청 생성은 기존 데이터와 충돌합니다. 새 신청 검수에는 신청 이력이 없는 크리에이터와 모집 중 캠페인을 조합합니다.
+- 현재 QA 크리에이터 회원 `12`는 이메일 인증 완료 상태이며 캠페인 `9` 신청 이력이 있습니다. 같은 계정으로 캠페인 `9`를 조회하면 `ALREADY_APPLIED`가 정상입니다.
+- 미인증 상태는 운영 DB나 외부 메일을 사용하지 않고 통합 DB 전용 회원의 `email_verified_at`을 `NULL`로 둔 상태에서 확인합니다. 인증 상태 변경 전후에는 동일한 회원·캠페인 조합을 사용하고, 신청 생성은 인증 완료 확인 뒤 한 번만 수행합니다.
+- 로그인 응답 토큰은 메시지나 문서에 기록하지 않고 `/private/tmp` 아래의 권한 제한 파일에 저장하거나 매 요청 직전에 다시 발급합니다.
+- 클라이언트 요청 DTO에는 `emailVerified`, `identityVerified`, `channelReady` 필드가 없습니다. 추가 필드를 보내더라도 신청 자격은 `member.email_verified_at`과 서버의 크리에이터 정보만 사용합니다.
+- 이메일 인증 메일 요청은 SMTP 미설정 환경에서 `503 SERVICE_UNAVAILABLE`이 정상입니다. 기존 QA 회원의 DB 인증 상태는 실제 메일 발송 성공을 의미하지 않습니다.
+- 다른 회원의 challenge 접근 검수는 SMTP가 설정돼 실제 challenge를 만들 수 있는 격리 환경에서 진행합니다. 현재 통합 실행본에서는 발송 단계가 `503`으로 끝나므로 소유권 테스트용 challenge가 생성되지 않습니다.
+
+주요 확인 순서는 다음과 같습니다.
+
+1. `GET /api/campaigns/{campaignId}/eligibility`에서 미인증 회원이 `EMAIL_VERIFICATION_REQUIRED`로 차단되는지 확인합니다.
+2. 같은 회원을 통합 DB에서 인증 완료 fixture로 바꾼 뒤 `emailVerified=true`, `identityVerified=false`, `canApply=true`를 확인합니다.
+3. 최신 `formVersion`으로 신청하고 `201`, `emailVerified=true`, `identityVerified=false`를 확인합니다.
+4. 같은 회원과 캠페인으로 다시 조회해 `ALREADY_APPLIED`, `canApply=false`를 확인합니다.
