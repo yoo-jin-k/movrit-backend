@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -58,7 +59,11 @@ public class SecurityConfig {
                                 "/api/collaborations/campaigns/open",
                                 "/api/campaigns/*/application-form"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/collaborations/campaigns/*").permitAll()
+                        // 공개 상세는 숫자 ID만 허용해 /seller 같은 관리 경로가 열리지 않게 합니다.
+                        .requestMatchers(new RegexRequestMatcher(
+                                "^/api/collaborations/campaigns/[0-9]+$",
+                                HttpMethod.GET.name()
+                        )).permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/collaborations/referrals/*/click").permitAll()
                         .anyRequest().authenticated()
                 )
