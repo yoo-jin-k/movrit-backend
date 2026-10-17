@@ -7,6 +7,7 @@ import com.movrit.movrit.campaignapplication.service.CampaignApplicationService;
 import com.movrit.movrit.collaboration.dto.CollaborationDtos;
 import com.movrit.movrit.collaboration.service.CampaignManagementService;
 import com.movrit.movrit.collaboration.service.CollaborationService;
+import com.movrit.movrit.campaignmedia.service.CampaignMediaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class ConfiguredCampaignService {
     private final CampaignManagementService campaignManagementService;
     private final CampaignEligibilityPolicyService eligibilityPolicyService;
     private final CampaignApplicationService campaignApplicationService;
+    private final CampaignMediaService campaignMediaService;
 
     /** 캠페인과 조건을 한 트랜잭션에서 저장해 조건만 누락된 공개 캠페인이 생기지 않게 합니다. */
     @Transactional
@@ -30,7 +32,8 @@ public class ConfiguredCampaignService {
                 memberId, campaign.id(), request.applicationForm());
         CampaignEligibilityDtos.RequirementResponse requirement = request.requirementMode() == ConfiguredCampaignDtos.RequirementMode.SINGLE
                 ? eligibilityPolicyService.save(memberId, campaign.id(), request.requirement()) : null;
-        return new ConfiguredCampaignDtos.CreateResponse(campaign, applicationForm, requirement);
+        var presentation = campaignMediaService.apply(memberId, campaign.id(), request.presentation(), null, true);
+        return new ConfiguredCampaignDtos.CreateResponse(campaign, applicationForm, requirement, presentation);
     }
 
     /** 캠페인 본문과 조건 변경 중 하나라도 실패하면 둘 다 이전 상태로 되돌립니다. */
@@ -39,6 +42,8 @@ public class ConfiguredCampaignService {
             Long memberId, Long campaignId, ConfiguredCampaignDtos.UpdateRequest request
     ) {
         validateMode(request.requirementMode(), request.requirement());
+        campaignMediaService.preflightUpdate(memberId, campaignId, request.presentation(),
+                request.expectedPresentationVersion(), request.applicationForm());
         var campaign = campaignManagementService.update(memberId, campaignId, request.campaign());
         CampaignApplicationDtos.FormResponse applicationForm = request.applicationForm() == null
                 ? campaignApplicationService.getForm(campaignId)
@@ -57,7 +62,10 @@ public class ConfiguredCampaignService {
                     && eligibilityPolicyService.find(campaignId) != null) conflict();
             requirement = eligibilityPolicyService.save(memberId, campaignId, request.requirement());
         }
-        return new ConfiguredCampaignDtos.UpdateResponse(campaign, applicationForm, requirement);
+        var presentation = request.presentation() == null ? campaignMediaService.manage(memberId, campaignId)
+                : campaignMediaService.apply(memberId, campaignId, request.presentation(), request.expectedPresentationVersion(), false);
+        if (request.presentation() != null) campaign = campaignManagementService.getDetail(campaignId);
+        return new ConfiguredCampaignDtos.UpdateResponse(campaign, applicationForm, requirement, presentation);
     }
 
     private void validateMode(ConfiguredCampaignDtos.RequirementMode mode,

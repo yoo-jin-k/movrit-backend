@@ -22,12 +22,12 @@ class CampaignPresentationServiceTest {
     private final CampaignDetailImageRepository detailImages = mock(CampaignDetailImageRepository.class);
     private final ProductService products = mock(ProductService.class);
     private final CampaignImageStorageService files = mock(CampaignImageStorageService.class);
-    private final CampaignPresentationService service = new CampaignPresentationService(campaigns, detailImages, products, files);
+    private final CampaignPresentationService service = new CampaignPresentationService(campaigns, detailImages, products, files, mock(com.movrit.movrit.campaignmedia.repository.CampaignMediaStateRepository.class), mock(com.movrit.movrit.campaignapplication.repository.CampaignApplicationFormRepository.class), mock(com.movrit.movrit.campaignmedia.service.CampaignMediaService.class));
 
     @Test
     void ownerCanSavePublicVisitLocationWithoutPersonalContact() {
         Campaign campaign = campaign();
-        when(campaigns.findById(10L)).thenReturn(Optional.of(campaign));
+        when(campaigns.findByIdForUpdate(10L)).thenReturn(Optional.of(campaign));
 
         CampaignPresentationDtos.Response result = service.saveLocation(1L, 10L,
                 new CampaignPresentationDtos.SaveRequest("모브릿 체험관", "서울특별시 강남구 테헤란로 1"));
@@ -41,7 +41,7 @@ class CampaignPresentationServiceTest {
     void representativeImageUsesCampaignSpecificDirectory() {
         Campaign campaign = campaign();
         var image = new MockMultipartFile("file", "campaign.png", "image/png", new byte[]{1});
-        when(campaigns.findById(10L)).thenReturn(Optional.of(campaign));
+        when(campaigns.findByIdForUpdate(10L)).thenReturn(Optional.of(campaign));
         when(files.storeImage(image, "campaigns/10/representative"))
                 .thenReturn("/uploads/campaigns/10/representative/safe.png");
 
@@ -54,7 +54,7 @@ class CampaignPresentationServiceTest {
     void detailImageIsAddedInDisplayOrder() {
         Campaign campaign = campaign();
         var image = new MockMultipartFile("file", "detail.png", "image/png", new byte[]{1});
-        when(campaigns.findById(10L)).thenReturn(Optional.of(campaign));
+        when(campaigns.findByIdForUpdate(10L)).thenReturn(Optional.of(campaign));
         when(detailImages.countByCampaignId(10L)).thenReturn(2L);
         when(files.storeImage(image, "campaigns/10/detail")).thenReturn("/uploads/detail.png");
 
@@ -67,7 +67,7 @@ class CampaignPresentationServiceTest {
     @Test
     void rejectsLongDescriptionBeforeWritingFileOrDatabase() {
         Campaign campaign = campaign();
-        when(campaigns.findById(10L)).thenReturn(Optional.of(campaign));
+        when(campaigns.findByIdForUpdate(10L)).thenReturn(Optional.of(campaign));
         var file = new MockMultipartFile("file", "detail.png", "image/png", new byte[]{1});
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.uploadDetail(1L, 10L, file, "가".repeat(201)))
                 .isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
@@ -78,7 +78,7 @@ class CampaignPresentationServiceTest {
     @Test
     void acceptsDescriptionAtTwoHundredCharacterBoundary() {
         Campaign campaign = campaign();
-        when(campaigns.findById(10L)).thenReturn(Optional.of(campaign));
+        when(campaigns.findByIdForUpdate(10L)).thenReturn(Optional.of(campaign));
         var file = new MockMultipartFile("file", "detail.png", "image/png", new byte[]{1});
         when(files.storeImage(file, "campaigns/10/detail")).thenReturn("/uploads/detail.png");
         service.uploadDetail(1L, 10L, file, "가".repeat(200));

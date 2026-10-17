@@ -6,6 +6,10 @@ import com.movrit.movrit.collaboration.entity.CampaignDetailImage;
 import com.movrit.movrit.collaboration.repository.CampaignDetailImageRepository;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
 import com.movrit.movrit.product.service.ProductService;
+import com.movrit.movrit.campaignmedia.repository.CampaignMediaStateRepository;
+import com.movrit.movrit.campaignmedia.service.CampaignPublicPolicy;
+import com.movrit.movrit.campaignmedia.service.CampaignMediaService;
+import com.movrit.movrit.campaignapplication.repository.CampaignApplicationFormRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,9 +26,29 @@ public class CampaignPresentationService {
     private final CampaignDetailImageRepository detailImageRepository;
     private final ProductService productService;
     private final CampaignImageStorageService fileStorageService;
+    private final CampaignMediaStateRepository mediaStates;
+    private final CampaignApplicationFormRepository forms;
+    private final CampaignMediaService mediaService;
 
     public CampaignPresentationDtos.Response find(Long campaignId) {
-        return response(get(campaignId));
+        Campaign campaign = get(campaignId);
+        CampaignPublicPolicy.requireVisible(campaign);
+        if (mediaStates.existsById(campaignId)) {
+            var current = mediaService.publicPresentation(campaignId);
+            var details = java.util.stream.IntStream.range(0, current.detailImages().size())
+                    .mapToObj(index -> new CampaignPresentationDtos.DetailImage(null,
+                            current.detailImages().get(index).imageUrl(), index, current.detailImages().get(index).altText()))
+                    .toList();
+            return new CampaignPresentationDtos.Response(campaignId, current.representativeImageUrl(),
+                    details.isEmpty() ? null : details.get(0).imageUrl(), details,
+                    current.visitLocation() == null ? null : current.visitLocation().venueName(),
+                    current.visitLocation() == null ? null : current.visitLocation().address1());
+        }
+        var result = response(campaign);
+        boolean visit = forms.findByCampaignId(campaignId).map(CampaignPublicPolicy::includesVisit).orElse(false);
+        return new CampaignPresentationDtos.Response(result.campaignId(), result.representativeImageUrl(),
+                result.detailImageUrl(), result.detailImages(), visit ? result.visitPlaceName() : null,
+                visit ? result.visitAddress() : null);
     }
 
     @Transactional
@@ -98,8 +122,13 @@ public class CampaignPresentationService {
     }
 
     private Campaign owned(Long memberId, Long campaignId) {
-        Campaign campaign = get(campaignId);
+        Campaign campaign = campaignRepository.findByIdForUpdate(campaignId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "캠페인을 찾을 수 없습니다."));
         productService.getOwnedProduct(memberId, campaign.getPreorder().getProduct().getId());
+        if (mediaStates.existsById(campaignId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "새 이미지 관리 방식으로 전환된 캠페인입니다. 최신 정보를 조회하고 함께 저장해 주세요.");
+        }
         return campaign;
     }
 

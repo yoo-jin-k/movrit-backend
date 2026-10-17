@@ -69,6 +69,11 @@ public class SecurityConfig {
                                 "^/api/campaigns/[0-9]+/presentation$",
                                 HttpMethod.GET.name()
                         )).permitAll()
+                        // 미디어 본문은 서비스에서 공개 캠페인과 현재 자산 연결을 매번 검사합니다.
+                        .requestMatchers(new RegexRequestMatcher(
+                                "^/api/campaign-image-assets/[0-9a-f-]{36}/content$", HttpMethod.GET.name())).permitAll()
+                        .requestMatchers(new RegexRequestMatcher(
+                                "^/api/campaigns/[0-9]+/presentation/public$", HttpMethod.GET.name())).permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/collaborations/referrals/*/click").permitAll()
                         .anyRequest().authenticated()
                 )

@@ -73,7 +73,10 @@ public final class CampaignManagementDtos {
             Long scheduleVersion,
             boolean open
     ) {
-        public static DetailResponse from(Campaign campaign) {
+        public static DetailResponse from(Campaign campaign) { return from(campaign, true); }
+
+        /** 공개 조회에서는 배송 전용 캠페인의 방문 주소·안내를 제외합니다. */
+        public static DetailResponse from(Campaign campaign, boolean includeVisit) {
             return new DetailResponse(
                     campaign.getId(),
                     campaign.getPreorder().getId(),
@@ -91,11 +94,11 @@ public final class CampaignManagementDtos {
                     campaign.getChannelGuide(),
                     campaign.getScheduleGuide(),
                     campaign.getDeliveryGuide(),
-                    campaign.getVisitGuide(),
+                    includeVisit ? campaign.getVisitGuide() : null,
                     campaign.getRepresentativeImageUrl(),
                     campaign.getDetailImageUrl(),
-                    campaign.getVisitPlaceName(),
-                    campaign.getVisitAddress(),
+                    includeVisit ? campaign.getVisitPlaceName() : null,
+                    includeVisit ? campaign.getVisitAddress() : null,
                     campaign.getCaution(),
                     campaign.getSubmissionRequirement(),
                     campaign.getStartAt(),

@@ -1,6 +1,7 @@
 package com.movrit.movrit.collaboration.service;
 
 import com.movrit.movrit.audit.service.AuditLogService;
+import com.movrit.movrit.campaignmedia.service.CampaignPublicPolicy;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationFormRepository;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
 import com.movrit.movrit.collaboration.dto.CampaignManagementDtos;
@@ -24,7 +25,10 @@ public class CampaignManagementService {
     private final AuditLogService auditLogService;
 
     public CampaignManagementDtos.DetailResponse getDetail(Long campaignId) {
-        return CampaignManagementDtos.DetailResponse.from(getCampaign(campaignId));
+        Campaign campaign = getCampaign(campaignId);
+        CampaignPublicPolicy.requireVisible(campaign);
+        boolean visit = formRepository.findByCampaignId(campaignId).map(CampaignPublicPolicy::includesVisit).orElse(false);
+        return CampaignManagementDtos.DetailResponse.from(campaign, visit);
     }
 
     @Transactional
