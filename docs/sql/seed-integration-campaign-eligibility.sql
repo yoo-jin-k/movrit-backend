@@ -30,6 +30,55 @@ ON CONFLICT (member_id, channel_type, metric_type) DO UPDATE SET
     verification_status = EXCLUDED.verification_status,
     updated_at = NOW();
 
+-- 브랜드 소유권과 원자적 작성/수정을 검수하는 격리 판매자 A/B입니다.
+INSERT INTO member (email, password_hash, name, role, status, email_verified_at, created_at, updated_at)
+SELECT fixture.email, source.password_hash, fixture.name, 'USER', 'ACTIVE', NOW(), NOW(), NOW()
+FROM member source
+CROSS JOIN (VALUES
+    ('qa-brand-a-integration@movrit.local', 'QA 브랜드 A'),
+    ('qa-brand-b-integration@movrit.local', 'QA 브랜드 B')
+) AS fixture(email, name)
+WHERE source.email = 'qa-browser-integration@movrit.local'
+ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO seller_profile (
+    member_id, business_name, brand_name, business_number, representative_name,
+    status, created_at, updated_at
+)
+SELECT member.id, fixture.business_name, fixture.brand_name, fixture.business_number,
+       fixture.representative_name, 'APPROVED', NOW(), NOW()
+FROM (VALUES
+    ('qa-brand-a-integration@movrit.local', 'QA 브랜드 A 사업자', 'QA BRAND A', 'QA-ELIGIBILITY-A', 'QA A'),
+    ('qa-brand-b-integration@movrit.local', 'QA 브랜드 B 사업자', 'QA BRAND B', 'QA-ELIGIBILITY-B', 'QA B')
+) AS fixture(email, business_name, brand_name, business_number, representative_name)
+JOIN member ON member.email = fixture.email
+ON CONFLICT (member_id) DO NOTHING;
+
+INSERT INTO brand (seller_id, name, description, status, created_at, updated_at)
+SELECT seller.id, seller.brand_name, '통합 캠페인 조건 검수 전용 브랜드', 'ACTIVE', NOW(), NOW()
+FROM seller_profile seller
+WHERE seller.business_number IN ('QA-ELIGIBILITY-A', 'QA-ELIGIBILITY-B')
+  AND NOT EXISTS (SELECT 1 FROM brand WHERE brand.seller_id = seller.id AND brand.name = seller.brand_name);
+
+INSERT INTO product (brand_id, name, description, category, normal_price, status, created_at, updated_at)
+SELECT brand.id, brand.name || ' 조건 검수 상품', '통합 캠페인 조건 검수 전용 상품',
+       'QA', 10000, 'ACTIVE', NOW(), NOW()
+FROM brand
+WHERE brand.name IN ('QA BRAND A', 'QA BRAND B')
+  AND NOT EXISTS (SELECT 1 FROM product WHERE product.brand_id = brand.id AND product.name = brand.name || ' 조건 검수 상품');
+
+INSERT INTO preorder (
+    product_id, title, description, preorder_price, currency, target_quantity, max_quantity,
+    ordered_quantity, start_at, end_at, status, version, created_at, updated_at,
+    min_order_quantity, max_order_quantity_per_member
+)
+SELECT product.id, '[QA] ' || product.name || ' 프리오더', '원자적 캠페인 작성 검수 전용',
+       9000, 'KRW', 10, 20, 0, NOW() - INTERVAL '1 day', NOW() + INTERVAL '30 days',
+       'OPEN', 0, NOW(), NOW(), 1, 1
+FROM product
+WHERE product.name IN ('QA BRAND A 조건 검수 상품', 'QA BRAND B 조건 검수 상품')
+  AND NOT EXISTS (SELECT 1 FROM preorder WHERE preorder.product_id = product.id);
+
 -- 499/500 경계를 다른 상태와 섞지 않고 HTTP로 확인하는 격리 계정입니다.
 -- 비밀번호 해시는 기존 브라우저 QA 계정의 로컬 자격증명을 재사용하며 평문은 저장하지 않습니다.
 INSERT INTO member (email, password_hash, name, role, status, email_verified_at, created_at, updated_at)

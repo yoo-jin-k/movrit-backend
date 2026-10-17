@@ -57,7 +57,8 @@ public class SecurityConfig {
                                 "/api/preorders/*",
                                 "/api/products/*/variants",
                                 "/api/collaborations/campaigns/open",
-                                "/api/campaigns/*/application-form"
+                                "/api/campaigns/*/application-form",
+                                "/api/campaigns/*/eligibility-requirement"
                         ).permitAll()
                         // 공개 상세는 숫자 ID만 허용해 /seller 같은 관리 경로가 열리지 않게 합니다.
                         .requestMatchers(new RegexRequestMatcher(
