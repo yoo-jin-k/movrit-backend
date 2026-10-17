@@ -24,7 +24,7 @@ java -jar build/libs/movrit-0.0.1-SNAPSHOT.jar --spring.profiles.active=integrat
 
 ## 이메일 기반 캠페인 신청 QA
 
-- 실행 JAR 기능 기준 커밋: `f3aa48a`
+- 실행 JAR 기능 기준 커밋: `8497873`
 - 실행 DB: `movrit_integration`
 - 실행 주소: `http://127.0.0.1:18080`
 - 프론트 개발 Origin은 `http://localhost:5173`, `http://localhost:5174`, `http://127.0.0.1:5173`, `http://127.0.0.1:5174`를 허용합니다. 브라우저 주소와 Origin을 혼용해도 되지만 프론트 프록시 대상은 `18080`으로 통일합니다.
@@ -61,6 +61,19 @@ curl -H "Authorization: Bearer $token" http://127.0.0.1:18080/api/auth/me
 완료된 검수 결과는 캠페인 `10` 기준으로 미인증 시 `EMAIL_VERIFICATION_REQUIRED`, 원래 인증 시각 복원 후 신청 `201`, 응답의 `emailVerified=true`·`identityVerified=false`, 후속 조회의 `ALREADY_APPLIED`·`canApply=false`입니다.
 
 기존 신청과 계정 상태에 의존하지 않는 회귀 검증은 `CampaignApplicationEligibilityTest.unverifiedEmailCannotCreateApplicationWhenOtherConditionsPass`에서 수행합니다. 합성 fixture는 모집기간·크리에이터 승인·팔로워·채널·폼 버전·배송 입력을 모두 충족시키고 이메일만 미인증으로 두며, 신청 서비스가 `409`를 반환하고 저장소에 신청을 기록하지 않는지 확인합니다. 이 테스트는 실서버 QA 및 실제 SMTP 수신 검증과 구분합니다.
+
+### 실서버 이메일 미인증 차단 fixture
+
+- 로그인 이메일: `qa-unverified-integration@movrit.local`
+- 회원 ID: `14`
+- 크리에이터 ID: `9`
+- 비밀번호 파일: `/private/tmp/movrit-unverified-qa-password.txt` (`600`)
+- 로그인 응답 파일: `/private/tmp/movrit-unverified-qa-login.json` (`600`)
+- 검수 대상: 캠페인 `10`, 폼 버전 `1`, `DELIVERY`
+
+이 fixture는 `ACTIVE`, 팔로워 `5000`, 활동 채널 등록 상태이며 `email_verified_at`만 `NULL`입니다. 실제 SMTP나 외부 계정은 사용하지 않았습니다. 검수 전 신청 수는 `0`, eligibility는 `EMAIL_VERIFICATION_REQUIRED`, 유효한 신청 POST는 `409`와 `이메일 소유 확인 후 캠페인에 신청할 수 있습니다.`, 검수 후 신청 수도 `0`으로 확인됐습니다.
+
+독립 재조회 시 eligibility와 캠페인 `10`·크리에이터 `9`의 신청 수만 확인하고 인증 상태를 변경하거나 신청을 생성하지 않습니다. 반복 QA를 위해 기본적으로 보존합니다. 정리할 때는 신청이 계속 `0`인지 확인한 뒤 회원 `14`의 `refresh_token`, 크리에이터 `9`, 회원 `14`의 `member_role`, 회원 `14` 순서로 정확한 ID만 삭제하고 두 `/private/tmp/movrit-unverified-qa-*` 파일을 제거합니다.
 
 ### 브라우저 로그인 fixture
 
