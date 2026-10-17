@@ -17,3 +17,6 @@ CREATE TABLE IF NOT EXISTS email_verification_challenge (
 
 CREATE INDEX IF NOT EXISTS idx_email_verification_member_created
     ON email_verification_challenge(member_id, created_at DESC);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON email_verification_challenge TO movrit_user;
+GRANT USAGE, SELECT ON SEQUENCE email_verification_challenge_id_seq TO movrit_user;
