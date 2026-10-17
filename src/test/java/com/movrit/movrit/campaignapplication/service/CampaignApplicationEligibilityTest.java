@@ -92,6 +92,7 @@ class CampaignApplicationEligibilityTest {
         CampaignEligibilityPolicyService policyService = mock(CampaignEligibilityPolicyService.class);
         MemberChannelMetricService metricService = mock(MemberChannelMetricService.class);
         when(campaignRepository.findById(10L)).thenReturn(Optional.of(campaign));
+        when(campaignRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(campaign));
         when(formRepository.findByCampaignId(10L)).thenReturn(Optional.of(CampaignApplicationForm.builder()
                 .campaign(campaign)
                 .version(3L)
@@ -113,7 +114,8 @@ class CampaignApplicationEligibilityTest {
                 mock(ProductService.class),
                 new ObjectMapper(),
                 mock(NotificationService.class),
-                mock(AuditLogService.class)
+                mock(AuditLogService.class),
+                mock(com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService.class)
         );
         CampaignApplicationDtos.CreateRequest request = new CampaignApplicationDtos.CreateRequest(
                 "신청합니다.",
@@ -173,6 +175,7 @@ class CampaignApplicationEligibilityTest {
         CampaignEligibilityPolicyService policyService = mock(CampaignEligibilityPolicyService.class);
         MemberChannelMetricService metricService = mock(MemberChannelMetricService.class);
         when(campaignRepository.findById(10L)).thenReturn(Optional.of(campaign));
+        when(campaignRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(campaign));
         when(formRepository.findByCampaignId(10L)).thenReturn(Optional.of(CampaignApplicationForm.builder()
                 .campaign(campaign)
                 .version(3L)
@@ -196,7 +199,8 @@ class CampaignApplicationEligibilityTest {
                 mock(ProductService.class),
                 new ObjectMapper(),
                 mock(NotificationService.class),
-                mock(AuditLogService.class)
+                mock(AuditLogService.class),
+                mock(com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService.class)
         );
     }
 

@@ -29,6 +29,7 @@ public class CampaignPresentationService {
     private final CampaignMediaStateRepository mediaStates;
     private final CampaignApplicationFormRepository forms;
     private final CampaignMediaService mediaService;
+    private final com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService visitEvidence;
 
     public CampaignPresentationDtos.Response find(Long campaignId) {
         Campaign campaign = get(campaignId);
@@ -56,7 +57,10 @@ public class CampaignPresentationService {
             Long memberId, Long campaignId, CampaignPresentationDtos.SaveRequest request
     ) {
         Campaign campaign = owned(memberId, campaignId);
-        campaign.updatePresentation(normalize(request.visitPlaceName()), normalize(request.visitAddress()));
+        String nextPlace = normalize(request.visitPlaceName());
+        String nextAddress = normalize(request.visitAddress());
+        visitEvidence.recordLegacyChange(memberId, campaign, nextPlace, nextAddress);
+        campaign.updatePresentation(nextPlace, nextAddress);
         return response(campaign);
     }
 

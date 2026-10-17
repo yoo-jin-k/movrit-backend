@@ -55,6 +55,7 @@ public class CampaignApplicationService {
     private final ObjectMapper objectMapper;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
+    private final com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService visitEvidence;
 
     @Transactional
     public CampaignApplicationDtos.FormResponse saveForm(
@@ -145,6 +146,9 @@ public class CampaignApplicationService {
             Long campaignId,
             CampaignApplicationDtos.CreateRequest request
     ) {
+        // 주소 변경과 신청 증빙 저장은 같은 캠페인 잠금으로 순서를 보장합니다.
+        campaignRepository.findByIdForUpdate(campaignId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "캠페인을 찾을 수 없습니다."));
         Campaign campaign = getOpenCampaign(campaignId);
         CampaignApplicationForm form = getFormEntity(campaignId);
         Member member = memberService.getMember(memberId);
@@ -188,6 +192,7 @@ public class CampaignApplicationService {
                 .build();
         try {
             CampaignApplication saved = applicationRepository.saveAndFlush(application);
+            visitEvidence.capture(saved);
             Long sellerMemberId = campaign.getPreorder().getProduct().getBrand().getSeller().getMember().getId();
             notificationService.send(sellerMemberId, "CAMPAIGN_APPLICATION", "새 캠페인 신청이 접수되었습니다.",
                     creator.getNickname() + "님이 캠페인에 신청하셨습니다.", "CAMPAIGN_APPLICATION", saved.getId());

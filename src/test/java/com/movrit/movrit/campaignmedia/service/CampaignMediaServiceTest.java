@@ -36,7 +36,7 @@ class CampaignMediaServiceTest {
     private final CampaignApplicationRepository applications = mock(CampaignApplicationRepository.class);
     private final CampaignPrivateImageStorage storage = mock(CampaignPrivateImageStorage.class);
     private final CampaignMediaService service = new CampaignMediaService(assets, states, campaigns, products,
-            sellers, forms, applications, storage, new ObjectMapper());
+            sellers, forms, applications, storage, new ObjectMapper(), mock(CampaignVisitEvidenceService.class));
     @TempDir Path folder;
 
     @Test void anotherOwnerCannotPreviewOrResolvePrivatePath() {

@@ -11,6 +11,7 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
     boolean existsByCampaignIdAndCreatorMemberId(Long campaignId, Long memberId);
 
     boolean existsByCampaignId(Long campaignId);
+    List<CampaignApplication> findAllByCampaignId(Long campaignId);
 
     Optional<CampaignApplication> findByIdAndCreatorMemberId(Long id, Long memberId);
     List<CampaignApplication> findAllByCreatorMemberIdOrderByIdDesc(Long memberId);

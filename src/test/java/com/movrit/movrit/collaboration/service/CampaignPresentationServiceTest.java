@@ -22,7 +22,7 @@ class CampaignPresentationServiceTest {
     private final CampaignDetailImageRepository detailImages = mock(CampaignDetailImageRepository.class);
     private final ProductService products = mock(ProductService.class);
     private final CampaignImageStorageService files = mock(CampaignImageStorageService.class);
-    private final CampaignPresentationService service = new CampaignPresentationService(campaigns, detailImages, products, files, mock(com.movrit.movrit.campaignmedia.repository.CampaignMediaStateRepository.class), mock(com.movrit.movrit.campaignapplication.repository.CampaignApplicationFormRepository.class), mock(com.movrit.movrit.campaignmedia.service.CampaignMediaService.class));
+    private final CampaignPresentationService service = new CampaignPresentationService(campaigns, detailImages, products, files, mock(com.movrit.movrit.campaignmedia.repository.CampaignMediaStateRepository.class), mock(com.movrit.movrit.campaignapplication.repository.CampaignApplicationFormRepository.class), mock(com.movrit.movrit.campaignmedia.service.CampaignMediaService.class), mock(com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService.class));
 
     @Test
     void ownerCanSavePublicVisitLocationWithoutPersonalContact() {

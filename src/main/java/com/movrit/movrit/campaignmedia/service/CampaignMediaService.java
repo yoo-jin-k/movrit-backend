@@ -36,6 +36,7 @@ public class CampaignMediaService {
     private final CampaignApplicationRepository applications;
     private final CampaignPrivateImageStorage storage;
     private final ObjectMapper json;
+    private final CampaignVisitEvidenceService visitEvidence;
 
     @Transactional
     public AssetResponse upload(Long memberId, MultipartFile file) {
@@ -136,6 +137,7 @@ public class CampaignMediaService {
         CampaignMediaState state = current == null ? CampaignMediaState.builder().campaignId(campaignId)
                 .version(0).legacyRepresentativeUrl(campaign.getRepresentativeImageUrl())
                 .legacyDetailUrl(campaign.getDetailImageUrl()).build() : current;
+        String previousLocation = state.getVisitLocationJson();
         state.replace(normalized.representativeAssetId(), json.writeValueAsString(normalized.detailImages()),
                 normalized.visitLocation() == null ? null : json.writeValueAsString(normalized.visitLocation()));
         assets.flush();
@@ -144,6 +146,8 @@ public class CampaignMediaService {
         campaign.updateRepresentativeImage(state.getRepresentativeAssetId() == null
                 ? state.getLegacyRepresentativeUrl() : publicPath(state.getRepresentativeAssetId()));
         campaign.updateDetailImage(normalized.detailImages().isEmpty() ? null : publicPath(normalized.detailImages().get(0).assetId()));
+        if (!creating) visitEvidence.recordChange(memberId, campaign, previousLocation,
+                state.getVisitLocationJson(), state.getVersion());
         Location location = normalized.visitLocation();
         // 레거시 자유 주소는 이미지 단독 변경이나 배송 전환 때문에 삭제하지 않습니다.
         // 배송 전용 공개 응답은 별도 정책으로 숨기고 소유자 이력은 보존합니다.
