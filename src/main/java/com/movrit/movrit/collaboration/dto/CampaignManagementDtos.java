@@ -27,7 +27,13 @@ public final class CampaignManagementDtos {
             @Size(max = 5000) String caution,
             @Size(max = 5000) String submissionRequirement,
             @NotNull LocalDateTime startAt,
-            @NotNull LocalDateTime endAt
+            @NotNull LocalDateTime endAt,
+            LocalDateTime selectionAnnouncedAt,
+            LocalDateTime experienceStartAt,
+            LocalDateTime experienceEndAt,
+            LocalDateTime contentSubmissionStartAt,
+            LocalDateTime contentSubmissionEndAt,
+            LocalDateTime resultsAnnouncedAt
     ) {
     }
 
@@ -53,6 +59,13 @@ public final class CampaignManagementDtos {
             String submissionRequirement,
             LocalDateTime startAt,
             LocalDateTime endAt,
+            LocalDateTime selectionAnnouncedAt,
+            LocalDateTime experienceStartAt,
+            LocalDateTime experienceEndAt,
+            LocalDateTime contentSubmissionStartAt,
+            LocalDateTime contentSubmissionEndAt,
+            LocalDateTime resultsAnnouncedAt,
+            Long scheduleVersion,
             boolean open
     ) {
         public static DetailResponse from(Campaign campaign) {
@@ -78,6 +91,13 @@ public final class CampaignManagementDtos {
                     campaign.getSubmissionRequirement(),
                     campaign.getStartAt(),
                     campaign.getEndAt(),
+                    campaign.getSelectionAnnouncedAt(),
+                    campaign.getExperienceStartAt(),
+                    campaign.getExperienceEndAt(),
+                    campaign.getContentSubmissionStartAt(),
+                    campaign.getContentSubmissionEndAt(),
+                    campaign.getResultsAnnouncedAt(),
+                    campaign.getScheduleVersion(),
                     campaign.isOpen()
             );
         }

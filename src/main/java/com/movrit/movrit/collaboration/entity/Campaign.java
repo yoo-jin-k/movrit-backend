@@ -79,6 +79,28 @@ public class Campaign extends BaseEntity {
     @Column(name = "end_at", nullable = false)
     private LocalDateTime endAt;
 
+    @Column(name = "selection_announced_at")
+    private LocalDateTime selectionAnnouncedAt;
+
+    @Column(name = "experience_start_at")
+    private LocalDateTime experienceStartAt;
+
+    @Column(name = "experience_end_at")
+    private LocalDateTime experienceEndAt;
+
+    @Column(name = "content_submission_start_at")
+    private LocalDateTime contentSubmissionStartAt;
+
+    @Column(name = "content_submission_end_at")
+    private LocalDateTime contentSubmissionEndAt;
+
+    @Column(name = "results_announced_at")
+    private LocalDateTime resultsAnnouncedAt;
+
+    @Builder.Default
+    @Column(name = "schedule_version", nullable = false)
+    private Long scheduleVersion = 1L;
+
     @Column(nullable = false)
     private boolean open;
 
@@ -98,11 +120,16 @@ public class Campaign extends BaseEntity {
             String caution,
             String submissionRequirement,
             LocalDateTime startAt,
-            LocalDateTime endAt
+            LocalDateTime endAt,
+            LocalDateTime selectionAnnouncedAt,
+            LocalDateTime experienceStartAt,
+            LocalDateTime experienceEndAt,
+            LocalDateTime contentSubmissionStartAt,
+            LocalDateTime contentSubmissionEndAt,
+            LocalDateTime resultsAnnouncedAt
     ) {
-        if (!startAt.isBefore(endAt)) {
-            throw new IllegalArgumentException("모집 종료일은 시작일보다 뒤여야 합니다.");
-        }
+        validateSchedule(startAt, endAt, selectionAnnouncedAt, experienceStartAt, experienceEndAt,
+                contentSubmissionStartAt, contentSubmissionEndAt, resultsAnnouncedAt);
         this.title = title;
         this.description = description;
         this.category = category;
@@ -118,9 +145,46 @@ public class Campaign extends BaseEntity {
         this.submissionRequirement = submissionRequirement;
         this.startAt = startAt;
         this.endAt = endAt;
+        this.selectionAnnouncedAt = selectionAnnouncedAt;
+        this.experienceStartAt = experienceStartAt;
+        this.experienceEndAt = experienceEndAt;
+        this.contentSubmissionStartAt = contentSubmissionStartAt;
+        this.contentSubmissionEndAt = contentSubmissionEndAt;
+        this.resultsAnnouncedAt = resultsAnnouncedAt;
+        this.scheduleVersion = scheduleVersion == null ? 1L : scheduleVersion + 1L;
     }
 
     public void close() {
         open = false;
+    }
+
+    private void validateSchedule(
+            LocalDateTime recruitmentStartAt,
+            LocalDateTime recruitmentEndAt,
+            LocalDateTime selectionAt,
+            LocalDateTime experienceStart,
+            LocalDateTime experienceEnd,
+            LocalDateTime submissionStart,
+            LocalDateTime submissionEnd,
+            LocalDateTime resultsAt
+    ) {
+        if (!recruitmentStartAt.isBefore(recruitmentEndAt)) {
+            throw new IllegalArgumentException("모집 종료일은 시작일보다 뒤여야 합니다.");
+        }
+        if (selectionAt != null && selectionAt.isBefore(recruitmentEndAt)) {
+            throw new IllegalArgumentException("선정 발표일은 모집 종료일보다 빠를 수 없습니다.");
+        }
+        if (experienceStart != null && selectionAt != null && experienceStart.isBefore(selectionAt)) {
+            throw new IllegalArgumentException("체험 시작일은 선정 발표일보다 빠를 수 없습니다.");
+        }
+        if (experienceStart != null && experienceEnd != null && !experienceStart.isBefore(experienceEnd)) {
+            throw new IllegalArgumentException("체험 종료일은 체험 시작일보다 뒤여야 합니다.");
+        }
+        if (submissionStart != null && submissionEnd != null && !submissionStart.isBefore(submissionEnd)) {
+            throw new IllegalArgumentException("콘텐츠 등록 종료일은 시작일보다 뒤여야 합니다.");
+        }
+        if (resultsAt != null && submissionEnd != null && resultsAt.isBefore(submissionEnd)) {
+            throw new IllegalArgumentException("결과 발표일은 콘텐츠 등록 종료일보다 빠를 수 없습니다.");
+        }
     }
 }

@@ -50,7 +50,13 @@ public class CampaignManagementService {
                     normalize(request.caution()),
                     normalize(request.submissionRequirement()),
                     request.startAt(),
-                    request.endAt()
+                    request.endAt(),
+                    request.selectionAnnouncedAt(),
+                    request.experienceStartAt(),
+                    request.experienceEndAt(),
+                    request.contentSubmissionStartAt(),
+                    request.contentSubmissionEndAt(),
+                    request.resultsAnnouncedAt()
             );
         } catch (IllegalArgumentException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());

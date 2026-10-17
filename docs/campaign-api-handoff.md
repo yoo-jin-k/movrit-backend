@@ -7,10 +7,12 @@
 | 기능 | Method / URL | 주요 응답 |
 |---|---|---|
 | 모집 중 목록 | `GET /api/collaborations/campaigns/open` | `id`, `preorderId`, `preorderTitle`, `brandName`, `title`, `description`, `category`, `minFollowerCount`, `recruitmentCount`, `rewardDescription`, `startAt`, `endAt`, `open` |
-| 캠페인 상세 | `GET /api/collaborations/campaigns/{campaignId}` | 목록 필드와 `productId`, `productName`, `mission`, `channelGuide`, `scheduleGuide`, `deliveryGuide`, `visitGuide`, `caution`, `submissionRequirement` |
+| 캠페인 상세 | `GET /api/collaborations/campaigns/{campaignId}` | 목록 필드와 `productId`, `productName`, `mission`, `channelGuide`, `scheduleGuide`, `deliveryGuide`, `visitGuide`, `caution`, `submissionRequirement`, 단계별 일정과 `scheduleVersion` |
 | 신청 폼 | `GET /api/campaigns/{campaignId}/application-form` | `campaignId`, `version`, `allowedFulfillmentTypes`, `questions`, `agreements` |
 
 `allowedFulfillmentTypes`는 `DELIVERY`, `VISIT` 중 하나 이상입니다. 질문은 `id`, `label`, `required`, `type`, `options`, `maxLength`, 동의 문서는 `id`, `title`, `version`, `required`, `body`를 가집니다.
+
+상세 일정은 모집 `startAt/endAt`, `selectionAnnouncedAt`, 체험 `experienceStartAt/experienceEndAt`, 콘텐츠 등록 `contentSubmissionStartAt/contentSubmissionEndAt`, `resultsAnnouncedAt`을 각각 제공합니다. 정의되지 않은 단계는 `null`이며 다른 기간에서 추정하지 않습니다. 기간의 `endAt`은 API 판정에서 제외 경계로 사용하므로, 자정 값은 달력에서 직전 날짜까지 포함되는 것으로 표시합니다. 모든 값은 `Asia/Seoul` 현지 시각의 오프셋 없는 `LocalDateTime`입니다.
 
 ## 크리에이터 신청과 진행
 
