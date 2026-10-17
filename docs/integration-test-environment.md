@@ -58,3 +58,5 @@ curl -H "Authorization: Bearer $token" http://127.0.0.1:18080/api/auth/me
 주요 확인 순서는 다음과 같습니다.
 
 완료된 검수 결과는 캠페인 `10` 기준으로 미인증 시 `EMAIL_VERIFICATION_REQUIRED`, 원래 인증 시각 복원 후 신청 `201`, 응답의 `emailVerified=true`·`identityVerified=false`, 후속 조회의 `ALREADY_APPLIED`·`canApply=false`입니다.
+
+기존 신청과 계정 상태에 의존하지 않는 회귀 검증은 `CampaignApplicationEligibilityTest.unverifiedEmailCannotCreateApplicationWhenOtherConditionsPass`에서 수행합니다. 합성 fixture는 모집기간·크리에이터 승인·팔로워·채널·폼 버전·배송 입력을 모두 충족시키고 이메일만 미인증으로 두며, 신청 서비스가 `409`를 반환하고 저장소에 신청을 기록하지 않는지 확인합니다. 이 테스트는 실서버 QA 및 실제 SMTP 수신 검증과 구분합니다.
