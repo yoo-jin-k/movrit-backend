@@ -71,7 +71,7 @@
 
 운영자는 `GET /api/admin/campaign-contents`로 전체 제출물을 조회합니다. 최종 수정 요청은 `PATCH /api/admin/campaign-contents/{submissionId}/request-revision`, 최종 승인은 `PATCH /api/admin/campaign-contents/{submissionId}/approve`입니다. 두 변경 API의 본문은 각각 판매자 API와 같은 `comment` 형식을 사용합니다.
 
-상세 수정 본문은 상세 응답의 편집 필드 가운데 `title`, `minFollowerCount`, `recruitmentCount`, `startAt`, `endAt`이 필수입니다. 신청 이력이 있는 캠페인은 삭제 대신 모집 종료를 사용합니다.
+상세 수정 본문은 상세 응답의 편집 필드 가운데 `title`, `minFollowerCount`, `recruitmentCount`, `expectedScheduleVersion`, `startAt`, `endAt`이 필수입니다. `expectedScheduleVersion`에는 상세 응답의 `scheduleVersion`을 보내며, 이미 일정이 변경된 경우 서버가 `400`으로 덮어쓰기를 막습니다. 신청 이력이 있는 캠페인은 삭제 대신 모집 종료를 사용합니다.
 
 ## 공통 운영 API
 

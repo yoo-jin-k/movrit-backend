@@ -17,7 +17,7 @@ class CampaignTest {
 
         campaign.update("가을 신상품 체험단", "상세 소개", "뷰티", 1000L, 10,
                 "제품 제공", "사진 5장", "인스타그램", "선정 후 7일 이내",
-                "택배 발송", null, "과장 표현 금지", "게시물 URL 제출", startAt, endAt,
+                "택배 발송", null, "과장 표현 금지", "게시물 URL 제출", 1L, startAt, endAt,
                 null, null, null, null, null, null);
 
         assertThat(campaign.getMission()).isEqualTo("사진 5장");
@@ -31,7 +31,7 @@ class CampaignTest {
         LocalDateTime startAt = LocalDateTime.now().plusDays(7);
 
         assertThatThrownBy(() -> campaign.update("캠페인", null, null, 0L, 1,
-                null, null, null, null, null, null, null, null, startAt, startAt.minusDays(1),
+                null, null, null, null, null, null, null, null, 1L, startAt, startAt.minusDays(1),
                 null, null, null, null, null, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("모집 종료일은 시작일보다 뒤여야 합니다.");
@@ -49,7 +49,7 @@ class CampaignTest {
         LocalDateTime submissionEnd = LocalDateTime.of(2026, 11, 3, 0, 0);
 
         campaign.update("캠페인", null, null, 0L, 1,
-                null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, 1L,
                 recruitmentStart, recruitmentEnd, selectionAt, experienceStart, experienceEnd,
                 submissionStart, submissionEnd, null);
 

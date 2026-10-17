@@ -119,6 +119,7 @@ public class Campaign extends BaseEntity {
             String visitGuide,
             String caution,
             String submissionRequirement,
+            Long expectedScheduleVersion,
             LocalDateTime startAt,
             LocalDateTime endAt,
             LocalDateTime selectionAnnouncedAt,
@@ -128,6 +129,9 @@ public class Campaign extends BaseEntity {
             LocalDateTime contentSubmissionEndAt,
             LocalDateTime resultsAnnouncedAt
     ) {
+        if (scheduleVersion == null || !scheduleVersion.equals(expectedScheduleVersion)) {
+            throw new IllegalArgumentException("캠페인 일정이 변경되었습니다. 최신 일정을 다시 확인해 주세요.");
+        }
         validateSchedule(startAt, endAt, selectionAnnouncedAt, experienceStartAt, experienceEndAt,
                 contentSubmissionStartAt, contentSubmissionEndAt, resultsAnnouncedAt);
         this.title = title;
@@ -151,7 +155,7 @@ public class Campaign extends BaseEntity {
         this.contentSubmissionStartAt = contentSubmissionStartAt;
         this.contentSubmissionEndAt = contentSubmissionEndAt;
         this.resultsAnnouncedAt = resultsAnnouncedAt;
-        this.scheduleVersion = scheduleVersion == null ? 1L : scheduleVersion + 1L;
+        this.scheduleVersion += 1L;
     }
 
     public void close() {

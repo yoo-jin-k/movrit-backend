@@ -26,6 +26,7 @@ public final class CampaignManagementDtos {
             @Size(max = 5000) String visitGuide,
             @Size(max = 5000) String caution,
             @Size(max = 5000) String submissionRequirement,
+            @NotNull Long expectedScheduleVersion,
             @NotNull LocalDateTime startAt,
             @NotNull LocalDateTime endAt,
             LocalDateTime selectionAnnouncedAt,

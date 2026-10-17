@@ -49,6 +49,7 @@ public class CampaignManagementService {
                     normalize(request.visitGuide()),
                     normalize(request.caution()),
                     normalize(request.submissionRequirement()),
+                    request.expectedScheduleVersion(),
                     request.startAt(),
                     request.endAt(),
                     request.selectionAnnouncedAt(),
