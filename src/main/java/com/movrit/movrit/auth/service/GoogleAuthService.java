@@ -42,6 +42,7 @@ public class GoogleAuthService {
     }
 
     public String getLoginUrl(String state) {
+        requireConfigured();
         String url = "https://accounts.google.com/o/oauth2/v2/auth"
                 + "?client_id=" + clientId
                 + "&redirect_uri=" + redirectUri
@@ -52,6 +53,7 @@ public class GoogleAuthService {
     }
 
     public String getAccessToken(String code) {
+        requireConfigured();
         RestTemplate restTemplate = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
@@ -73,6 +75,19 @@ public class GoogleAuthService {
         );
 
         return (String) response.getBody().get("access_token");
+    }
+
+    /** 검수용 더미 값으로 외부 Google 인증 화면을 열지 않습니다. */
+    private void requireConfigured() {
+        if (clientId == null || clientId.isBlank()
+                || clientSecret == null || clientSecret.isBlank()
+                || "integration-test".equals(clientId)
+                || "integration-test".equals(clientSecret)) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "구글 로그인 설정이 아직 구성되지 않았습니다."
+            );
+        }
     }
 
     public GoogleUserInfo getUserInfo(String accessToken) {

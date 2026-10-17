@@ -10,6 +10,8 @@
 
 실행에 필요한 OAuth 값은 외부 로그인을 호출하지 않는 통합 검수용 더미 값을 사용하고, JWT 비밀값은 로컬 환경변수로만 전달합니다.
 
+통합 프로필의 Google OAuth 값은 실제 자격증명이 아니라 더미이므로 로그인 URL 요청은 `503 SERVICE_UNAVAILABLE`과 `구글 로그인 설정이 아직 구성되지 않았습니다.`를 반환합니다. 실제 Google 로그인을 검수하려면 기존 Google Cloud OAuth 클라이언트의 client ID·secret을 로컬 환경변수로 제공하고, 승인된 리디렉션 URI에 `http://localhost:18080/api/auth/google/callback`을 등록해야 합니다. 비밀값은 문서나 Git에 저장하지 않습니다.
+
 ```shell
 java -jar build/libs/movrit-0.0.1-SNAPSHOT.jar --spring.profiles.active=integration
 ```
