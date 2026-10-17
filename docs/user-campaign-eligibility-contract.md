@@ -33,6 +33,14 @@
 
 1차 구현에서 캠페인은 구조화된 신청 조건을 없거나 하나만 가집니다. 복수 조건의 AND/OR 방식은 정책 확정 전까지 제공하지 않습니다.
 
+판매자 API:
+
+| 기능 | Method / URL | 설명 |
+|---|---|---|
+| 조건 조회 | `GET /api/campaigns/{campaignId}/eligibility-requirement` | 조건이 없으면 `null` 반환 |
+| 조건 저장 | `PUT /api/campaigns/{campaignId}/eligibility-requirement` | 캠페인 소유 판매자만 생성·수정 |
+| 조건 삭제 | `DELETE /api/campaigns/{campaignId}/eligibility-requirement` | 조건 없는 캠페인으로 전환 |
+
 - 조건이 없으면 채널 프로필이나 지표 없이 신청할 수 있습니다.
 - 지표 조건은 `channelType`, `metricType`, `minimumValue`, 선택적 `measurementPeriod`로 구성합니다.
 - 조건이 있는데 대응 지표가 없으면 `CHANNEL_METRIC_REQUIRED`입니다.
@@ -51,7 +59,7 @@
 `GET /api/campaigns/{campaignId}/eligibility`는 로그인 회원을 기준으로 다음을 반환합니다.
 
 - 기존 필드: `campaignId`, `formVersion`, `emailVerified`, `identityVerified`, `alreadyApplied`, `canApply`, `blockingReasons`
-- 추가 필드: `channelProfileExists`, `campaignRequirements`, `metricEvaluations`
+- 추가 필드: `channelProfileExists`, `campaignRequirement`, `metricEvaluation`
 
 서버는 신청 POST에서도 동일 조건을 다시 검증합니다. 로그인, 이메일 인증, 모집기간, 중복 신청, 폼 버전, 질문·동의·배송 검증은 유지합니다. 별도 크리에이터 승인 상태는 공통 신청 조건에서 제거합니다.
 

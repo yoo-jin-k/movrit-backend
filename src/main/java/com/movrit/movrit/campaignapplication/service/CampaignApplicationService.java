@@ -10,11 +10,15 @@ import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
 import com.movrit.movrit.campaignapplication.entity.FulfillmentType;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationFormRepository;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
+import com.movrit.movrit.campaigneligibility.service.CampaignEligibilityPolicyService;
+import com.movrit.movrit.campaigneligibility.service.MemberChannelMetricService;
 import com.movrit.movrit.audit.service.AuditLogService;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
 import com.movrit.movrit.creator.entity.Creator;
 import com.movrit.movrit.creator.service.CreatorService;
+import com.movrit.movrit.member.entity.Member;
+import com.movrit.movrit.member.service.MemberService;
 import com.movrit.movrit.product.service.ProductService;
 import com.movrit.movrit.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +46,9 @@ public class CampaignApplicationService {
     private final CampaignApplicationFormRepository formRepository;
     private final CampaignApplicationRepository applicationRepository;
     private final CreatorService creatorService;
+    private final MemberService memberService;
+    private final CampaignEligibilityPolicyService eligibilityPolicyService;
+    private final MemberChannelMetricService memberChannelMetricService;
     private final ProductService productService;
     private final ObjectMapper objectMapper;
     private final NotificationService notificationService;
@@ -82,19 +89,24 @@ public class CampaignApplicationService {
     public CampaignApplicationDtos.EligibilityResponse getEligibility(Long memberId, Long campaignId) {
         Campaign campaign = getCampaign(campaignId);
         CampaignApplicationForm form = getFormEntity(campaignId);
-        Creator creator = creatorService.getByMember(memberId);
-        List<String> reasons = eligibilityReasons(creator, campaign);
-        boolean alreadyApplied = applicationRepository.existsByCampaignIdAndCreatorId(campaignId, creator.getId());
+        Member member = memberService.getMember(memberId);
+        Creator creator = creatorService.findOptionalByMember(memberId).orElse(null);
+        CampaignEligibilityPolicyService.Evaluation evaluation = eligibilityPolicyService.evaluate(memberId, campaignId);
+        List<String> reasons = campaignEligibilityReasons(member, campaign, evaluation);
+        boolean alreadyApplied = applicationRepository.existsByCampaignIdAndCreatorMemberId(campaignId, memberId);
         if (alreadyApplied) {
             reasons.add("ALREADY_APPLIED");
         }
         return new CampaignApplicationDtos.EligibilityResponse(
                 campaignId,
                 form.getVersion(),
-                "EMAIL_TEMPORARY",
-                creator.getMember().isEmailVerified(),
+                "EMAIL_AND_CAMPAIGN_REQUIREMENT",
+                member.isEmailVerified(),
                 false,
-                hasChannel(creator),
+                creator != null && hasChannel(creator),
+                memberChannelMetricService.findMine(memberId).profileExists(),
+                evaluation.requirement(),
+                evaluation.metricEvaluation(),
                 alreadyApplied,
                 reasons.isEmpty(),
                 List.copyOf(reasons)
@@ -109,18 +121,18 @@ public class CampaignApplicationService {
     ) {
         Campaign campaign = getOpenCampaign(campaignId);
         CampaignApplicationForm form = getFormEntity(campaignId);
-        Creator creator = creatorService.getByMember(memberId);
+        Member member = memberService.getMember(memberId);
 
         if (!form.getVersion().equals(request.expectedFormVersion())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "신청 조건이 변경되었습니다. 최신 신청서를 다시 확인해 주세요.");
         }
-        validateCreatorEligibility(creator, campaign);
-        if (applicationRepository.existsByCampaignIdAndCreatorId(campaignId, creator.getId())) {
+        validateEligibility(member, campaign);
+        if (applicationRepository.existsByCampaignIdAndCreatorMemberId(campaignId, memberId)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 이 캠페인에 신청하셨습니다.");
         }
         validateApplication(form, request);
-        validateConfiguredEvidence(creator);
+        Creator creator = creatorService.getOrCreateCandidate(memberId);
 
         CampaignApplication application = CampaignApplication.builder()
                 .campaign(campaign)
@@ -139,7 +151,7 @@ public class CampaignApplicationService {
                 // 본인 인증 공급자가 정해지기 전에는 인증 완료로 간주하지 않습니다.
                 .identityVerificationConfigured(false)
                 .identityVerified(false)
-                .emailVerified(creator.getMember().isEmailVerified())
+                .emailVerified(member.isEmailVerified())
                 .channelReady(hasChannel(creator))
                 .submittedAt(LocalDateTime.now())
                 .build();
@@ -260,44 +272,36 @@ public class CampaignApplicationService {
         }
     }
 
-    private void validateCreatorEligibility(Creator creator, Campaign campaign) {
-        if (!"ACTIVE".equals(creator.getStatus()) && !"APPROVED".equals(creator.getStatus())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "승인된 크리에이터만 캠페인에 신청할 수 있습니다.");
-        }
-        if (creator.getFollowerCount() < campaign.getMinFollowerCount()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "캠페인의 최소 팔로워 조건을 충족하지 못했습니다.");
-        }
-    }
-
-    /** 클라이언트 표시값이 아니라 서버에 연결된 인증 증거만 신청 자격으로 인정합니다. */
-    private void validateConfiguredEvidence(Creator creator) {
-        if (!hasChannel(creator)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "활동 채널 정보를 먼저 등록해 주세요.");
-        }
-        if (!creator.getMember().isEmailVerified()) {
+    private void validateEligibility(Member member, Campaign campaign) {
+        if (!member.isEmailVerified()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "이메일 소유 확인 후 캠페인에 신청할 수 있습니다.");
         }
+        String reason = eligibilityPolicyService.evaluate(member.getId(), campaign.getId()).blockingReason();
+        if (reason == null) return;
+        String message = switch (reason) {
+            case "CHANNEL_METRIC_REQUIRED" -> "캠페인 신청에 필요한 채널 지표를 먼저 등록해 주세요.";
+            case "CHANNEL_METRIC_UNVERIFIED" -> "캠페인 신청에 필요한 채널 지표가 아직 확인되지 않았습니다.";
+            case "CHANNEL_METRIC_BELOW_MINIMUM" -> "캠페인의 채널 지표 조건을 충족하지 못했습니다.";
+            default -> "캠페인 신청 조건을 확인해 주세요.";
+        };
+        throw new ResponseStatusException(HttpStatus.CONFLICT, message);
     }
 
-    private List<String> eligibilityReasons(Creator creator, Campaign campaign) {
+    private List<String> campaignEligibilityReasons(
+            Member member,
+            Campaign campaign,
+            CampaignEligibilityPolicyService.Evaluation evaluation
+    ) {
         List<String> reasons = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
         if (!campaign.isOpen() || now.isBefore(campaign.getStartAt()) || !now.isBefore(campaign.getEndAt())) {
             reasons.add("CAMPAIGN_NOT_OPEN");
         }
-        if (!"ACTIVE".equals(creator.getStatus()) && !"APPROVED".equals(creator.getStatus())) {
-            reasons.add("CREATOR_NOT_APPROVED");
-        }
-        if (creator.getFollowerCount() < campaign.getMinFollowerCount()) {
-            reasons.add("FOLLOWER_REQUIREMENT_NOT_MET");
-        }
-        if (!hasChannel(creator)) {
-            reasons.add("CHANNEL_REQUIRED");
-        }
-        if (!creator.getMember().isEmailVerified()) {
+        if (!member.isEmailVerified()) {
             reasons.add("EMAIL_VERIFICATION_REQUIRED");
         }
+        if (evaluation.blockingReason() != null) reasons.add(evaluation.blockingReason());
         return reasons;
     }
 

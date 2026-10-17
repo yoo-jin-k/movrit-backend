@@ -1,5 +1,6 @@
 package com.movrit.movrit.campaignapplication.dto;
 
+import com.movrit.movrit.campaigneligibility.dto.CampaignEligibilityDtos;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
 import com.movrit.movrit.campaignapplication.entity.FulfillmentType;
 import jakarta.validation.Valid;
@@ -90,6 +91,9 @@ public final class CampaignApplicationDtos {
             boolean emailVerified,
             boolean identityVerified,
             boolean channelReady,
+            boolean channelProfileExists,
+            CampaignEligibilityDtos.RequirementResponse campaignRequirement,
+            CampaignEligibilityDtos.MetricEvaluation metricEvaluation,
             boolean alreadyApplied,
             boolean canApply,
             List<String> blockingReasons

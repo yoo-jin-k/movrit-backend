@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface CampaignApplicationRepository extends JpaRepository<CampaignApplication, Long> {
     boolean existsByCampaignIdAndCreatorId(Long campaignId, Long creatorId);
+    boolean existsByCampaignIdAndCreatorMemberId(Long campaignId, Long memberId);
 
     boolean existsByCampaignId(Long campaignId);
 

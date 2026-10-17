@@ -5,11 +5,15 @@ import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplicationForm;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationFormRepository;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
+import com.movrit.movrit.campaigneligibility.dto.CampaignEligibilityDtos;
+import com.movrit.movrit.campaigneligibility.service.CampaignEligibilityPolicyService;
+import com.movrit.movrit.campaigneligibility.service.MemberChannelMetricService;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
 import com.movrit.movrit.creator.entity.Creator;
 import com.movrit.movrit.creator.service.CreatorService;
 import com.movrit.movrit.member.entity.Member;
+import com.movrit.movrit.member.service.MemberService;
 import com.movrit.movrit.notification.service.NotificationService;
 import com.movrit.movrit.product.service.ProductService;
 import org.junit.jupiter.api.Test;
@@ -34,25 +38,37 @@ class CampaignApplicationEligibilityTest {
 
     @Test
     void verifiedEmailAllowsApplicationWithoutClaimingIdentityVerification() {
-        Member member = Member.builder().emailVerifiedAt(LocalDateTime.now()).build();
+        Member member = Member.builder().id(1L).emailVerifiedAt(LocalDateTime.now()).build();
         CampaignApplicationDtos.EligibilityResponse result = service(member, activeCreator(member), openCampaign(), false)
                 .getEligibility(1L, 10L);
 
         assertThat(result.canApply()).isTrue();
         assertThat(result.emailVerified()).isTrue();
         assertThat(result.identityVerified()).isFalse();
-        assertThat(result.applicationEligibilityPolicy()).isEqualTo("EMAIL_TEMPORARY");
+        assertThat(result.applicationEligibilityPolicy()).isEqualTo("EMAIL_AND_CAMPAIGN_REQUIREMENT");
         assertThat(result.blockingReasons()).isEmpty();
     }
 
     @Test
     void unverifiedEmailIsBlockedByServerState() {
-        Member member = Member.builder().build();
+        Member member = Member.builder().id(1L).build();
         CampaignApplicationDtos.EligibilityResponse result = service(member, activeCreator(member), openCampaign(), false)
                 .getEligibility(1L, 10L);
 
         assertThat(result.canApply()).isFalse();
         assertThat(result.blockingReasons()).containsExactly("EMAIL_VERIFICATION_REQUIRED");
+    }
+
+    @Test
+    void verifiedGeneralUserCanApplyToCampaignWithoutMetricRequirement() {
+        Member member = Member.builder().id(1L).emailVerifiedAt(LocalDateTime.now()).build();
+
+        CampaignApplicationDtos.EligibilityResponse result = service(member, null, openCampaign(), false)
+                .getEligibility(1L, 10L);
+
+        assertThat(result.canApply()).isTrue();
+        assertThat(result.channelProfileExists()).isFalse();
+        assertThat(result.campaignRequirement()).isNull();
     }
 
     @Test
@@ -64,13 +80,16 @@ class CampaignApplicationEligibilityTest {
 
     @Test
     void unverifiedEmailCannotCreateApplicationWhenOtherConditionsPass() {
-        Member member = Member.builder().build();
+        Member member = Member.builder().id(1L).build();
         Creator creator = activeCreator(member);
         Campaign campaign = openCampaign();
         CampaignRepository campaignRepository = mock(CampaignRepository.class);
         CampaignApplicationFormRepository formRepository = mock(CampaignApplicationFormRepository.class);
         CampaignApplicationRepository applicationRepository = mock(CampaignApplicationRepository.class);
         CreatorService creatorService = mock(CreatorService.class);
+        MemberService memberService = mock(MemberService.class);
+        CampaignEligibilityPolicyService policyService = mock(CampaignEligibilityPolicyService.class);
+        MemberChannelMetricService metricService = mock(MemberChannelMetricService.class);
         when(campaignRepository.findById(10L)).thenReturn(Optional.of(campaign));
         when(formRepository.findByCampaignId(10L)).thenReturn(Optional.of(CampaignApplicationForm.builder()
                 .campaign(campaign)
@@ -79,12 +98,16 @@ class CampaignApplicationEligibilityTest {
                 .questionsJson("[]")
                 .agreementsJson("[]")
                 .build()));
-        when(creatorService.getByMember(1L)).thenReturn(creator);
+        when(memberService.getMember(1L)).thenReturn(member);
+        when(policyService.evaluate(1L, 10L)).thenReturn(new CampaignEligibilityPolicyService.Evaluation(null, null, null));
         CampaignApplicationService service = new CampaignApplicationService(
                 campaignRepository,
                 formRepository,
                 applicationRepository,
                 creatorService,
+                memberService,
+                policyService,
+                metricService,
                 mock(ProductService.class),
                 new ObjectMapper(),
                 mock(NotificationService.class),
@@ -110,8 +133,8 @@ class CampaignApplicationEligibilityTest {
     }
 
     @Test
-    void existingCampaignChecksRemainVisibleInEligibility() {
-        Member member = Member.builder().emailVerifiedAt(LocalDateTime.now()).build();
+    void legacyCreatorFieldsDoNotBlockGeneralUserCampaignEligibility() {
+        Member member = Member.builder().id(1L).emailVerifiedAt(LocalDateTime.now()).build();
         Creator creator = Creator.builder()
                 .id(20L)
                 .member(member)
@@ -133,9 +156,6 @@ class CampaignApplicationEligibilityTest {
         assertThat(result.canApply()).isFalse();
         assertThat(result.blockingReasons()).containsExactly(
                 "CAMPAIGN_NOT_OPEN",
-                "CREATOR_NOT_APPROVED",
-                "FOLLOWER_REQUIREMENT_NOT_MET",
-                "CHANNEL_REQUIRED",
                 "ALREADY_APPLIED"
         );
     }
@@ -145,18 +165,29 @@ class CampaignApplicationEligibilityTest {
         CampaignApplicationFormRepository formRepository = mock(CampaignApplicationFormRepository.class);
         CampaignApplicationRepository applicationRepository = mock(CampaignApplicationRepository.class);
         CreatorService creatorService = mock(CreatorService.class);
+        MemberService memberService = mock(MemberService.class);
+        CampaignEligibilityPolicyService policyService = mock(CampaignEligibilityPolicyService.class);
+        MemberChannelMetricService metricService = mock(MemberChannelMetricService.class);
         when(campaignRepository.findById(10L)).thenReturn(Optional.of(campaign));
         when(formRepository.findByCampaignId(10L)).thenReturn(Optional.of(CampaignApplicationForm.builder()
                 .campaign(campaign)
                 .version(3L)
                 .build()));
-        when(creatorService.getByMember(1L)).thenReturn(creator);
-        when(applicationRepository.existsByCampaignIdAndCreatorId(10L, creator.getId())).thenReturn(alreadyApplied);
+        when(creatorService.findOptionalByMember(1L)).thenReturn(Optional.ofNullable(creator));
+        when(memberService.getMember(1L)).thenReturn(member);
+        when(policyService.evaluate(1L, 10L)).thenReturn(new CampaignEligibilityPolicyService.Evaluation(null, null, null));
+        when(metricService.findMine(1L)).thenReturn(new CampaignEligibilityDtos.ChannelProfileResponse(
+                creator != null, java.util.List.of()
+        ));
+        when(applicationRepository.existsByCampaignIdAndCreatorMemberId(10L, 1L)).thenReturn(alreadyApplied);
         return new CampaignApplicationService(
                 campaignRepository,
                 formRepository,
                 applicationRepository,
                 creatorService,
+                memberService,
+                policyService,
+                metricService,
                 mock(ProductService.class),
                 new ObjectMapper(),
                 mock(NotificationService.class),

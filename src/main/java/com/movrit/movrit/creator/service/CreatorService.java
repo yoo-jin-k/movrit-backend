@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
+import java.util.Optional;
 
 @Service @RequiredArgsConstructor @Transactional(readOnly=true)
 public class CreatorService {
@@ -25,4 +26,13 @@ public class CreatorService {
     @Transactional public CreatorDtos.Response update(Long memberId,CreatorDtos.SaveRequest r){Creator c=getByMember(memberId);c.update(r.nickname().trim(),r.bio(),r.primaryCategory(),r.snsUrl(),r.followerCount());return CreatorDtos.Response.from(c);}
     public Creator get(Long id){return repository.findById(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"인플루언서를 찾을 수 없어."));}
     public Creator getByMember(Long id){return repository.findByMemberId(id).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"인플루언서 프로필이 없어."));}
+    public Optional<Creator> findOptionalByMember(Long memberId){return repository.findByMemberId(memberId);}
+    /** 기존 신청 테이블의 외래 키를 유지하면서 일반 사용자도 캠페인에 신청할 수 있게 내부 프로필을 만든다. */
+    @Transactional public Creator getOrCreateCandidate(Long memberId){
+        return repository.findByMemberId(memberId).orElseGet(()->{
+            var member=memberService.getMember(memberId);
+            Creator candidate=Creator.builder().member(member).nickname(member.getName()).followerCount(0L).status("ACTIVE").build();
+            return repository.save(candidate);
+        });
+    }
 }
