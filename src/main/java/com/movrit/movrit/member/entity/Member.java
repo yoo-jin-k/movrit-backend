@@ -45,6 +45,9 @@ public class Member extends BaseEntity {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    @Column(name = "email_verified_at")
+    private LocalDateTime emailVerifiedAt;
+
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
@@ -59,6 +62,20 @@ public class Member extends BaseEntity {
 
     public void updateLastLoginAt() {
         this.lastLoginAt = LocalDateTime.now();
+    }
+
+    public void verifyEmail() {
+        this.emailVerifiedAt = LocalDateTime.now();
+    }
+
+    /** 이메일이 변경되면 이전 주소의 소유 확인은 즉시 무효가 됩니다. */
+    public void changeEmail(String email) {
+        this.email = email;
+        this.emailVerifiedAt = null;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerifiedAt != null;
     }
 
     public boolean isAdmin() {
