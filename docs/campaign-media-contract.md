@@ -60,7 +60,7 @@ configured 응답에 `presentation`을 추가합니다. `GET /api/campaigns/{id}
 
 미디어 관련 6개 테스트 클래스의 31개 테스트가 통과했습니다. Spring 트랜잭션 인터셉터의 후반 실패 rollback 요청과 stale version 앞단 차단을 포함하지만 실제 PostgreSQL 데이터 롤백·동시성·HTTP 인가 통합 검증을 대체하지 않습니다. 프리오더 승인 대기 매핑과 마이그레이션은 포함하지 않습니다. 사용자 수정 CollaborationController/CollaborationDtos는 이번 커밋 대상에서 제외합니다.
 
-## GAP08 주소 증빙 추가 계약 — 코드 준비, DB/서버 미반영
+## GAP08 주소 증빙 추가 계약
 
 주소 변경은 정규화된 장소명·우편번호·주소1·주소2의 값 비교로 판단합니다. 이미지 순서/설명만 변경하거나 같은 주소를 다시 제출하면 이력과 알림을 생성하지 않습니다. 신규 캠페인의 최초 주소는 변경 이력 대상이 아니며, 기존 캠페인에 새 주소를 설정하는 경우는 대상입니다. 주소 활성 해제도 전후 증빙을 보존합니다. 구 주소 저장 API는 자유 문자열 전후 원문을 별도로 남기며 구조화 주소로 추론하지 않습니다.
 
@@ -72,4 +72,4 @@ configured 응답에 `presentation`을 추가합니다. `GET /api/campaigns/{id}
 - GET `/api/campaign-applications/{applicationId}/visit-snapshot`: 신청 본인 또는 승인된 해당 업체만 조회합니다. 기존 증빙이 없으면 `available:false`이며 현재 주소로 대체하지 않습니다.
 - GET `/api/campaigns/{campaignId}/visit-history`: 승인된 해당 업체만 조회합니다. 전후 구조화 주소와 레거시 원문을 구분합니다. 수정 회원 ID는 응답에 노출하지 않습니다.
 
-운영자 전용 열람 경로는 이번 최소 구현에 추가하지 않았습니다. 공개 응답에는 신청 당시 증빙과 변경 이력을 넣지 않습니다. 신규 SQL `feature-campaign-visit-evidence.sql`은 미적용이며 실제 DB 원자성·동시성·HTTP 접근 권한과 프론트 증빙 조회 연결은 후속 검수 대상입니다. 562ffff의 기존 미디어 API 요청·응답은 유지합니다.
+운영자 전용 열람 경로는 이번 최소 구현에 추가하지 않았습니다. 공개 응답에는 신청 당시 증빙과 변경 이력을 넣지 않습니다. 신규 SQL `feature-campaign-visit-evidence.sql`은 새 사용자 명시 승인과 정식 검토 후 2026-10-18 로컬 movrit_integration에만 적용했습니다. 기존 신청 행은 변경하지 않았으며 다른 환경은 미적용입니다. 실제 DB 원자성·동시성·HTTP 접근 권한과 프론트 증빙 조회 연결은 후속 검수 대상입니다. 562ffff의 기존 미디어 API 요청·응답은 유지합니다.

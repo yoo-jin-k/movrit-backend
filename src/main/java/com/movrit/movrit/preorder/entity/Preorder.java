@@ -30,10 +30,13 @@ public class Preorder extends BaseEntity {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    /** 프리오더에서 실제 판매 허용한 SKU만 주문할 수 있다. */
+    /**
+     * 현재 주문 흐름에서 판매를 허용한 SKU 연결입니다.
+     * 가격·주문 참조를 가진 레거시 preorder_variant와 분리해 기존 이력을 보존합니다.
+     */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "preorder_variant",
+            name = "preorder_sale_variant",
             joinColumns = @JoinColumn(name = "preorder_id"),
             inverseJoinColumns = @JoinColumn(name = "product_variant_id")
     )

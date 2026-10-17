@@ -1,4 +1,4 @@
--- GAP08 신규 주소 증빙 테이블입니다. 준비만 했으며 어느 DB에도 적용하지 않았습니다.
+-- GAP08 신규 주소 증빙 테이블입니다. 2026-10-18 새 명시 승인 후 로컬 movrit_integration에만 적용했으며 다른 DB에는 미적용입니다.
 -- 기존 신청 및 조건 스냅샷에는 쓰거나 소급 채우지 않습니다.
 BEGIN;
 CREATE TABLE campaign_visit_history (
