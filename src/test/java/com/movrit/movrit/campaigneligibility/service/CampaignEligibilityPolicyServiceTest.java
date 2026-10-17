@@ -33,7 +33,7 @@ class CampaignEligibilityPolicyServiceTest {
     @Test
     void verifiedMetricBelowMinimumIsBlocked() {
         stubRequirement();
-        when(metrics.findByMemberIdAndChannelTypeAndMetricType(1L, "INSTAGRAM", "FOLLOWERS"))
+        when(metrics.findByMemberIdAndChannelTypeAndMetricType(1L, "INSTAGRAM", "FOLLOWER_COUNT"))
                 .thenReturn(Optional.of(metric(499L, MetricVerificationStatus.VERIFIED)));
 
         var result = service.evaluate(1L, 10L);
@@ -44,7 +44,7 @@ class CampaignEligibilityPolicyServiceTest {
     @Test
     void verifiedMetricEqualToMinimumIsAllowed() {
         stubRequirement();
-        when(metrics.findByMemberIdAndChannelTypeAndMetricType(1L, "INSTAGRAM", "FOLLOWERS"))
+        when(metrics.findByMemberIdAndChannelTypeAndMetricType(1L, "INSTAGRAM", "FOLLOWER_COUNT"))
                 .thenReturn(Optional.of(metric(500L, MetricVerificationStatus.VERIFIED)));
 
         assertThat(service.evaluate(1L, 10L).blockingReason()).isNull();
@@ -53,7 +53,7 @@ class CampaignEligibilityPolicyServiceTest {
     @Test
     void missingMetricIsNotTreatedAsZero() {
         stubRequirement();
-        when(metrics.findByMemberIdAndChannelTypeAndMetricType(1L, "INSTAGRAM", "FOLLOWERS"))
+        when(metrics.findByMemberIdAndChannelTypeAndMetricType(1L, "INSTAGRAM", "FOLLOWER_COUNT"))
                 .thenReturn(Optional.empty());
 
         assertThat(service.evaluate(1L, 10L).blockingReason()).isEqualTo("CHANNEL_METRIC_REQUIRED");
@@ -62,7 +62,7 @@ class CampaignEligibilityPolicyServiceTest {
     @Test
     void memberEnteredMetricMustBeVerifiedBeforeItCanQualify() {
         stubRequirement();
-        when(metrics.findByMemberIdAndChannelTypeAndMetricType(1L, "INSTAGRAM", "FOLLOWERS"))
+        when(metrics.findByMemberIdAndChannelTypeAndMetricType(1L, "INSTAGRAM", "FOLLOWER_COUNT"))
                 .thenReturn(Optional.of(metric(500L, MetricVerificationStatus.UNVERIFIED)));
 
         assertThat(service.evaluate(1L, 10L).blockingReason()).isEqualTo("CHANNEL_METRIC_UNVERIFIED");
@@ -71,7 +71,7 @@ class CampaignEligibilityPolicyServiceTest {
     private void stubRequirement() {
         Campaign campaign = Campaign.builder().id(10L).build();
         CampaignEligibilityRequirement requirement = CampaignEligibilityRequirement.builder()
-                .id(20L).campaign(campaign).channelType("INSTAGRAM").metricType("FOLLOWERS")
+                .id(20L).campaign(campaign).channelType("INSTAGRAM").metricType("FOLLOWER_COUNT")
                 .minimumValue(500L).build();
         when(requirements.findByCampaignId(10L)).thenReturn(Optional.of(requirement));
     }
