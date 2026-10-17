@@ -81,7 +81,7 @@ public class MemberService {
     public Member getAdmin(Long memberId) {
         Member member = getMember(memberId);
         if (!member.isAdmin()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자 권한이 필요해.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자 권한이 필요합니다.");
         }
         return member;
     }
