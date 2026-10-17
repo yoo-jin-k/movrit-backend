@@ -117,7 +117,7 @@ public class SellerProfileService {
         SellerProfile seller = getSellerByMemberId(memberId);
 
         if (seller.getStatus() != SellerStatus.APPROVED) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "승인된 판매자만 이용할 수 있어.");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "승인된 판매자만 이용할 수 있습니다.");
         }
 
         return seller;
