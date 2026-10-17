@@ -24,7 +24,7 @@ java -jar build/libs/movrit-0.0.1-SNAPSHOT.jar --spring.profiles.active=integrat
 
 ## 이메일 기반 캠페인 신청 QA
 
-- 실행 JAR 기준 커밋: `b5a2736`
+- 실행 JAR 기능 기준 커밋: `f3aa48a`
 - 실행 DB: `movrit_integration`
 - 실행 주소: `http://127.0.0.1:18080`
 - 대상 캠페인: `9`는 이메일 인증 신청과 중복 신청이 이미 검증됐고, 추가 신청 생성은 기존 데이터와 충돌합니다. 새 신청 검수에는 신청 이력이 없는 크리에이터와 모집 중 캠페인을 조합합니다.
@@ -60,3 +60,22 @@ curl -H "Authorization: Bearer $token" http://127.0.0.1:18080/api/auth/me
 완료된 검수 결과는 캠페인 `10` 기준으로 미인증 시 `EMAIL_VERIFICATION_REQUIRED`, 원래 인증 시각 복원 후 신청 `201`, 응답의 `emailVerified=true`·`identityVerified=false`, 후속 조회의 `ALREADY_APPLIED`·`canApply=false`입니다.
 
 기존 신청과 계정 상태에 의존하지 않는 회귀 검증은 `CampaignApplicationEligibilityTest.unverifiedEmailCannotCreateApplicationWhenOtherConditionsPass`에서 수행합니다. 합성 fixture는 모집기간·크리에이터 승인·팔로워·채널·폼 버전·배송 입력을 모두 충족시키고 이메일만 미인증으로 두며, 신청 서비스가 `409`를 반환하고 저장소에 신청을 기록하지 않는지 확인합니다. 이 테스트는 실서버 QA 및 실제 SMTP 수신 검증과 구분합니다.
+
+### 브라우저 로그인 fixture
+
+- 로그인 이메일: `qa-browser-integration@movrit.local`
+- 회원 ID: `13`
+- 크리에이터 ID: `8`
+- 비밀번호 파일: `/private/tmp/movrit-browser-qa-password.txt` (`600`)
+- 로그인 응답 파일: `/private/tmp/movrit-browser-qa-login.json` (`600`)
+- 신청 검수 대상: 캠페인 `10`; fixture 생성 직후에는 신청 이력이 없고 `canApply=true`입니다.
+
+비밀번호 파일의 값은 채팅·Git·화면 캡처에 복사하지 않고 로컬 로그인 UI에만 입력합니다. 이 회원의 `email_verified_at`과 크리에이터 `ACTIVE` 상태는 외부 메일 또는 실명 인증을 완료한 결과가 아니라 `movrit_integration` 전용 합성 상태입니다. `identityVerified`는 계속 `false`여야 합니다. 브라우저의 `/api` 프록시는 최신 검수 서버 `http://localhost:18080`을 향해야 하며, 현재 저장소 기본 Vite 설정의 `8080`과 혼동하지 않습니다.
+
+fixture는 반복 QA를 위해 기본적으로 보존합니다. 신청을 생성했다면 응답의 정확한 신청 ID를 기록하고 이후 `ALREADY_APPLIED`를 정상 결과로 취급합니다. 아직 신청을 생성하지 않은 상태에서 fixture 자체를 정리할 때만 다음 순서를 사용합니다.
+
+1. 대상이 회원 `13`, 크리에이터 `8`, 이메일 `qa-browser-integration@movrit.local`인지 다시 확인합니다.
+2. `refresh_token`에서 회원 `13` 행, `influencer_profile`에서 크리에이터 `8` 행, `member_role`에서 회원 `13` 행을 순서대로 삭제합니다.
+3. 마지막으로 `member`의 회원 `13` 행을 삭제합니다.
+4. 신청·콘텐츠 등 추가 QA 데이터가 생겼다면 위 단순 절차를 사용하지 않고 생성한 ID별 참조 관계를 먼저 확인합니다.
+5. DB 정리 후 두 `/private/tmp/movrit-browser-qa-*` 파일을 삭제합니다.
