@@ -49,11 +49,8 @@ tasks.named('test') {
 spotless {
     java {
         target 'src/main/java/**/*.java', 'src/test/java/**/*.java'
-        // 작업 중인 사용자 파일은 자동 정리 대상에서 제외합니다.
-        targetExclude(
-                'src/main/java/com/movrit/movrit/collaboration/controller/CollaborationController.java',
-                'src/main/java/com/movrit/movrit/collaboration/dto/CollaborationDtos.java'
-        )
+        // Git에서 관리하지 않는 로컬 복사본은 정리 대상에서 제외합니다.
+        targetExclude('**/* 2.java')
         googleJavaFormat('1.24.0')
         removeUnusedImports()
         trimTrailingWhitespace()
