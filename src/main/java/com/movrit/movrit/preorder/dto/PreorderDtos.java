@@ -12,9 +12,28 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/** 프리오더의 요청 및 응답 계약을 모읍니다. 입력 제약과 응답 필드의 변경은 호출 화면 및 API 계약과 함께 검토합니다. */
 public final class PreorderDtos {
   private PreorderDtos() {}
 
+  /**
+   * 프리오더의 생성 요청을 전달합니다.
+   *
+   * @param productId 상품 식별자입니다. null을 허용하지 않습니다.
+   * @param variantIds 판매 가능한 상품 옵션 식별자 목록이며 기존 가격·주문 참조와 구분합니다. null을 허용하지 않습니다. 빈 목록을 허용하지 않습니다.
+   * @param title 제목입니다. 빈 문자열을 허용하지 않습니다.
+   * @param description 상세 설명입니다.
+   * @param preorderPrice 프리오더 판매 가격입니다. null을 허용하지 않습니다.
+   * @param currency 금액의 통화 코드입니다. 빈 문자열을 허용하지 않습니다.
+   * @param targetQuantity 목표 수량입니다. null을 허용하지 않습니다. 입력하는 경우 양수여야 합니다.
+   * @param maxQuantity 최대 판매 수량입니다. 입력하는 경우 양수여야 합니다.
+   * @param minOrderQuantity 최소 주문 수량입니다. null을 허용하지 않습니다. 최솟값은 1입니다.
+   * @param maxOrderQuantityPerMember 회원별 최대 주문 수량입니다. 최솟값은 1입니다.
+   * @param startAt 시작 시각입니다. null을 허용하지 않습니다.
+   * @param endAt 종료 시각입니다. null을 허용하지 않습니다.
+   * @param productionExpectedAt 예상 생산 시각입니다.
+   * @param shippingExpectedAt 예상 배송 시각입니다.
+   */
   public record CreateRequest(
       @NotNull Long productId,
       @NotEmpty List<@NotNull Long> variantIds,
@@ -31,6 +50,23 @@ public final class PreorderDtos {
       LocalDateTime productionExpectedAt,
       LocalDateTime shippingExpectedAt) {}
 
+  /**
+   * 프리오더의 수정 요청을 전달합니다.
+   *
+   * @param variantIds 판매 가능한 상품 옵션 식별자 목록이며 기존 가격·주문 참조와 구분합니다. null을 허용하지 않습니다. 빈 목록을 허용하지 않습니다.
+   * @param title 제목입니다. 빈 문자열을 허용하지 않습니다.
+   * @param description 상세 설명입니다.
+   * @param preorderPrice 프리오더 판매 가격입니다. null을 허용하지 않습니다.
+   * @param currency 금액의 통화 코드입니다. 빈 문자열을 허용하지 않습니다.
+   * @param targetQuantity 목표 수량입니다. null을 허용하지 않습니다. 입력하는 경우 양수여야 합니다.
+   * @param maxQuantity 최대 판매 수량입니다. 입력하는 경우 양수여야 합니다.
+   * @param minOrderQuantity 최소 주문 수량입니다. null을 허용하지 않습니다. 최솟값은 1입니다.
+   * @param maxOrderQuantityPerMember 회원별 최대 주문 수량입니다. 최솟값은 1입니다.
+   * @param startAt 시작 시각입니다. null을 허용하지 않습니다.
+   * @param endAt 종료 시각입니다. null을 허용하지 않습니다.
+   * @param productionExpectedAt 예상 생산 시각입니다.
+   * @param shippingExpectedAt 예상 배송 시각입니다.
+   */
   public record UpdateRequest(
       @NotEmpty List<@NotNull Long> variantIds,
       @NotBlank String title,
@@ -46,8 +82,41 @@ public final class PreorderDtos {
       LocalDateTime productionExpectedAt,
       LocalDateTime shippingExpectedAt) {}
 
+  /**
+   * 프리오더의 취소 요청을 전달합니다.
+   *
+   * @param reason 처리 또는 판정 사유입니다. 빈 문자열을 허용하지 않습니다.
+   */
   public record CancelRequest(@NotBlank String reason) {}
 
+  /**
+   * 프리오더의 조회 및 처리 결과를 전달합니다.
+   *
+   * @param id 대상 데이터의 식별자입니다.
+   * @param brandId 브랜드 식별자입니다.
+   * @param productId 상품 식별자입니다.
+   * @param productName 상품명입니다.
+   * @param brandName 브랜드명입니다.
+   * @param category 분류값입니다.
+   * @param variantIds 판매 가능한 상품 옵션 식별자 목록이며 기존 가격·주문 참조와 구분합니다.
+   * @param title 제목입니다.
+   * @param description 상세 설명입니다.
+   * @param preorderPrice 프리오더 판매 가격입니다.
+   * @param currency 금액의 통화 코드입니다.
+   * @param targetQuantity 목표 수량입니다.
+   * @param maxQuantity 최대 판매 수량입니다.
+   * @param orderedQuantity 누적 주문 수량입니다.
+   * @param achievementRate 목표 대비 달성률입니다.
+   * @param remainingSeconds 종료까지 남은 초이며 음수는 0으로 반환합니다.
+   * @param minOrderQuantity 최소 주문 수량입니다.
+   * @param maxOrderQuantityPerMember 회원별 최대 주문 수량입니다.
+   * @param startAt 시작 시각입니다.
+   * @param endAt 종료 시각입니다.
+   * @param productionExpectedAt 예상 생산 시각입니다.
+   * @param shippingExpectedAt 예상 배송 시각입니다.
+   * @param status 현재 업무 상태입니다.
+   * @param cancellationReason 취소 사유입니다.
+   */
   public record Response(
       Long id,
       Long brandId,
@@ -73,6 +142,10 @@ public final class PreorderDtos {
       LocalDateTime shippingExpectedAt,
       PreorderStatus status,
       String cancellationReason) {
+    /**
+     * 엔티티에서 공개할 응답 필드만 복사합니다. 이 변환 메서드 자체는 조회 권한을 판정하지 않습니다. 판매 옵션 ID를 정렬하고 달성률은 최대 100%, 남은 시간은 최소
+     * 0초로 계산합니다.
+     */
     public static Response from(Preorder preorder) {
       return new Response(
           preorder.getId(),

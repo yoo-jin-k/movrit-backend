@@ -7,9 +7,36 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
+/** 캠페인 및 협업의 요청 및 응답 계약을 모읍니다. 입력 제약과 응답 필드의 변경은 호출 화면 및 API 계약과 함께 검토합니다. */
 public final class CampaignManagementDtos {
   private CampaignManagementDtos() {}
 
+  /**
+   * 캠페인 및 협업의 수정 요청을 전달합니다.
+   *
+   * @param title 제목입니다. 빈 문자열을 허용하지 않습니다. 크기 제약은 max = 255입니다.
+   * @param description 상세 설명입니다. 크기 제약은 max = 10000입니다.
+   * @param category 분류값입니다. 크기 제약은 max = 100입니다.
+   * @param minFollowerCount 기존 캠페인의 최소 팔로워 필드이며 신규 채널별 조건과 구분합니다. null을 허용하지 않습니다. 최솟값은 0입니다.
+   * @param recruitmentCount 모집 인원입니다. null을 허용하지 않습니다. 최솟값은 1입니다.
+   * @param rewardDescription 제공 혜택 설명입니다. 크기 제약은 max = 5000입니다.
+   * @param mission 참여자가 수행할 미션입니다. 크기 제약은 max = 10000입니다.
+   * @param channelGuide 채널별 작성 안내입니다. 크기 제약은 max = 5000입니다.
+   * @param scheduleGuide 일정 안내입니다. 크기 제약은 max = 5000입니다.
+   * @param deliveryGuide 배송 안내입니다. 크기 제약은 max = 5000입니다.
+   * @param visitGuide 방문 안내입니다. 크기 제약은 max = 5000입니다.
+   * @param caution 참여 시 주의사항입니다. 크기 제약은 max = 5000입니다.
+   * @param submissionRequirement 콘텐츠 제출 요구사항입니다. 크기 제약은 max = 5000입니다.
+   * @param expectedScheduleVersion 수정하기 전에 조회한 캠페인 일정 버전입니다. null을 허용하지 않습니다.
+   * @param startAt 모집 시작 시각입니다.
+   * @param endAt 모집 종료 시각입니다.
+   * @param selectionAnnouncedAt 참여자 선정 발표 시각입니다.
+   * @param experienceStartAt 체험 시작 시각입니다.
+   * @param experienceEndAt 체험 종료 시각입니다.
+   * @param contentSubmissionStartAt 콘텐츠 등록 시작 시각입니다.
+   * @param contentSubmissionEndAt 콘텐츠 등록 종료 시각입니다.
+   * @param resultsAnnouncedAt 결과 발표 시각입니다.
+   */
   public record UpdateRequest(
       @NotBlank @Size(max = 255) String title,
       @Size(max = 10000) String description,
@@ -34,6 +61,43 @@ public final class CampaignManagementDtos {
       LocalDateTime contentSubmissionEndAt,
       LocalDateTime resultsAnnouncedAt) {}
 
+  /**
+   * 캠페인 및 협업의 캠페인 상세 응답을 전달합니다.
+   *
+   * @param id 대상 데이터의 식별자입니다.
+   * @param preorderId 연결된 프리오더 식별자입니다.
+   * @param preorderTitle 프리오더 제목입니다.
+   * @param productId 상품 식별자입니다.
+   * @param productName 상품명입니다.
+   * @param brandName 브랜드명입니다.
+   * @param title 제목입니다.
+   * @param description 상세 설명입니다.
+   * @param category 분류값입니다.
+   * @param minFollowerCount 기존 캠페인의 최소 팔로워 필드이며 신규 채널별 조건과 구분합니다.
+   * @param recruitmentCount 모집 인원입니다.
+   * @param rewardDescription 제공 혜택 설명입니다.
+   * @param mission 참여자가 수행할 미션입니다.
+   * @param channelGuide 채널별 작성 안내입니다.
+   * @param scheduleGuide 일정 안내입니다.
+   * @param deliveryGuide 배송 안내입니다.
+   * @param visitGuide 방문 안내입니다.
+   * @param representativeImageUrl 대표 이미지 주소입니다.
+   * @param detailImageUrl 기존 단일 상세 이미지 주소입니다.
+   * @param visitPlaceName 방문 장소명입니다.
+   * @param visitAddress 방문 주소입니다.
+   * @param caution 참여 시 주의사항입니다.
+   * @param submissionRequirement 콘텐츠 제출 요구사항입니다.
+   * @param startAt 모집 시작 시각입니다.
+   * @param endAt 모집 종료 시각입니다.
+   * @param selectionAnnouncedAt 참여자 선정 발표 시각입니다.
+   * @param experienceStartAt 체험 시작 시각입니다.
+   * @param experienceEndAt 체험 종료 시각입니다.
+   * @param contentSubmissionStartAt 콘텐츠 등록 시작 시각입니다.
+   * @param contentSubmissionEndAt 콘텐츠 등록 종료 시각입니다.
+   * @param resultsAnnouncedAt 결과 발표 시각입니다.
+   * @param scheduleVersion 현재 캠페인 일정 버전입니다.
+   * @param open 현재 모집 또는 진행 가능 상태입니다.
+   */
   public record DetailResponse(
       Long id,
       Long preorderId,
@@ -68,11 +132,18 @@ public final class CampaignManagementDtos {
       LocalDateTime resultsAnnouncedAt,
       Long scheduleVersion,
       boolean open) {
+    /**
+     * 엔티티에서 공개할 응답 필드만 복사합니다. 이 변환 메서드 자체는 조회 권한을 판정하지 않습니다. 방문 정보의 포함 여부는 호출한 오버로드와 includeVisit
+     * 인자로 구분합니다.
+     */
     public static DetailResponse from(Campaign campaign) {
       return from(campaign, true);
     }
 
-    /** 공개 조회에서는 배송 전용 캠페인의 방문 주소·안내를 제외합니다. */
+    /**
+     * 공개 조회에서는 배송 전용 캠페인의 방문 주소·안내를 제외합니다. 엔티티에서 공개할 응답 필드만 복사합니다. 이 변환 메서드 자체는 조회 권한을 판정하지 않습니다.
+     * 방문 정보의 포함 여부는 호출한 오버로드와 includeVisit 인자로 구분합니다.
+     */
     public static DetailResponse from(Campaign campaign, boolean includeVisit) {
       return new DetailResponse(
           campaign.getId(),

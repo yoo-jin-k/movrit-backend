@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+/** 로그인 및 소셜 인증의 HTTP 요청을 서비스로 연결합니다. 인증 주체는 토큰에서 읽고, 업무 권한과 상태 검증은 호출한 서비스의 정책을 따릅니다. */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -49,41 +50,55 @@ public class AuthController {
     }
   }
 
+  /** 로그인 및 소셜 인증 관련 이메일과 비밀번호를 검증하는 로그인 서비스에 요청을 전달합니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
   @PostMapping("/login")
   public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
     return ResponseEntity.ok(authService.login(request));
   }
 
+  /**
+   * 로그인 및 소셜 인증의 로그인 세션 재발급 또는 종료 요청을 전달합니다.
+   *
+   * @param refreshToken 접근 토큰 재발급에 사용하는 토큰이며 로그에 노출하지 않습니다.
+   */
   public record RefreshRequest(String refreshToken) {}
 
+  /** 로그인 및 소셜 인증 관련 재발급 토큰으로 로그인 토큰 재발급을 요청합니다. */
   @PostMapping("/refresh")
   public LoginResponse refresh(@RequestBody RefreshRequest r) {
     return authService.refresh(r.refreshToken());
   }
 
+  /** 로그인 및 소셜 인증 관련 재발급 토큰의 로그아웃 처리를 요청하고 본문 없는 응답을 반환합니다. */
   @PostMapping("/logout")
   public ResponseEntity<Void> logout(@RequestBody RefreshRequest r) {
     authService.logout(r.refreshToken());
     return ResponseEntity.noContent().build();
   }
 
+  /** 로그인 및 소셜 인증 관련 Google 로그인 화면으로 이동할 인증 URL을 반환합니다. */
   @GetMapping("/google/login-url")
   public ResponseEntity<String> googleLoginUrl() {
     return ResponseEntity.ok(googleAuthService.getLoginUrl());
   }
 
+  /** 로그인 및 소셜 인증 관련 Kakao 로그인 화면으로 이동할 인증 URL을 반환합니다. */
   @GetMapping("/kakao")
   public ResponseEntity<String> kakaoLogin() {
     return ResponseEntity.ok(kakaoAuthService.getLoginUrl(null));
   }
 
+  /** 로그인 및 소셜 인증 관련 로그인 회원 정보를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
   @GetMapping("/me")
   public ResponseEntity<AuthMeResponse> me(@AuthenticationPrincipal Jwt jwt) {
     Long memberId = JwtMemberId.from(jwt);
     return ResponseEntity.ok(AuthMeResponse.from(memberService.getMember(memberId)));
   }
 
-  /** 현재 MOVRIT 계정에 연결된 소셜 로그인 수단을 조회합니다. */
+  /**
+   * 현재 MOVRIT 계정에 연결된 소셜 로그인 수단을 조회합니다. 로그인 및 소셜 인증 관련 현재 회원에게 연결된 소셜 로그인 수단을 조회합니다. 요청자의 회원 ID는 인증
+   * 토큰에서 가져옵니다.
+   */
   @GetMapping("/social/accounts")
   public List<SocialAccountResponse> socialAccounts(@AuthenticationPrincipal Jwt jwt) {
     return socialAccountService.findByMemberId(JwtMemberId.from(jwt));
@@ -91,6 +106,9 @@ public class AuthController {
 
   /**
    * 로그인된 회원이 카카오 계정을 추가 연결할 때 사용하는 인증 URL입니다. state에는 회원 ID를 그대로 노출하지 않고 서버 서명을 포함한 일회성 값을 넣습니다.
+   *
+   * <p>로그인 및 소셜 인증 관련 기존 회원 계정 연결을 위한 서명된 state를 포함한 Kakao 인증 URL을 반환합니다. 요청자의 회원 ID는 인증 토큰에서
+   * 가져옵니다.
    */
   @GetMapping("/social/kakao/link-url")
   public ResponseEntity<String> kakaoLinkUrl(@AuthenticationPrincipal Jwt jwt) {
@@ -98,12 +116,16 @@ public class AuthController {
     return ResponseEntity.ok(kakaoAuthService.getLoginUrl(state));
   }
 
+  /**
+   * 로그인 및 소셜 인증 관련 기존 회원 계정 연결을 위한 서명된 state를 포함한 Google 인증 URL을 반환합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다.
+   */
   @GetMapping("/social/google/link-url")
   public ResponseEntity<String> googleLinkUrl(@AuthenticationPrincipal Jwt jwt) {
     String state = socialLinkStateService.create(JwtMemberId.from(jwt));
     return ResponseEntity.ok(googleAuthService.getLoginUrl(state));
   }
 
+  /** 로그인 및 소셜 인증 관련 Kakao 인증 코드를 교환합니다. state가 있으면 계정 연결을 처리하고, 없으면 로그인 후 프론트로 이동합니다. */
   @GetMapping("/kakao/callback")
   public void kakaoCallback(
       @RequestParam("code") String code,
@@ -129,6 +151,7 @@ public class AuthController {
     redirectLogin(response, member);
   }
 
+  /** 로그인 및 소셜 인증 관련 Google 인증 코드를 교환합니다. state가 있으면 계정 연결을 처리하고, 없으면 로그인 후 프론트로 이동합니다. */
   @GetMapping("/google/callback")
   public void googleCallback(
       @RequestParam("code") String code,
@@ -153,6 +176,7 @@ public class AuthController {
     redirectLogin(response, member);
   }
 
+  /** MOVRIT 접근 토큰을 발급하고 시작 시 검증한 프론트 주소로 이동합니다. 토큰 포함 주소를 로그에 기록하지 않습니다. */
   private void redirectLogin(HttpServletResponse response, Member member) throws IOException {
     String movritAccessToken =
         jwtTokenProvider.createAccessToken(member.getId(), member.getEmail());
@@ -165,6 +189,7 @@ public class AuthController {
     response.sendRedirect(redirectUrl);
   }
 
+  /** 계정 연결 결과를 프론트에 전달합니다. 결과 메시지는 쿼리 문자열에 넣기 전에 인코딩합니다. */
   private void redirectSocialLink(
       HttpServletResponse response, String provider, boolean success, String message)
       throws IOException {

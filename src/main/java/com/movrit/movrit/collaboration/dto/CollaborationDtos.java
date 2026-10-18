@@ -4,9 +4,23 @@ import com.movrit.movrit.collaboration.entity.*;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 
+/** 캠페인 및 협업의 요청 및 응답 계약을 모읍니다. 입력 제약과 응답 필드의 변경은 호출 화면 및 API 계약과 함께 검토합니다. */
 public final class CollaborationDtos {
   private CollaborationDtos() {}
 
+  /**
+   * 캠페인 및 협업의 기존 캠페인 생성 요청을 전달합니다.
+   *
+   * @param preorderId 연결된 프리오더 식별자입니다. null을 허용하지 않습니다.
+   * @param title 제목입니다. 빈 문자열을 허용하지 않습니다.
+   * @param description 상세 설명입니다.
+   * @param category 분류값입니다.
+   * @param minFollowerCount 기존 캠페인의 최소 팔로워 필드이며 신규 채널별 조건과 구분합니다. null을 허용하지 않습니다. 최솟값은 0입니다.
+   * @param recruitmentCount 모집 인원입니다. null을 허용하지 않습니다. 최솟값은 1입니다.
+   * @param rewardDescription 제공 혜택 설명입니다.
+   * @param startAt 모집 시작 시각입니다.
+   * @param endAt 모집 종료 시각입니다.
+   */
   public record CampaignRequest(
       @NotNull Long preorderId,
       @NotBlank String title,
@@ -18,6 +32,23 @@ public final class CollaborationDtos {
       @NotNull LocalDateTime startAt,
       @NotNull LocalDateTime endAt) {}
 
+  /**
+   * 캠페인 및 협업의 기존 캠페인 목록 응답을 전달합니다.
+   *
+   * @param id 대상 데이터의 식별자입니다.
+   * @param preorderId 연결된 프리오더 식별자입니다.
+   * @param preorderTitle 프리오더 제목입니다.
+   * @param brandName 브랜드명입니다.
+   * @param title 제목입니다.
+   * @param description 상세 설명입니다.
+   * @param category 분류값입니다.
+   * @param minFollowerCount 기존 캠페인의 최소 팔로워 필드이며 신규 채널별 조건과 구분합니다.
+   * @param recruitmentCount 모집 인원입니다.
+   * @param rewardDescription 제공 혜택 설명입니다.
+   * @param startAt 모집 시작 시각입니다.
+   * @param endAt 모집 종료 시각입니다.
+   * @param open 현재 모집 또는 진행 가능 상태입니다.
+   */
   public record CampaignResponse(
       Long id,
       Long preorderId,
@@ -32,6 +63,7 @@ public final class CollaborationDtos {
       LocalDateTime startAt,
       LocalDateTime endAt,
       boolean open) {
+    /** 엔티티에서 공개할 응답 필드만 복사합니다. 이 변환 메서드 자체는 조회 권한을 판정하지 않습니다. */
     public static CampaignResponse from(Campaign c) {
       return new CampaignResponse(
           c.getId(),
@@ -50,11 +82,37 @@ public final class CollaborationDtos {
     }
   }
 
+  /**
+   * 캠페인 및 협업의 신청 요청을 전달합니다.
+   *
+   * @param message 신청 또는 안내 메시지입니다. 빈 문자열을 허용하지 않습니다.
+   */
   public record ApplyRequest(@NotBlank String message) {}
 
+  /**
+   * 캠페인 및 협업의 협업 제안 요청을 전달합니다.
+   *
+   * @param preorderId 연결된 프리오더 식별자입니다. null을 허용하지 않습니다.
+   * @param creatorId 기존 채널 프로필 식별자이며, 회원 ID와 구분합니다. null을 허용하지 않습니다.
+   * @param message 신청 또는 안내 메시지입니다. 빈 문자열을 허용하지 않습니다.
+   */
   public record ProposeRequest(
       @NotNull Long preorderId, @NotNull Long creatorId, @NotBlank String message) {}
 
+  /**
+   * 캠페인 및 협업의 조회 및 처리 결과를 전달합니다.
+   *
+   * @param id 대상 데이터의 식별자입니다.
+   * @param preorderId 연결된 프리오더 식별자입니다.
+   * @param preorderTitle 프리오더 제목입니다.
+   * @param creatorId 기존 채널 프로필 식별자이며, 회원 ID와 구분합니다.
+   * @param creatorNickname 참여자의 채널 프로필 표시 이름입니다.
+   * @param type 데이터 또는 질문 유형입니다.
+   * @param status 현재 업무 상태입니다.
+   * @param message 신청 또는 안내 메시지입니다.
+   * @param referralCode 추천 추적 코드입니다.
+   * @param referralUrl 추천 코드가 포함된 연결 주소입니다.
+   */
   public record Response(
       Long id,
       Long preorderId,
@@ -66,6 +124,7 @@ public final class CollaborationDtos {
       String message,
       String referralCode,
       String referralUrl) {
+    /** 엔티티에서 공개할 응답 필드만 복사합니다. 이 변환 메서드 자체는 조회 권한을 판정하지 않습니다. */
     public static Response from(Collaboration c) {
       String url =
           c.getReferralCode() == null
@@ -85,8 +144,26 @@ public final class CollaborationDtos {
     }
   }
 
+  /**
+   * 캠페인 및 협업의 추천 링크 클릭 기록을 전달합니다.
+   *
+   * @param visitorKey 방문 식별값입니다.
+   * @param userAgent 요청 클라이언트 정보입니다.
+   */
   public record ClickRequest(String visitorKey, String userAgent) {}
 
+  /**
+   * 캠페인 및 협업의 추천 성과 집계 응답을 전달합니다.
+   *
+   * @param collaborationId 협업 식별자입니다.
+   * @param creatorNickname 참여자의 채널 프로필 표시 이름입니다.
+   * @param preorderTitle 프리오더 제목입니다.
+   * @param clicks 추천 링크 클릭 수입니다.
+   * @param paidOrders 결제된 주문 수입니다.
+   * @param paidQuantity 결제된 수량입니다.
+   * @param gmv 집계 거래 금액입니다.
+   * @param conversionRate 집계된 전환율입니다.
+   */
   public record PerformanceResponse(
       Long collaborationId,
       String creatorNickname,

@@ -7,13 +7,33 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
+/** 정산 기록의 요청 및 응답 계약을 모읍니다. 입력 제약과 응답 필드의 변경은 호출 화면 및 API 계약과 함께 검토합니다. */
 public final class SettlementDtos {
   private SettlementDtos() {}
 
+  /**
+   * 정산 기록의 생성 요청을 전달합니다.
+   *
+   * @param preorderId 연결된 프리오더 식별자입니다. null을 허용하지 않습니다.
+   * @param platformFeeRate 플랫폼 수수료율이며 허용 범위는 0부터 100까지입니다. null을 허용하지 않습니다.
+   */
   public record CreateRequest(
       @NotNull Long preorderId,
       @NotNull @DecimalMin("0") @DecimalMax("100") BigDecimal platformFeeRate) {}
 
+  /**
+   * 정산 기록의 조회 및 처리 결과를 전달합니다.
+   *
+   * @param id 대상 데이터의 식별자입니다.
+   * @param preorderId 연결된 프리오더 식별자입니다.
+   * @param settlementNumber 정산 표시 번호입니다.
+   * @param status 현재 업무 상태입니다.
+   * @param grossAmount 정산 기준 총금액입니다.
+   * @param refundAmount 환불 금액입니다.
+   * @param platformFeeAmount 플랫폼 수수료 금액입니다.
+   * @param netAmount 최종 정산 금액입니다.
+   * @param currency 금액의 통화 코드입니다.
+   */
   public record Response(
       Long id,
       Long preorderId,
@@ -24,6 +44,7 @@ public final class SettlementDtos {
       BigDecimal platformFeeAmount,
       BigDecimal netAmount,
       String currency) {
+    /** 엔티티에서 공개할 응답 필드만 복사합니다. 이 변환 메서드 자체는 조회 권한을 판정하지 않습니다. */
     public static Response from(Settlement settlement) {
       return new Response(
           settlement.getId(),

@@ -10,12 +10,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/** 업체의 HTTP 요청을 서비스로 연결합니다. 인증 주체는 토큰에서 읽고, 업무 권한과 상태 검증은 호출한 서비스의 정책을 따릅니다. */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/sellers/dashboard")
 public class SellerDashboardController {
   private final SellerDashboardService service;
 
+  /** 업체 관련 대시보드 집계를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
   @GetMapping
   public SellerDashboardDtos.Response get(@AuthenticationPrincipal Jwt jwt) {
     return service.get(JwtMemberId.from(jwt));
