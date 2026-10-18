@@ -20,30 +20,31 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/campaigns/{campaignId}/eligibility-requirement")
 public class CampaignEligibilityRequirementController {
-    private final CampaignEligibilityPolicyService service;
+  private final CampaignEligibilityPolicyService service;
 
-    @GetMapping
-    public CampaignEligibilityDtos.RequirementResponse find(@PathVariable Long campaignId) {
-        return service.find(campaignId);
-    }
+  @GetMapping
+  public CampaignEligibilityDtos.RequirementResponse find(@PathVariable Long campaignId) {
+    return service.find(campaignId);
+  }
 
-    @PutMapping
-    public CampaignEligibilityDtos.RequirementResponse save(
-            @AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long campaignId,
-            @Valid @RequestBody CampaignEligibilityDtos.RequirementSaveRequest request
-    ) {
-        return service.save(memberId(jwt), campaignId, request);
-    }
+  @PutMapping
+  public CampaignEligibilityDtos.RequirementResponse save(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long campaignId,
+      @Valid @RequestBody CampaignEligibilityDtos.RequirementSaveRequest request) {
+    return service.save(memberId(jwt), campaignId, request);
+  }
 
-    @DeleteMapping
-    public ResponseEntity<Void> delete(@AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId,
-                                       @RequestParam Long expectedVersion) {
-        service.delete(memberId(jwt), campaignId, expectedVersion);
-        return ResponseEntity.noContent().build();
-    }
+  @DeleteMapping
+  public ResponseEntity<Void> delete(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long campaignId,
+      @RequestParam Long expectedVersion) {
+    service.delete(memberId(jwt), campaignId, expectedVersion);
+    return ResponseEntity.noContent().build();
+  }
 
-    private Long memberId(Jwt jwt) {
-        return Long.valueOf(jwt.getSubject());
-    }
+  private Long memberId(Jwt jwt) {
+    return Long.valueOf(jwt.getSubject());
+  }
 }

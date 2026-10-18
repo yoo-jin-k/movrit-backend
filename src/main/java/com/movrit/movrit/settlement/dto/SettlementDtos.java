@@ -5,33 +5,36 @@ import com.movrit.movrit.settlement.entity.SettlementStatus;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
-
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 public final class SettlementDtos {
-    private SettlementDtos() {}
+  private SettlementDtos() {}
 
-    public record CreateRequest(
-            @NotNull Long preorderId,
-            @NotNull @DecimalMin("0") @DecimalMax("100") BigDecimal platformFeeRate
-    ) {}
+  public record CreateRequest(
+      @NotNull Long preorderId,
+      @NotNull @DecimalMin("0") @DecimalMax("100") BigDecimal platformFeeRate) {}
 
-    public record Response(
-            Long id,
-            Long preorderId,
-            String settlementNumber,
-            SettlementStatus status,
-            BigDecimal grossAmount,
-            BigDecimal refundAmount,
-            BigDecimal platformFeeAmount,
-            BigDecimal netAmount,
-            String currency
-    ) {
-        public static Response from(Settlement settlement) {
-            return new Response(settlement.getId(), settlement.getPreorder().getId(), settlement.getSettlementNumber(),
-                    settlement.getStatus(), settlement.getGrossAmount(), settlement.getRefundAmount(),
-                    settlement.getPlatformFeeAmount(), settlement.getNetAmount(), settlement.getCurrency());
-        }
+  public record Response(
+      Long id,
+      Long preorderId,
+      String settlementNumber,
+      SettlementStatus status,
+      BigDecimal grossAmount,
+      BigDecimal refundAmount,
+      BigDecimal platformFeeAmount,
+      BigDecimal netAmount,
+      String currency) {
+    public static Response from(Settlement settlement) {
+      return new Response(
+          settlement.getId(),
+          settlement.getPreorder().getId(),
+          settlement.getSettlementNumber(),
+          settlement.getStatus(),
+          settlement.getGrossAmount(),
+          settlement.getRefundAmount(),
+          settlement.getPlatformFeeAmount(),
+          settlement.getNetAmount(),
+          settlement.getCurrency());
     }
+  }
 }

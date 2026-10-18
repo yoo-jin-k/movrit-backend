@@ -2,20 +2,16 @@ package com.movrit.movrit.member.repository;
 
 import com.movrit.movrit.member.entity.AuthProvider;
 import com.movrit.movrit.member.entity.MemberSocialAccount;
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface MemberSocialAccountRepository
-        extends JpaRepository<MemberSocialAccount, Long> {
+public interface MemberSocialAccountRepository extends JpaRepository<MemberSocialAccount, Long> {
 
-    Optional<MemberSocialAccount> findByProviderAndProviderId(
-            AuthProvider provider,
-            String providerId
-    );
+  Optional<MemberSocialAccount> findByProviderAndProviderId(
+      AuthProvider provider, String providerId);
 
-    List<MemberSocialAccount> findAllByMemberId(Long memberId);
+  List<MemberSocialAccount> findAllByMemberId(Long memberId);
 
-    boolean existsByMemberIdAndProvider(Long memberId, AuthProvider provider);
+  boolean existsByMemberIdAndProvider(Long memberId, AuthProvider provider);
 }

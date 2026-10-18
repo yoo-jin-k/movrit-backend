@@ -16,22 +16,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/users/me/channel-profile")
 public class UserChannelProfileController {
-    private final MemberChannelMetricService service;
+  private final MemberChannelMetricService service;
 
-    @GetMapping
-    public CampaignEligibilityDtos.ChannelProfileResponse mine(@AuthenticationPrincipal Jwt jwt) {
-        return service.findMine(memberId(jwt));
-    }
+  @GetMapping
+  public CampaignEligibilityDtos.ChannelProfileResponse mine(@AuthenticationPrincipal Jwt jwt) {
+    return service.findMine(memberId(jwt));
+  }
 
-    @PutMapping
-    public CampaignEligibilityDtos.ChannelProfileResponse save(
-            @AuthenticationPrincipal Jwt jwt,
-            @Valid @RequestBody CampaignEligibilityDtos.MetricSaveRequest request
-    ) {
-        return service.saveMine(memberId(jwt), request);
-    }
+  @PutMapping
+  public CampaignEligibilityDtos.ChannelProfileResponse save(
+      @AuthenticationPrincipal Jwt jwt,
+      @Valid @RequestBody CampaignEligibilityDtos.MetricSaveRequest request) {
+    return service.saveMine(memberId(jwt), request);
+  }
 
-    private Long memberId(Jwt jwt) {
-        return Long.valueOf(jwt.getSubject());
-    }
+  private Long memberId(Jwt jwt) {
+    return Long.valueOf(jwt.getSubject());
+  }
 }

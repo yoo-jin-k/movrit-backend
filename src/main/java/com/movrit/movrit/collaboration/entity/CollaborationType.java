@@ -1,2 +1,6 @@
 package com.movrit.movrit.collaboration.entity;
-public enum CollaborationType { APPLICATION, PROPOSAL }
+
+public enum CollaborationType {
+  APPLICATION,
+  PROPOSAL
+}

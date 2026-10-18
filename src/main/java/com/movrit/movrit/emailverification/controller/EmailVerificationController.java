@@ -14,27 +14,27 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/api/email-verifications")
 public class EmailVerificationController {
-    private final EmailVerificationService service;
+  private final EmailVerificationService service;
 
-    @PostMapping("/requests")
-    public ResponseEntity<EmailVerificationDtos.RequestResponse> request(@AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(service.request(memberId(jwt)));
-    }
+  @PostMapping("/requests")
+  public ResponseEntity<EmailVerificationDtos.RequestResponse> request(
+      @AuthenticationPrincipal Jwt jwt) {
+    return ResponseEntity.status(HttpStatus.ACCEPTED).body(service.request(memberId(jwt)));
+  }
 
-    @PostMapping("/confirm")
-    public EmailVerificationDtos.StatusResponse confirm(
-            @AuthenticationPrincipal Jwt jwt,
-            @Valid @RequestBody EmailVerificationDtos.ConfirmRequest request
-    ) {
-        return service.confirm(memberId(jwt), request);
-    }
+  @PostMapping("/confirm")
+  public EmailVerificationDtos.StatusResponse confirm(
+      @AuthenticationPrincipal Jwt jwt,
+      @Valid @RequestBody EmailVerificationDtos.ConfirmRequest request) {
+    return service.confirm(memberId(jwt), request);
+  }
 
-    @GetMapping("/status")
-    public EmailVerificationDtos.StatusResponse status(@AuthenticationPrincipal Jwt jwt) {
-        return service.status(memberId(jwt));
-    }
+  @GetMapping("/status")
+  public EmailVerificationDtos.StatusResponse status(@AuthenticationPrincipal Jwt jwt) {
+    return service.status(memberId(jwt));
+  }
 
-    private Long memberId(Jwt jwt) {
-        return Long.valueOf(jwt.getSubject());
-    }
+  private Long memberId(Jwt jwt) {
+    return Long.valueOf(jwt.getSubject());
+  }
 }

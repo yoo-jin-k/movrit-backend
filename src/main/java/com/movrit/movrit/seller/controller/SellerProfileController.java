@@ -15,26 +15,24 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/sellers")
 public class SellerProfileController {
 
-    private final SellerProfileService sellerProfileService;
+  private final SellerProfileService sellerProfileService;
 
-    /**
-     * JWT subject에는 로그인한 Member의 id가 들어 있다.
-     * 요청 body에서 memberId를 받지 않고 토큰에서 꺼내 사용해 본인 명의로만 신청할 수 있게 한다.
-     */
-    @PostMapping("/apply")
-    public ResponseEntity<SellerDtos.Response> apply(
-            @AuthenticationPrincipal Jwt jwt,
-            @Valid @RequestBody SellerDtos.ApplyRequest request
-    ) {
-        Long memberId = Long.valueOf(jwt.getSubject());
+  /**
+   * JWT subject에는 로그인한 Member의 id가 들어 있다. 요청 body에서 memberId를 받지 않고 토큰에서 꺼내 사용해 본인 명의로만 신청할 수 있게
+   * 한다.
+   */
+  @PostMapping("/apply")
+  public ResponseEntity<SellerDtos.Response> apply(
+      @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody SellerDtos.ApplyRequest request) {
+    Long memberId = Long.valueOf(jwt.getSubject());
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(sellerProfileService.apply(memberId, request));
-    }
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(sellerProfileService.apply(memberId, request));
+  }
 
-    @GetMapping("/me")
-    public SellerDtos.Response findMine(@AuthenticationPrincipal Jwt jwt) {
-        Long memberId = Long.valueOf(jwt.getSubject());
-        return sellerProfileService.findMine(memberId);
-    }
+  @GetMapping("/me")
+  public SellerDtos.Response findMine(@AuthenticationPrincipal Jwt jwt) {
+    Long memberId = Long.valueOf(jwt.getSubject());
+    return sellerProfileService.findMine(memberId);
+  }
 }

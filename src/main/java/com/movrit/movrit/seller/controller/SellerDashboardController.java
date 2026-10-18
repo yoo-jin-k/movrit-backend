@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/sellers/dashboard")
 public class SellerDashboardController {
-    private final SellerDashboardService service;
+  private final SellerDashboardService service;
 
-    @GetMapping
-    public SellerDashboardDtos.Response get(@AuthenticationPrincipal Jwt jwt) {
-        return service.get(Long.valueOf(jwt.getSubject()));
-    }
+  @GetMapping
+  public SellerDashboardDtos.Response get(@AuthenticationPrincipal Jwt jwt) {
+    return service.get(Long.valueOf(jwt.getSubject()));
+  }
 }

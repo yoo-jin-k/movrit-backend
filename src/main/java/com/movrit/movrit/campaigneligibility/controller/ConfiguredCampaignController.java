@@ -19,22 +19,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/campaigns/configured")
 public class ConfiguredCampaignController {
-    private final ConfiguredCampaignService service;
+  private final ConfiguredCampaignService service;
 
-    @PostMapping
-    public ResponseEntity<ConfiguredCampaignDtos.CreateResponse> create(
-            @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ConfiguredCampaignDtos.CreateRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(memberId(jwt), request));
-    }
+  @PostMapping
+  public ResponseEntity<ConfiguredCampaignDtos.CreateResponse> create(
+      @AuthenticationPrincipal Jwt jwt,
+      @Valid @RequestBody ConfiguredCampaignDtos.CreateRequest request) {
+    return ResponseEntity.status(HttpStatus.CREATED).body(service.create(memberId(jwt), request));
+  }
 
-    @PatchMapping("/{campaignId}")
-    public ConfiguredCampaignDtos.UpdateResponse update(
-            @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId,
-            @Valid @RequestBody ConfiguredCampaignDtos.UpdateRequest request
-    ) {
-        return service.update(memberId(jwt), campaignId, request);
-    }
+  @PatchMapping("/{campaignId}")
+  public ConfiguredCampaignDtos.UpdateResponse update(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long campaignId,
+      @Valid @RequestBody ConfiguredCampaignDtos.UpdateRequest request) {
+    return service.update(memberId(jwt), campaignId, request);
+  }
 
-    private Long memberId(Jwt jwt) { return Long.valueOf(jwt.getSubject()); }
+  private Long memberId(Jwt jwt) {
+    return Long.valueOf(jwt.getSubject());
+  }
 }

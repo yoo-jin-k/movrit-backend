@@ -7,6 +7,6 @@ import lombok.Getter;
 @AllArgsConstructor
 public class KakaoUserInfo {
 
-    private Long providerId;
-    private String nickname;
+  private Long providerId;
+  private String nickname;
 }
