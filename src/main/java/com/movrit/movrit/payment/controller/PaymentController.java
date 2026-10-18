@@ -1,5 +1,6 @@
 package com.movrit.movrit.payment.controller;
 
+import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.payment.dto.PaymentDtos;
 import com.movrit.movrit.payment.service.PaymentService;
 import jakarta.validation.Valid;
@@ -50,6 +51,6 @@ public class PaymentController {
   }
 
   private Long id(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

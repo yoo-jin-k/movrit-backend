@@ -2,6 +2,7 @@ package com.movrit.movrit.campaignmedia.controller;
 
 import com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService;
 import com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService.*;
+import com.movrit.movrit.common.security.JwtMemberId;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,12 +16,12 @@ public class CampaignVisitEvidenceController {
 
   @GetMapping("/api/campaign-applications/{applicationId}/visit-snapshot")
   public SnapshotView snapshot(@AuthenticationPrincipal Jwt jwt, @PathVariable Long applicationId) {
-    return service.snapshot(Long.valueOf(jwt.getSubject()), applicationId);
+    return service.snapshot(JwtMemberId.from(jwt), applicationId);
   }
 
   @GetMapping("/api/campaigns/{campaignId}/visit-history")
   public List<HistoryView> history(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {
-    return service.history(Long.valueOf(jwt.getSubject()), campaignId);
+    return service.history(JwtMemberId.from(jwt), campaignId);
   }
 }

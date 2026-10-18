@@ -1,5 +1,6 @@
 package com.movrit.movrit.preorder.controller;
 
+import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.preorder.dto.PreorderDtos;
 import com.movrit.movrit.preorder.service.PreorderService;
 import jakarta.validation.Valid;
@@ -106,6 +107,6 @@ public class PreorderController {
   }
 
   private Long memberId(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

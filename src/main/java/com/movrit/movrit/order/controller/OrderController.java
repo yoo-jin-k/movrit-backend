@@ -1,5 +1,6 @@
 package com.movrit.movrit.order.controller;
 
+import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.order.dto.OrderDtos;
 import com.movrit.movrit.order.service.OrderService;
 import jakarta.validation.Valid;
@@ -53,6 +54,6 @@ public class OrderController {
   }
 
   private Long memberId(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

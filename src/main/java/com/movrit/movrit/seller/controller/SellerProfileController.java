@@ -1,5 +1,6 @@
 package com.movrit.movrit.seller.controller;
 
+import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.seller.dto.SellerDtos;
 import com.movrit.movrit.seller.service.SellerProfileService;
 import jakarta.validation.Valid;
@@ -24,7 +25,7 @@ public class SellerProfileController {
   @PostMapping("/apply")
   public ResponseEntity<SellerDtos.Response> apply(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody SellerDtos.ApplyRequest request) {
-    Long memberId = Long.valueOf(jwt.getSubject());
+    Long memberId = JwtMemberId.from(jwt);
 
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(sellerProfileService.apply(memberId, request));
@@ -32,7 +33,7 @@ public class SellerProfileController {
 
   @GetMapping("/me")
   public SellerDtos.Response findMine(@AuthenticationPrincipal Jwt jwt) {
-    Long memberId = Long.valueOf(jwt.getSubject());
+    Long memberId = JwtMemberId.from(jwt);
     return sellerProfileService.findMine(memberId);
   }
 }

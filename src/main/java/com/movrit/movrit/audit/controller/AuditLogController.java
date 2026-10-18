@@ -2,6 +2,7 @@ package com.movrit.movrit.audit.controller;
 
 import com.movrit.movrit.audit.dto.AuditDtos;
 import com.movrit.movrit.audit.service.AuditLogService;
+import com.movrit.movrit.common.security.JwtMemberId;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,6 +19,6 @@ public class AuditLogController {
 
   @GetMapping
   public List<AuditDtos.Response> recent(@AuthenticationPrincipal Jwt jwt) {
-    return service.findRecent(Long.valueOf(jwt.getSubject()));
+    return service.findRecent(JwtMemberId.from(jwt));
   }
 }

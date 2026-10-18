@@ -2,6 +2,7 @@ package com.movrit.movrit.campaignmedia.controller;
 
 import com.movrit.movrit.campaignmedia.dto.CampaignMediaDtos.*;
 import com.movrit.movrit.campaignmedia.service.CampaignMediaService;
+import com.movrit.movrit.common.security.JwtMemberId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -53,6 +54,6 @@ public class CampaignMediaController {
   }
 
   private Long member(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

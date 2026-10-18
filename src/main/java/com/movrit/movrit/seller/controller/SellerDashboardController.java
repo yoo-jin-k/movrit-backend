@@ -1,5 +1,6 @@
 package com.movrit.movrit.seller.controller;
 
+import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.seller.dto.SellerDashboardDtos;
 import com.movrit.movrit.seller.service.SellerDashboardService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,6 @@ public class SellerDashboardController {
 
   @GetMapping
   public SellerDashboardDtos.Response get(@AuthenticationPrincipal Jwt jwt) {
-    return service.get(Long.valueOf(jwt.getSubject()));
+    return service.get(JwtMemberId.from(jwt));
   }
 }

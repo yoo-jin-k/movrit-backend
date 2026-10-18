@@ -3,6 +3,7 @@ package com.movrit.movrit.brand.controller;
 import com.movrit.movrit.brand.dto.BrandDtos;
 import com.movrit.movrit.brand.entity.BrandStatus;
 import com.movrit.movrit.brand.service.BrandService;
+import com.movrit.movrit.common.security.JwtMemberId;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -67,6 +68,6 @@ public class BrandController {
   }
 
   private Long memberId(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

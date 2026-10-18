@@ -3,6 +3,7 @@ package com.movrit.movrit.auth.controller;
 import com.movrit.movrit.auth.dto.*;
 import com.movrit.movrit.auth.jwt.JwtTokenProvider;
 import com.movrit.movrit.auth.service.*;
+import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.service.MemberService;
 import jakarta.annotation.PostConstruct;
@@ -78,14 +79,14 @@ public class AuthController {
 
   @GetMapping("/me")
   public ResponseEntity<AuthMeResponse> me(@AuthenticationPrincipal Jwt jwt) {
-    Long memberId = Long.valueOf(jwt.getSubject());
+    Long memberId = JwtMemberId.from(jwt);
     return ResponseEntity.ok(AuthMeResponse.from(memberService.getMember(memberId)));
   }
 
   /** 현재 MOVRIT 계정에 연결된 소셜 로그인 수단을 조회합니다. */
   @GetMapping("/social/accounts")
   public List<SocialAccountResponse> socialAccounts(@AuthenticationPrincipal Jwt jwt) {
-    return socialAccountService.findByMemberId(Long.valueOf(jwt.getSubject()));
+    return socialAccountService.findByMemberId(JwtMemberId.from(jwt));
   }
 
   /**
@@ -93,13 +94,13 @@ public class AuthController {
    */
   @GetMapping("/social/kakao/link-url")
   public ResponseEntity<String> kakaoLinkUrl(@AuthenticationPrincipal Jwt jwt) {
-    String state = socialLinkStateService.create(Long.valueOf(jwt.getSubject()));
+    String state = socialLinkStateService.create(JwtMemberId.from(jwt));
     return ResponseEntity.ok(kakaoAuthService.getLoginUrl(state));
   }
 
   @GetMapping("/social/google/link-url")
   public ResponseEntity<String> googleLinkUrl(@AuthenticationPrincipal Jwt jwt) {
-    String state = socialLinkStateService.create(Long.valueOf(jwt.getSubject()));
+    String state = socialLinkStateService.create(JwtMemberId.from(jwt));
     return ResponseEntity.ok(googleAuthService.getLoginUrl(state));
   }
 

@@ -2,6 +2,7 @@ package com.movrit.movrit.campaigneligibility.controller;
 
 import com.movrit.movrit.campaigneligibility.dto.ConfiguredCampaignDtos;
 import com.movrit.movrit.campaigneligibility.service.ConfiguredCampaignService;
+import com.movrit.movrit.common.security.JwtMemberId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -37,6 +38,6 @@ public class ConfiguredCampaignController {
   }
 
   private Long memberId(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

@@ -2,6 +2,7 @@ package com.movrit.movrit.campaignapplication.controller;
 
 import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos;
 import com.movrit.movrit.campaignapplication.service.CampaignApplicationService;
+import com.movrit.movrit.common.security.JwtMemberId;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -88,6 +89,6 @@ public class CampaignApplicationController {
   }
 
   private Long memberId(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

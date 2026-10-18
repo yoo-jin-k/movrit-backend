@@ -1,5 +1,6 @@
 package com.movrit.movrit.seller.controller;
 
+import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.seller.dto.SellerDtos;
 import com.movrit.movrit.seller.service.SellerProfileService;
 import java.util.List;
@@ -41,6 +42,6 @@ public class AdminSellerController {
   }
 
   private Long memberId(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

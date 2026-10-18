@@ -1,5 +1,6 @@
 package com.movrit.movrit.shipping.controller;
 
+import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.shipping.dto.ShippingDtos;
 import com.movrit.movrit.shipping.service.ShippingService;
 import jakarta.validation.Valid;
@@ -53,6 +54,6 @@ public class ShippingController {
   }
 
   private Long id(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

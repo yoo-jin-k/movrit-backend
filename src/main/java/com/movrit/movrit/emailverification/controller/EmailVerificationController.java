@@ -1,5 +1,6 @@
 package com.movrit.movrit.emailverification.controller;
 
+import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.emailverification.dto.EmailVerificationDtos;
 import com.movrit.movrit.emailverification.service.EmailVerificationService;
 import jakarta.validation.Valid;
@@ -35,6 +36,6 @@ public class EmailVerificationController {
   }
 
   private Long memberId(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

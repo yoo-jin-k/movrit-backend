@@ -2,6 +2,7 @@ package com.movrit.movrit.campaigncontent.controller;
 
 import com.movrit.movrit.campaigncontent.dto.CampaignContentDtos;
 import com.movrit.movrit.campaigncontent.service.CampaignContentService;
+import com.movrit.movrit.common.security.JwtMemberId;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,6 @@ public class AdminCampaignContentController {
   }
 
   private Long memberId(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

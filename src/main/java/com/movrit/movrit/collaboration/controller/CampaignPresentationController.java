@@ -2,6 +2,7 @@ package com.movrit.movrit.collaboration.controller;
 
 import com.movrit.movrit.collaboration.dto.CampaignPresentationDtos;
 import com.movrit.movrit.collaboration.service.CampaignPresentationService;
+import com.movrit.movrit.common.security.JwtMemberId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -74,6 +75,6 @@ public class CampaignPresentationController {
   }
 
   private Long memberId(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

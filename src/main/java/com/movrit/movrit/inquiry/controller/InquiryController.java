@@ -1,5 +1,6 @@
 package com.movrit.movrit.inquiry.controller;
 
+import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.inquiry.dto.InquiryDtos;
 import com.movrit.movrit.inquiry.service.InquiryService;
 import jakarta.validation.Valid;
@@ -48,6 +49,6 @@ public class InquiryController {
   }
 
   private Long memberId(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

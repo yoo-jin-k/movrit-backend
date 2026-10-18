@@ -1,5 +1,6 @@
 package com.movrit.movrit.notification.controller;
 
+import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.notification.dto.NotificationDtos;
 import com.movrit.movrit.notification.service.NotificationService;
 import java.util.List;
@@ -38,6 +39,6 @@ public class NotificationController {
   }
 
   private Long memberId(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

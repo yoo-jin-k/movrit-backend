@@ -2,6 +2,7 @@ package com.movrit.movrit.admin.controller;
 
 import com.movrit.movrit.admin.dto.AdminDtos;
 import com.movrit.movrit.admin.service.AdminDashboardService;
+import com.movrit.movrit.common.security.JwtMemberId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -15,6 +16,6 @@ public class AdminDashboardController {
 
   @GetMapping
   public AdminDtos.Dashboard get(@AuthenticationPrincipal Jwt jwt) {
-    return service.get(Long.valueOf(jwt.getSubject()));
+    return service.get(JwtMemberId.from(jwt));
   }
 }

@@ -1,5 +1,6 @@
 package com.movrit.movrit.product.controller;
 
+import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.product.dto.ProductDtos;
 import com.movrit.movrit.product.service.ProductService;
 import jakarta.validation.Valid;
@@ -102,6 +103,6 @@ public class ProductController {
   }
 
   private Long memberId(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }

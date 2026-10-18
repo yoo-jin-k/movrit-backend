@@ -1,5 +1,6 @@
 package com.movrit.movrit.settlement.controller;
 
+import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.settlement.dto.SettlementDtos;
 import com.movrit.movrit.settlement.service.SettlementService;
 import jakarta.validation.Valid;
@@ -51,6 +52,6 @@ public class SettlementController {
   }
 
   private Long id(Jwt jwt) {
-    return Long.valueOf(jwt.getSubject());
+    return JwtMemberId.from(jwt);
   }
 }
