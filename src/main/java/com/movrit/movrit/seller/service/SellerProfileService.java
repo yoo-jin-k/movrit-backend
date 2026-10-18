@@ -21,7 +21,7 @@ public class SellerProfileService {
   private final SellerProfileRepository sellerProfileRepository;
   private final MemberService memberService;
 
-  /** 로그인한 일반 회원을 판매자 등록 심사 대상으로 만든다. 신청 직후에는 상품을 등록할 수 없고 관리자 승인 후 APPROVED 상태가 되어야 한다. */
+  /** 로그인한 일반 회원을 판매자 등록 심사 대상으로 만듭니다. 신청 직후에는 상품을 등록할 수 없고 관리자 승인 후 APPROVED 상태가 되어야 합니다. */
   @Transactional
   public SellerDtos.Response apply(Long memberId, SellerDtos.ApplyRequest request) {
     if (sellerProfileRepository.existsByMemberId(memberId)) {
@@ -45,7 +45,7 @@ public class SellerProfileService {
     return SellerDtos.Response.from(sellerProfileRepository.save(seller));
   }
 
-  /** 로그인한 회원 본인의 판매자 신청 상태를 조회한다. */
+  /** 로그인한 회원 본인의 판매자 신청 상태를 조회합니다. */
   public SellerDtos.Response findMine(Long memberId) {
     return SellerDtos.Response.from(getSellerByMemberId(memberId));
   }
@@ -107,7 +107,7 @@ public class SellerProfileService {
             () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "판매자 등록 신청 정보를 찾을 수 없습니다."));
   }
 
-  /** 이후 상품 등록 서비스에서 승인 여부를 검사할 때 사용할 공통 조회 메서드다. */
+  /** 이후 상품 등록 서비스에서 승인 여부를 검사할 때 사용할 공통 조회 메서드입니다. */
   public SellerProfile getApprovedSeller(Long memberId) {
     SellerProfile seller = getSellerByMemberId(memberId);
 

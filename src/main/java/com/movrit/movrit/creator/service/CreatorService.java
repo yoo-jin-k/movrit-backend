@@ -74,7 +74,7 @@ public class CreatorService {
     return repository.findByMemberId(memberId);
   }
 
-  /** 기존 신청 테이블의 외래 키를 유지하면서 일반 사용자도 캠페인에 신청할 수 있게 내부 프로필을 만든다. */
+  /** 기존 신청 테이블의 외래 키를 유지하면서 일반 사용자도 캠페인에 신청할 수 있게 내부 프로필을 만듭니다. */
   @Transactional
   public Creator getOrCreateCandidate(Long memberId) {
     return repository

@@ -17,7 +17,7 @@ public class SellerProfile extends BaseEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  // 일반 회원이 판매자 등록을 신청하면 회원 1명당 하나의 판매자 프로필을 갖는다.
+  // 일반 회원이 판매자 등록을 신청하면 회원 1명당 하나의 판매자 프로필을 갖습니다.
   @OneToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "member_id", nullable = false, unique = true)
   private Member member;
@@ -34,7 +34,7 @@ public class SellerProfile extends BaseEntity {
   @Column(name = "representative_name")
   private String representativeName;
 
-  // 문자열 대신 enum을 사용해 잘못된 상태값이 DB에 저장되는 것을 막는다.
+  // 문자열 대신 enum을 사용해 잘못된 상태값이 DB에 저장되는 것을 막습니다.
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
   private SellerStatus status;

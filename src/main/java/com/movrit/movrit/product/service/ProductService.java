@@ -84,7 +84,7 @@ public class ProductService {
 
   /**
    * 재고는 상품 자체가 아니라 판매 가능한 SKU(옵션 조합) 단위로 생성합니다. 옵션이 없는 상품도 'DEFAULT-...' 같은 SKU 한 개를 만들면 동일한 재고 로직을
-   * 사용할 수 있다.
+   * 사용할 수 있습니다.
    */
   @Transactional
   public ProductDtos.VariantResponse createVariant(
@@ -199,7 +199,7 @@ public class ProductService {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "상품 옵션을 찾을 수 없습니다."));
   }
 
-  /** 주문 재고를 예약하는 동안 같은 SKU의 다른 예약이 끼어들지 못하게 한다. */
+  /** 주문 재고를 예약하는 동안 같은 SKU의 다른 예약이 끼어들지 못하게 합니다. */
   public ProductVariant getVariantForOrder(Long variantId) {
     return productVariantRepository
         .findLockedById(variantId)

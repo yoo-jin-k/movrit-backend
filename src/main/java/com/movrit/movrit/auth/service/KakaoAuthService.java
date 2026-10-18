@@ -137,7 +137,7 @@ public class KakaoAuthService {
             });
   }
 
-  /** 로그인한 MOVRIT 회원에게 카카오 로그인 수단을 추가한다. 이미 다른 회원에게 연결된 카카오 계정은 자동 이전하지 않는다. */
+  /** 로그인한 MOVRIT 회원에게 카카오 로그인 수단을 추가합니다. 이미 다른 회원에게 연결된 카카오 계정은 자동 이전하지 않습니다. */
   @Transactional
   public void linkAccount(Long memberId, KakaoUserInfo userInfo) {
     Member member =

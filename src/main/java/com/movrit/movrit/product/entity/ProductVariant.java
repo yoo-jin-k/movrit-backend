@@ -21,7 +21,7 @@ public class ProductVariant extends BaseEntity {
   @JoinColumn(name = "product_id", nullable = false)
   private Product product;
 
-  // 옵션이 없는 단일 상품도 variant 1개를 갖도록 하면 재고 로직을 한 곳에서 처리할 수 있다.
+  // 옵션이 없는 단일 상품도 variant 1개를 갖도록 하면 재고 로직을 한 곳에서 처리할 수 있습니다.
   @Column(name = "sku_code", nullable = false, unique = true, length = 80)
   private String skuCode;
 

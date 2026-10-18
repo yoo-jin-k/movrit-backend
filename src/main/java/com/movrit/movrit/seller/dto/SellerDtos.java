@@ -8,8 +8,8 @@ public final class SellerDtos {
   private SellerDtos() {}
 
   /**
-   * 판매자 등록 신청 값만 받는다. memberId와 status를 클라이언트가 보내지 않는 이유는 로그인 토큰과 서버 정책으로 결정해야 다른 회원 명의로 신청하거나 임의로
-   * APPROVED 상태를 만드는 것을 막을 수 있기 때문이다.
+   * 판매자 등록 신청 값만 받습니다. memberId와 status를 클라이언트가 보내지 않는 이유는 로그인 토큰과 서버 정책으로 결정해야 다른 회원 명의로 신청하거나 임의로
+   * APPROVED 상태를 만드는 것을 막을 수 있기 때문입니다.
    */
   public record ApplyRequest(
       @NotBlank String businessName,

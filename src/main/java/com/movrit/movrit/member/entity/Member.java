@@ -29,7 +29,7 @@ public class Member extends BaseEntity {
   @Column(length = 20)
   private String phone;
 
-  /** 시스템 접근 권한만 관리합니다. 판매자 여부는 SellerProfile 승인 상태로 판단하므로 판매자가 되어도 role은 USER일 수 있다. */
+  /** 시스템 접근 권한만 관리합니다. 판매자 여부는 SellerProfile 승인 상태로 판단하므로 판매자가 되어도 role은 USER일 수 있습니다. */
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
   private MemberRole role;

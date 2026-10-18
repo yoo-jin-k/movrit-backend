@@ -82,13 +82,15 @@ public class AuthController {
     return ResponseEntity.ok(AuthMeResponse.from(memberService.getMember(memberId)));
   }
 
-  /** 현재 MOVRIT 계정에 연결된 소셜 로그인 수단을 조회한다. */
+  /** 현재 MOVRIT 계정에 연결된 소셜 로그인 수단을 조회합니다. */
   @GetMapping("/social/accounts")
   public List<SocialAccountResponse> socialAccounts(@AuthenticationPrincipal Jwt jwt) {
     return socialAccountService.findByMemberId(Long.valueOf(jwt.getSubject()));
   }
 
-  /** 로그인된 회원이 카카오 계정을 추가 연결할 때 사용하는 인증 URL이다. state에는 회원 ID를 그대로 노출하지 않고 서버 서명을 포함한 일회성 값을 넣는다. */
+  /**
+   * 로그인된 회원이 카카오 계정을 추가 연결할 때 사용하는 인증 URL입니다. state에는 회원 ID를 그대로 노출하지 않고 서버 서명을 포함한 일회성 값을 넣습니다.
+   */
   @GetMapping("/social/kakao/link-url")
   public ResponseEntity<String> kakaoLinkUrl(@AuthenticationPrincipal Jwt jwt) {
     String state = socialLinkStateService.create(Long.valueOf(jwt.getSubject()));
@@ -110,7 +112,7 @@ public class AuthController {
     String kakaoAccessToken = kakaoAuthService.getAccessToken(code);
     KakaoUserInfo userInfo = kakaoAuthService.getUserInfo(kakaoAccessToken);
 
-    // state가 있으면 신규 로그인/회원가입이 아니라 기존 회원의 계정 연결 요청이다.
+    // state가 있으면 신규 로그인/회원가입이 아니라 기존 회원의 계정 연결 요청입니다.
     if (state != null && !state.isBlank()) {
       try {
         Long memberId = socialLinkStateService.getMemberId(state);

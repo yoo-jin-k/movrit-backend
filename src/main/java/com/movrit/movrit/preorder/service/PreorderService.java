@@ -213,7 +213,7 @@ public class PreorderService {
     return preorder;
   }
 
-  /** 주문 수량을 검사하고 늘리는 동안 다른 주문이 같은 프리오더 수량을 바꾸지 못하게 한다. */
+  /** 주문 수량을 검사하고 늘리는 동안 다른 주문이 같은 프리오더 수량을 바꾸지 못하게 합니다. */
   public Preorder getPreorderForOrder(Long id) {
     Preorder preorder =
         preorderRepository

@@ -18,8 +18,8 @@ public class SellerProfileController {
   private final SellerProfileService sellerProfileService;
 
   /**
-   * JWT subject에는 로그인한 Member의 id가 들어 있다. 요청 body에서 memberId를 받지 않고 토큰에서 꺼내 사용해 본인 명의로만 신청할 수 있게
-   * 한다.
+   * JWT subject에는 로그인한 Member의 id가 들어 있습니다. 요청 body에서 memberId를 받지 않고 토큰에서 꺼내 사용해 본인 명의로만 신청할 수 있게
+   * 합니다.
    */
   @PostMapping("/apply")
   public ResponseEntity<SellerDtos.Response> apply(

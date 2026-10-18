@@ -28,7 +28,7 @@ public class LocalFileStorageService {
     this.rootPath = Path.of(uploadDir).toAbsolutePath().normalize();
   }
 
-  /** 원본 파일명은 저장 파일명으로 사용하지 않는다. MIME 타입에서 허용 확장자를 직접 결정하면 악의적인 파일명이 그대로 노출되는 것도 막을 수 있다. */
+  /** 원본 파일명은 저장 파일명으로 사용하지 않습니다. MIME 타입에서 허용 확장자를 직접 결정하면 악의적인 파일명이 그대로 노출되는 것도 막을 수 있습니다. */
   public String storeImage(MultipartFile file, String directory) {
     String extension = validateAndResolveExtension(file);
     String storedName = UUID.randomUUID() + extension;

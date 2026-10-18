@@ -154,7 +154,7 @@ public class GoogleAuthService {
             });
   }
 
-  /** 로그인한 MOVRIT 회원에게 구글 로그인 수단을 추가한다. 이미 다른 회원에게 연결된 구글 계정은 자동 병합하지 않아 계정 탈취를 방지합니다. */
+  /** 로그인한 MOVRIT 회원에게 구글 로그인 수단을 추가합니다. 이미 다른 회원에게 연결된 구글 계정은 자동 병합하지 않아 계정 탈취를 방지합니다. */
   @Transactional
   public void linkAccount(Long memberId, GoogleUserInfo userInfo) {
     Member member =

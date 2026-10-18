@@ -18,7 +18,7 @@ public class Brand extends BaseEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  // 판매자 한 명이 여러 브랜드를 운영할 수 있도록 ManyToOne으로 둔다.
+  // 판매자 한 명이 여러 브랜드를 운영할 수 있도록 ManyToOne으로 둡니다.
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "seller_id", nullable = false)
   private SellerProfile seller;

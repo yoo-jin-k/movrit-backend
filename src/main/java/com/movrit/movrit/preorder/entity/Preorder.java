@@ -55,7 +55,7 @@ public class Preorder extends BaseEntity {
   @Column(name = "target_quantity", nullable = false)
   private Long targetQuantity;
 
-  // 전체 판매 상한. null이면 별도 상한 없이 SKU 재고를 기준으로 판매한다.
+  // 전체 판매 상한. null이면 별도 상한 없이 SKU 재고를 기준으로 판매합니다.
   @Column(name = "max_quantity")
   private Long maxQuantity;
 
@@ -169,7 +169,7 @@ public class Preorder extends BaseEntity {
     this.status = PreorderStatus.CLOSED;
   }
 
-  /** 마감 후 목표 수량 달성 여부를 확정한다. */
+  /** 마감 후 목표 수량 달성 여부를 확정합니다. */
   public void finalizeResult() {
     if (status != PreorderStatus.CLOSED) throw new IllegalStateException("마감된 프리오더만 결과를 확정할 수 있어.");
     this.status =
