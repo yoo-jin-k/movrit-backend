@@ -630,9 +630,13 @@ public class CampaignApplicationService {
   }
 
   private CampaignApplicationDtos.Response sellerResponse(CampaignApplication application) {
+    // 선정만으로는 참여가 확정되지 않습니다. 당사자가 수락해 ACTIVE가 된 뒤에만
+    // 배송에 필요한 연락처를 업체에 제공하고, 취소·미선정 건에서는 다시 숨깁니다.
     boolean hideContact =
-        application.getStatus() == CampaignApplicationStatus.SUBMITTED
-            || application.getStatus() == CampaignApplicationStatus.REJECTED;
+        application.getStatus() != CampaignApplicationStatus.ACTIVE
+            && application.getStatus() != CampaignApplicationStatus.CONTENT_SUBMITTED
+            && application.getStatus() != CampaignApplicationStatus.REVISION_REQUESTED
+            && application.getStatus() != CampaignApplicationStatus.COMPLETED;
     return response(application, hideContact);
   }
 
