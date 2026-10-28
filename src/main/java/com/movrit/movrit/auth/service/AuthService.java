@@ -52,7 +52,13 @@ public class AuthService {
     // 4. 프론트에 로그인 결과 반환
     String refreshToken = issueRefreshToken(member);
     return new LoginResponse(
-        accessToken, refreshToken, "Bearer", member.getId(), member.getEmail(), member.getName());
+        accessToken,
+        refreshToken,
+        "Bearer",
+        member.getId(),
+        member.getEmail(),
+        member.getName(),
+        member.getNickname());
   }
 
   @Transactional
@@ -74,7 +80,8 @@ public class AuthService {
         "Bearer",
         m.getId(),
         m.getEmail(),
-        m.getName());
+        m.getName(),
+        m.getNickname());
   }
 
   @Transactional

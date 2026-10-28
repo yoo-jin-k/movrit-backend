@@ -26,6 +26,10 @@ public class Member extends BaseEntity {
   @Column(nullable = false, length = 50)
   private String name;
 
+  /** 화면에 노출하는 회원 표시명이며 실명·업체명·채널 프로필 이름과 구분합니다. */
+  @Column(nullable = false, unique = true, length = 20)
+  private String nickname;
+
   @Column(length = 20)
   private String phone;
 
@@ -47,9 +51,10 @@ public class Member extends BaseEntity {
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
-  public void updateProfile(String name, String phone) {
+  public void updateProfile(String name, String phone, String nickname) {
     this.name = name;
     this.phone = phone;
+    if (nickname != null) this.nickname = nickname;
   }
 
   public void changePassword(String passwordHash) {

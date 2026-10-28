@@ -8,6 +8,7 @@ import com.movrit.movrit.member.entity.MemberSocialAccount;
 import com.movrit.movrit.member.entity.MemberStatus;
 import com.movrit.movrit.member.repository.MemberRepository;
 import com.movrit.movrit.member.repository.MemberSocialAccountRepository;
+import com.movrit.movrit.member.service.MemberNicknamePolicy;
 import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -117,6 +118,9 @@ public class KakaoAuthService {
                       .email(null)
                       .passwordHash(null)
                       .name(nickname)
+                      .nickname(
+                          MemberNicknamePolicy.availableSocialFallback(
+                              memberRepository::existsByNickname))
                       .phone(null)
                       .role(MemberRole.USER)
                       .status(MemberStatus.ACTIVE)

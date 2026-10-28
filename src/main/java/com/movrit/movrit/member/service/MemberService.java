@@ -29,12 +29,17 @@ public class MemberService {
     if (memberRepository.existsByEmail(email)) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 가입된 이메일입니다.");
     }
+    String nickname = MemberNicknamePolicy.normalize(request.nickname());
+    if (memberRepository.existsByNickname(nickname)) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다.");
+    }
 
     Member member =
         Member.builder()
             .email(email)
             .passwordHash(passwordEncoder.encode(request.password()))
             .name(request.name().trim())
+            .nickname(nickname)
             .phone(normalizePhone(request.phone()))
             // 회원가입 요청에서 관리자 권한을 받을 수 없도록 서버가 USER로 고정합니다.
             .role(MemberRole.USER)
@@ -63,7 +68,14 @@ public class MemberService {
   @Transactional
   public MemberSignupResponse update(Long id, MemberUpdateRequest request) {
     Member member = getMember(id);
-    member.updateProfile(request.name().trim(), normalizePhone(request.phone()));
+    String nickname = null;
+    if (request.nickname() != null) {
+      nickname = MemberNicknamePolicy.normalize(request.nickname());
+      if (memberRepository.existsByNicknameAndIdNot(nickname, id)) {
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다.");
+      }
+    }
+    member.updateProfile(request.name().trim(), normalizePhone(request.phone()), nickname);
     return MemberSignupResponse.from(member);
   }
 

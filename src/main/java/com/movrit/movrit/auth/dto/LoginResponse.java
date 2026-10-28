@@ -25,4 +25,7 @@ public class LoginResponse {
 
   /** 표시 이름입니다. */
   private String name;
+
+  /** 헤더와 프로필에서 사용하는 회원 표시용 닉네임입니다. */
+  private String nickname;
 }
