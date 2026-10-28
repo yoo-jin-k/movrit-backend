@@ -11,6 +11,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -47,6 +49,12 @@ public class Campaign extends BaseEntity {
 
   @Column(name = "recruitment_count", nullable = false)
   private Integer recruitmentCount;
+
+  /** 기존 캠페인은 브랜드 직접 선정으로 유지합니다. */
+  @Builder.Default
+  @Enumerated(EnumType.STRING)
+  @Column(name = "selection_mode", nullable = false, length = 20)
+  private CampaignSelectionMode selectionMode = CampaignSelectionMode.BRAND_DIRECT;
 
   @Column(name = "reward_description", columnDefinition = "TEXT")
   private String rewardDescription;
@@ -145,6 +153,57 @@ public class Campaign extends BaseEntity {
       LocalDateTime contentSubmissionStartAt,
       LocalDateTime contentSubmissionEndAt,
       LocalDateTime resultsAnnouncedAt) {
+    update(
+        title,
+        description,
+        category,
+        minFollowerCount,
+        recruitmentCount,
+        selectionMode == null ? CampaignSelectionMode.BRAND_DIRECT : selectionMode,
+        rewardDescription,
+        mission,
+        channelGuide,
+        scheduleGuide,
+        deliveryGuide,
+        visitGuide,
+        caution,
+        submissionRequirement,
+        expectedScheduleVersion,
+        startAt,
+        endAt,
+        selectionAnnouncedAt,
+        experienceStartAt,
+        experienceEndAt,
+        contentSubmissionStartAt,
+        contentSubmissionEndAt,
+        resultsAnnouncedAt);
+  }
+
+  /** 선정 주체를 포함해 모집 내용과 참여 안내를 수정합니다. */
+  public void update(
+      String title,
+      String description,
+      String category,
+      Long minFollowerCount,
+      Integer recruitmentCount,
+      CampaignSelectionMode selectionMode,
+      String rewardDescription,
+      String mission,
+      String channelGuide,
+      String scheduleGuide,
+      String deliveryGuide,
+      String visitGuide,
+      String caution,
+      String submissionRequirement,
+      Long expectedScheduleVersion,
+      LocalDateTime startAt,
+      LocalDateTime endAt,
+      LocalDateTime selectionAnnouncedAt,
+      LocalDateTime experienceStartAt,
+      LocalDateTime experienceEndAt,
+      LocalDateTime contentSubmissionStartAt,
+      LocalDateTime contentSubmissionEndAt,
+      LocalDateTime resultsAnnouncedAt) {
     if (scheduleVersion == null || !scheduleVersion.equals(expectedScheduleVersion)) {
       throw new IllegalArgumentException("캠페인 일정이 변경되었습니다. 최신 일정을 다시 확인해 주세요.");
     }
@@ -162,6 +221,7 @@ public class Campaign extends BaseEntity {
     this.category = category;
     this.minFollowerCount = minFollowerCount;
     this.recruitmentCount = recruitmentCount;
+    this.selectionMode = selectionMode;
     this.rewardDescription = rewardDescription;
     this.mission = mission;
     this.channelGuide = channelGuide;

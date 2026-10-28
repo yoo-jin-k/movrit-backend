@@ -28,6 +28,7 @@ public final class CollaborationDtos {
       String category,
       @NotNull @Min(0) Long minFollowerCount,
       @NotNull @Min(1) Integer recruitmentCount,
+      CampaignSelectionMode selectionMode,
       String rewardDescription,
       @NotNull LocalDateTime startAt,
       @NotNull LocalDateTime endAt) {}
@@ -60,6 +61,7 @@ public final class CollaborationDtos {
       String category,
       Long minFollowerCount,
       Integer recruitmentCount,
+      CampaignSelectionMode selectionMode,
       String rewardDescription,
       String representativeImageUrl,
       LocalDateTime startAt,
@@ -77,6 +79,7 @@ public final class CollaborationDtos {
           c.getCategory(),
           c.getMinFollowerCount(),
           c.getRecruitmentCount(),
+          c.getSelectionMode(),
           c.getRewardDescription(),
           c.getRepresentativeImageUrl(),
           c.getStartAt(),

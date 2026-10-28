@@ -6,6 +6,7 @@ import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepos
 import com.movrit.movrit.campaignmedia.service.CampaignPublicPolicy;
 import com.movrit.movrit.collaboration.dto.CampaignManagementDtos;
 import com.movrit.movrit.collaboration.entity.Campaign;
+import com.movrit.movrit.collaboration.entity.CampaignSelectionMode;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
 import com.movrit.movrit.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,13 @@ public class CampaignManagementService {
         campaign.getScheduleVersion(), request.expectedScheduleVersion())) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "캠페인 일정이 변경되었습니다. 최신 일정을 다시 확인해 주세요.");
     }
+    CampaignSelectionMode requestedSelectionMode =
+        request.selectionMode() == null ? campaign.getSelectionMode() : request.selectionMode();
+    if (requestedSelectionMode != campaign.getSelectionMode()
+        && applicationRepository.existsByCampaignId(campaignId)) {
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "신청 이력이 있는 캠페인은 선정 방식을 변경할 수 없습니다.");
+    }
     try {
       campaign.update(
           request.title().trim(),
@@ -50,6 +58,7 @@ public class CampaignManagementService {
           normalize(request.category()),
           request.minFollowerCount(),
           request.recruitmentCount(),
+          requestedSelectionMode,
           normalize(request.rewardDescription()),
           normalize(request.mission()),
           normalize(request.channelGuide()),

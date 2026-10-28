@@ -2,6 +2,7 @@ package com.movrit.movrit.campaignapplication.repository;
 
 import com.movrit.movrit.campaignapplication.entity.CampaignApplication;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
+import com.movrit.movrit.collaboration.entity.CampaignSelectionMode;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,6 +22,9 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
 
   List<CampaignApplication> findAllByCampaignPreorderProductBrandSellerMemberIdOrderByIdDesc(
       Long memberId);
+
+  List<CampaignApplication> findAllByCampaignSelectionModeOrderByIdDesc(
+      CampaignSelectionMode selectionMode);
 
   long countByCampaignIdAndStatusIn(Long campaignId, List<CampaignApplicationStatus> statuses);
 }

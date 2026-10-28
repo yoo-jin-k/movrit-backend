@@ -1,6 +1,7 @@
 package com.movrit.movrit.collaboration.dto;
 
 import com.movrit.movrit.collaboration.entity.Campaign;
+import com.movrit.movrit.collaboration.entity.CampaignSelectionMode;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -43,6 +44,7 @@ public final class CampaignManagementDtos {
       @Size(max = 100) String category,
       @NotNull @Min(0) Long minFollowerCount,
       @NotNull @Min(1) Integer recruitmentCount,
+      CampaignSelectionMode selectionMode,
       @Size(max = 5000) String rewardDescription,
       @Size(max = 10000) String mission,
       @Size(max = 5000) String channelGuide,
@@ -110,6 +112,7 @@ public final class CampaignManagementDtos {
       String category,
       Long minFollowerCount,
       Integer recruitmentCount,
+      CampaignSelectionMode selectionMode,
       String rewardDescription,
       String mission,
       String channelGuide,
@@ -157,6 +160,7 @@ public final class CampaignManagementDtos {
           campaign.getCategory(),
           campaign.getMinFollowerCount(),
           campaign.getRecruitmentCount(),
+          campaign.getSelectionMode(),
           campaign.getRewardDescription(),
           campaign.getMission(),
           campaign.getChannelGuide(),

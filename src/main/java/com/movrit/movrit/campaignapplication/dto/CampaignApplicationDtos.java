@@ -5,6 +5,7 @@ import com.movrit.movrit.campaignapplication.entity.FulfillmentType;
 import com.movrit.movrit.campaigncontent.dto.CampaignContentDtos;
 import com.movrit.movrit.campaigneligibility.dto.CampaignEligibilityDtos;
 import com.movrit.movrit.collaboration.dto.CampaignManagementDtos;
+import com.movrit.movrit.collaboration.entity.CampaignSelectionMode;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -217,6 +218,8 @@ public final class CampaignApplicationDtos {
   public record Response(
       Long id,
       Long campaignId,
+      String campaignTitle,
+      CampaignSelectionMode selectionMode,
       Long preorderId,
       Long creatorId,
       String creatorNickname,

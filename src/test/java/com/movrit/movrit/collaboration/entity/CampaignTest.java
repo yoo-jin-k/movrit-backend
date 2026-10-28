@@ -9,6 +9,13 @@ import org.junit.jupiter.api.Test;
 class CampaignTest {
 
   @Test
+  void existingCompatibleCampaignDefaultsToBrandDirectSelection() {
+    Campaign campaign = Campaign.builder().build();
+
+    assertThat(campaign.getSelectionMode()).isEqualTo(CampaignSelectionMode.BRAND_DIRECT);
+  }
+
+  @Test
   void updateStoresCampaignSpecificGuides() {
     Campaign campaign = Campaign.builder().open(true).build();
     LocalDateTime startAt = LocalDateTime.now().plusDays(1);
@@ -116,5 +123,38 @@ class CampaignTest {
     assertThat(campaign.getContentSubmissionStartAt()).isEqualTo(submissionStart);
     assertThat(campaign.getResultsAnnouncedAt()).isNull();
     assertThat(campaign.getScheduleVersion()).isEqualTo(2L);
+  }
+
+  @Test
+  void updateStoresOperatorSelectionMode() {
+    Campaign campaign = Campaign.builder().scheduleVersion(1L).build();
+    LocalDateTime startAt = LocalDateTime.now().plusDays(1);
+
+    campaign.update(
+        "운영자 선정 캠페인",
+        null,
+        null,
+        0L,
+        3,
+        CampaignSelectionMode.OPERATOR,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        1L,
+        startAt,
+        startAt.plusDays(7),
+        null,
+        null,
+        null,
+        null,
+        null,
+        null);
+
+    assertThat(campaign.getSelectionMode()).isEqualTo(CampaignSelectionMode.OPERATOR);
   }
 }

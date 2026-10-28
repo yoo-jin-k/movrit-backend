@@ -13,6 +13,7 @@ import com.movrit.movrit.campaigneligibility.service.CampaignEligibilityPolicySe
 import com.movrit.movrit.campaigneligibility.service.MemberChannelMetricService;
 import com.movrit.movrit.collaboration.dto.CampaignManagementDtos;
 import com.movrit.movrit.collaboration.entity.Campaign;
+import com.movrit.movrit.collaboration.entity.CampaignSelectionMode;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
 import com.movrit.movrit.creator.entity.Creator;
 import com.movrit.movrit.creator.service.CreatorService;
@@ -258,9 +259,34 @@ public class CampaignApplicationService {
         .toList();
   }
 
+  /** 운영자 선정 캠페인의 신청 목록만 관리자에게 제공합니다. */
+  public List<CampaignApplicationDtos.Response> findOperatorApplications(Long adminMemberId) {
+    memberService.getAdmin(adminMemberId);
+    return applicationRepository
+        .findAllByCampaignSelectionModeOrderByIdDesc(CampaignSelectionMode.OPERATOR)
+        .stream()
+        .map(this::sellerResponse)
+        .toList();
+  }
+
   @Transactional
   public CampaignApplicationDtos.Response select(Long memberId, Long applicationId) {
     CampaignApplication application = getSellerApplication(memberId, applicationId);
+    requireSelectionMode(application, CampaignSelectionMode.BRAND_DIRECT);
+    return selectApplication(memberId, application);
+  }
+
+  /** 운영자 선정 캠페인의 신청만 관리자가 선정합니다. */
+  @Transactional
+  public CampaignApplicationDtos.Response operatorSelect(Long adminMemberId, Long applicationId) {
+    memberService.getAdmin(adminMemberId);
+    CampaignApplication application = getApplication(applicationId);
+    requireSelectionMode(application, CampaignSelectionMode.OPERATOR);
+    return selectApplication(adminMemberId, application);
+  }
+
+  private CampaignApplicationDtos.Response selectApplication(
+      Long actorMemberId, CampaignApplication application) {
     Campaign lockedCampaign =
         campaignRepository
             .findByIdForUpdate(application.getCampaign().getId())
@@ -281,17 +307,37 @@ public class CampaignApplicationService {
     CampaignApplicationDtos.Response response =
         transition(application, CampaignApplication::select);
     notifyCreatorAndAudit(
-        memberId, application, "신청이 선정되었습니다.", "CAMPAIGN_APPLICATION_SELECTED", "SELECTED", null);
+        actorMemberId,
+        application,
+        "신청이 선정되었습니다.",
+        "CAMPAIGN_APPLICATION_SELECTED",
+        "SELECTED",
+        null);
     return response;
   }
 
   @Transactional
   public CampaignApplicationDtos.Response reject(Long memberId, Long applicationId) {
     CampaignApplication application = getSellerApplication(memberId, applicationId);
+    requireSelectionMode(application, CampaignSelectionMode.BRAND_DIRECT);
+    return rejectApplication(memberId, application);
+  }
+
+  /** 운영자 선정 캠페인의 신청만 관리자가 미선정 처리합니다. */
+  @Transactional
+  public CampaignApplicationDtos.Response operatorReject(Long adminMemberId, Long applicationId) {
+    memberService.getAdmin(adminMemberId);
+    CampaignApplication application = getApplication(applicationId);
+    requireSelectionMode(application, CampaignSelectionMode.OPERATOR);
+    return rejectApplication(adminMemberId, application);
+  }
+
+  private CampaignApplicationDtos.Response rejectApplication(
+      Long actorMemberId, CampaignApplication application) {
     CampaignApplicationDtos.Response response =
         transition(application, CampaignApplication::reject);
     notifyCreatorAndAudit(
-        memberId,
+        actorMemberId,
         application,
         "신청이 선정되지 않았습니다.",
         "CAMPAIGN_APPLICATION_REJECTED",
@@ -607,13 +653,23 @@ public class CampaignApplicationService {
   }
 
   private CampaignApplication getSellerApplication(Long memberId, Long applicationId) {
-    CampaignApplication application =
-        applicationRepository
-            .findById(applicationId)
-            .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
+    CampaignApplication application = getApplication(applicationId);
     getOwnedCampaign(memberId, application.getCampaign().getId());
     return application;
+  }
+
+  private CampaignApplication getApplication(Long applicationId) {
+    return applicationRepository
+        .findById(applicationId)
+        .orElseThrow(
+            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
+  }
+
+  private void requireSelectionMode(
+      CampaignApplication application, CampaignSelectionMode expected) {
+    if (application.getCampaign().getSelectionMode() != expected) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이 캠페인의 선정 주체가 아닙니다.");
+    }
   }
 
   private CampaignApplicationDtos.FormResponse formResponse(CampaignApplicationForm form) {
@@ -657,6 +713,8 @@ public class CampaignApplicationService {
     return new CampaignApplicationDtos.Response(
         application.getId(),
         application.getCampaign().getId(),
+        application.getCampaign().getTitle(),
+        application.getCampaign().getSelectionMode(),
         application.getCampaign().getPreorder().getId(),
         application.getCreator().getId(),
         application.getCreator().getNickname(),
