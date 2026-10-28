@@ -71,7 +71,14 @@ JOIN (VALUES
     ('[QA-CANCEL] 진행 상태 취소', 'ACTIVE')
 ) AS fixture(campaign_title, status) ON fixture.campaign_title = campaign.title
 CROSS JOIN (
-    SELECT application.creator_id FROM campaign_application application WHERE application.id = 24
+    SELECT application.creator_id
+    FROM campaign_application application
+    WHERE application.id = 24
+    UNION ALL
+    SELECT creator.id
+    FROM influencer_profile creator
+    JOIN member member ON member.id = creator.member_id
+    WHERE member.email = 'qa-workspace-user-integration@movrit.local'
 ) source
 WHERE NOT EXISTS (
     SELECT 1 FROM campaign_application existing
