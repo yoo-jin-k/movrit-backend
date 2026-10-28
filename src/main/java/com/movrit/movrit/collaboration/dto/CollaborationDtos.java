@@ -45,6 +45,7 @@ public final class CollaborationDtos {
    * @param minFollowerCount 기존 캠페인의 최소 팔로워 필드이며 신규 채널별 조건과 구분합니다.
    * @param recruitmentCount 모집 인원입니다.
    * @param rewardDescription 제공 혜택 설명입니다.
+   * @param representativeImageUrl 캠페인에 직접 연결된 대표 이미지 주소입니다.
    * @param startAt 모집 시작 시각입니다.
    * @param endAt 모집 종료 시각입니다.
    * @param open 현재 모집 또는 진행 가능 상태입니다.
@@ -60,6 +61,7 @@ public final class CollaborationDtos {
       Long minFollowerCount,
       Integer recruitmentCount,
       String rewardDescription,
+      String representativeImageUrl,
       LocalDateTime startAt,
       LocalDateTime endAt,
       boolean open) {
@@ -76,6 +78,7 @@ public final class CollaborationDtos {
           c.getMinFollowerCount(),
           c.getRecruitmentCount(),
           c.getRewardDescription(),
+          c.getRepresentativeImageUrl(),
           c.getStartAt(),
           c.getEndAt(),
           c.isOpen());
