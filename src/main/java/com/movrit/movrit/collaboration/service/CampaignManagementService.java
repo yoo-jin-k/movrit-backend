@@ -89,6 +89,24 @@ public class CampaignManagementService {
     return CampaignManagementDtos.DetailResponse.from(campaign);
   }
 
+  @Transactional
+  public CampaignManagementDtos.ContactResponse saveContact(
+      Long memberId, Long campaignId, CampaignManagementDtos.ContactSaveRequest request) {
+    Campaign campaign = getOwnedCampaign(memberId, campaignId);
+    campaign.updateContact(request.name().trim(), request.phone().trim());
+    auditLogService.record(
+        memberId, "CAMPAIGN_CONTACT_UPDATED", "CAMPAIGN", campaignId, null, null, null);
+    return new CampaignManagementDtos.ContactResponse(
+        campaign.getContactName(), campaign.getContactPhone());
+  }
+
+  public CampaignManagementDtos.ContactResponse getContact(Long memberId, Long campaignId) {
+    Campaign campaign = getOwnedCampaign(memberId, campaignId);
+    if (campaign.getContactName() == null || campaign.getContactPhone() == null) return null;
+    return new CampaignManagementDtos.ContactResponse(
+        campaign.getContactName(), campaign.getContactPhone());
+  }
+
   /** 신청 이력이 생긴 뒤에는 감사 추적을 위해 삭제하지 않고 종료만 허용합니다. */
   @Transactional
   public void delete(Long memberId, Long campaignId) {

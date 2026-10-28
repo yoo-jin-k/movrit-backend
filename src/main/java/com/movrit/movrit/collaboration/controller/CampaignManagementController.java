@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,6 +44,22 @@ public class CampaignManagementController {
   public CampaignManagementDtos.DetailResponse close(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {
     return service.close(memberId(jwt), campaignId);
+  }
+
+  /** 소유 업체가 신청 당사자에게 공개할 캠페인 담당자 연락처를 저장합니다. */
+  @PutMapping("/{campaignId}/contact")
+  public CampaignManagementDtos.ContactResponse saveContact(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long campaignId,
+      @Valid @RequestBody CampaignManagementDtos.ContactSaveRequest request) {
+    return service.saveContact(memberId(jwt), campaignId, request);
+  }
+
+  /** 소유 업체가 현재 등록된 캠페인 공개 담당자 연락처를 조회합니다. */
+  @GetMapping("/{campaignId}/contact")
+  public CampaignManagementDtos.ContactResponse getContact(
+      @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {
+    return service.getContact(memberId(jwt), campaignId);
   }
 
   /** 캠페인 및 협업 관련 삭제를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */

@@ -181,4 +181,11 @@ public final class CampaignManagementDtos {
           campaign.isOpen());
     }
   }
+
+  /** 캠페인 신청 당사자에게 공개할 브랜드 담당자 연락처입니다. */
+  public record ContactResponse(String name, String phone) {}
+
+  /** 업체가 캠페인별 공개 담당자 연락처를 저장합니다. */
+  public record ContactSaveRequest(
+      @NotBlank @Size(max = 100) String name, @NotBlank @Size(max = 30) String phone) {}
 }

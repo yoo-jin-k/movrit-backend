@@ -4,15 +4,21 @@ import com.movrit.movrit.audit.service.AuditLogService;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplication;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
 import com.movrit.movrit.campaigncontent.dto.CampaignContentDtos;
+import com.movrit.movrit.campaigncontent.entity.CampaignContentLink;
 import com.movrit.movrit.campaigncontent.entity.CampaignContentSubmission;
 import com.movrit.movrit.campaigncontent.entity.ContentSubmissionStatus;
+import com.movrit.movrit.campaigncontent.repository.CampaignContentLinkRepository;
 import com.movrit.movrit.campaigncontent.repository.CampaignContentSubmissionRepository;
 import com.movrit.movrit.member.service.MemberService;
 import com.movrit.movrit.notification.service.NotificationService;
 import com.movrit.movrit.product.service.ProductService;
 import com.movrit.movrit.seller.service.SellerProfileService;
+import java.net.URI;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,6 +32,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class CampaignContentService {
   private final CampaignApplicationRepository applicationRepository;
   private final CampaignContentSubmissionRepository submissionRepository;
+  private final CampaignContentLinkRepository linkRepository;
   private final ProductService productService;
   private final NotificationService notificationService;
   private final AuditLogService auditLogService;
@@ -42,6 +49,9 @@ public class CampaignContentService {
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
     CampaignContentSubmission submission =
         submissionRepository.findByApplicationId(applicationId).orElse(null);
+    validateLink(
+        com.movrit.movrit.campaigncontent.entity.ContentChannel.OTHER, request.contentUrl());
+    requireSubmissionPeriod(application, submission);
 
     if (submission == null) {
       transitionApplication(application, CampaignApplication::markContentSubmitted);
@@ -82,10 +92,53 @@ public class CampaignContentService {
     return flushedResponse(submission);
   }
 
+  @Transactional
+  public CampaignContentDtos.Response submitLinks(
+      Long memberId, Long applicationId, CampaignContentDtos.PackageSubmitRequest request) {
+    Set<String> urls = new HashSet<>();
+    for (CampaignContentDtos.LinkRequest link : request.links()) {
+      validateLink(link.channelType(), link.contentUrl());
+      if (!urls.add(link.contentUrl().trim())) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "같은 콘텐츠 URL을 중복 제출할 수 없습니다.");
+      }
+    }
+    CampaignContentDtos.LinkRequest first = request.links().get(0);
+    submit(
+        memberId,
+        applicationId,
+        new CampaignContentDtos.SubmitRequest(
+            first.contentUrl(), request.note(), request.expectedVersion()));
+    CampaignContentSubmission submission =
+        submissionRepository.findByApplicationId(applicationId).orElseThrow();
+    linkRepository.deleteAllBySubmissionId(submission.getId());
+    linkRepository.saveAll(
+        request.links().stream()
+            .map(
+                link ->
+                    CampaignContentLink.builder()
+                        .submission(submission)
+                        .channelType(link.channelType())
+                        .contentUrl(link.contentUrl().trim())
+                        .build())
+            .toList());
+    return flushedResponse(submission);
+  }
+
   public List<CampaignContentDtos.Response> findMine(Long memberId) {
     return submissionRepository.findAllByApplicationCreatorMemberIdOrderByIdDesc(memberId).stream()
         .map(this::response)
         .toList();
+  }
+
+  /** 내 캠페인 작업공간에서 신청별 최신 콘텐츠 검수 상태를 합칠 때 사용합니다. */
+  public CampaignContentDtos.Response findMineByApplication(Long memberId, Long applicationId) {
+    CampaignContentSubmission submission =
+        submissionRepository.findByApplicationId(applicationId).orElse(null);
+    if (submission == null) return null;
+    if (!submission.getApplication().getCreator().getMember().getId().equals(memberId)) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "콘텐츠 제출 내역을 찾을 수 없습니다.");
+    }
+    return response(submission);
   }
 
   public List<CampaignContentDtos.Response> findSellerContents(Long memberId) {
@@ -243,7 +296,13 @@ public class CampaignContentService {
         submission.getVersion(),
         submission.getReviewComment(),
         submission.getSubmittedAt(),
-        submission.getReviewedAt());
+        submission.getReviewedAt(),
+        linkRepository.findAllBySubmissionIdOrderByIdAsc(submission.getId()).stream()
+            .map(
+                link ->
+                    new CampaignContentDtos.LinkResponse(
+                        link.getChannelType(), link.getContentUrl()))
+            .toList());
   }
 
   private CampaignContentDtos.Response flushedResponse(CampaignContentSubmission submission) {
@@ -261,6 +320,65 @@ public class CampaignContentService {
         .getSeller()
         .getMember()
         .getId();
+  }
+
+  private void requireSubmissionPeriod(
+      CampaignApplication application, CampaignContentSubmission submission) {
+    if (submission != null && submission.getStatus() == ContentSubmissionStatus.REVISION_REQUESTED)
+      return;
+    LocalDateTime start = application.getCampaign().getContentSubmissionStartAt();
+    LocalDateTime end = application.getCampaign().getContentSubmissionEndAt();
+    LocalDateTime now = LocalDateTime.now();
+    if ((start != null && now.isBefore(start)) || (end != null && now.isAfter(end))) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "현재 콘텐츠 제출 기간이 아닙니다.");
+    }
+  }
+
+  /** 주소 형식만 검사하며 외부 사이트에 접속하거나 게시물을 수집하지 않습니다. */
+  private void validateLink(
+      com.movrit.movrit.campaigncontent.entity.ContentChannel channel, String value) {
+    try {
+      URI uri = URI.create(value.trim());
+      String scheme = uri.getScheme();
+      String host = uri.getHost();
+      if ((!("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)))
+          || host == null
+          || uri.getUserInfo() != null
+          || blockedHost(host)) {
+        throw invalidLink();
+      }
+      String normalizedHost = host.toLowerCase(Locale.ROOT);
+      String path = uri.getPath() == null ? "" : uri.getPath();
+      if (channel == com.movrit.movrit.campaigncontent.entity.ContentChannel.INSTAGRAM
+          && (!(normalizedHost.equals("instagram.com")
+                  || normalizedHost.equals("www.instagram.com"))
+              || !(path.startsWith("/p/")
+                  || path.startsWith("/reel/")
+                  || path.startsWith("/tv/")))) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "Instagram은 instagram.com의 게시물 또는 릴스 URL을 입력해 주세요.");
+      }
+    } catch (IllegalArgumentException exception) {
+      throw invalidLink();
+    }
+  }
+
+  private boolean blockedHost(String host) {
+    String value = host.toLowerCase(Locale.ROOT);
+    if (value.equals("localhost")
+        || value.equals("::1")
+        || value.equals("0.0.0.0")
+        || value.endsWith(".local")
+        || value.startsWith("127.")
+        || value.startsWith("10.")
+        || value.startsWith("192.168.")) return true;
+    if (value.matches("^172\\.(1[6-9]|2[0-9]|3[01])\\..*")) return true;
+    return false;
+  }
+
+  private ResponseStatusException invalidLink() {
+    return new ResponseStatusException(
+        HttpStatus.BAD_REQUEST, "외부 공개 콘텐츠의 http 또는 https URL을 입력해 주세요.");
   }
 
   private void requireVersion(CampaignContentSubmission submission, Long expectedVersion) {

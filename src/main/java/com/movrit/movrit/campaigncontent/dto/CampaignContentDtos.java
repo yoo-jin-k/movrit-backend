@@ -1,10 +1,15 @@
 package com.movrit.movrit.campaigncontent.dto;
 
+import com.movrit.movrit.campaigncontent.entity.ContentChannel;
 import com.movrit.movrit.campaigncontent.entity.ContentSubmissionStatus;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /** 제출 콘텐츠의 요청 및 응답 계약을 모읍니다. 입력 제약과 응답 필드의 변경은 호출 화면 및 API 계약과 함께 검토합니다. */
 public final class CampaignContentDtos {
@@ -18,9 +23,28 @@ public final class CampaignContentDtos {
    * @param expectedVersion 클라이언트가 마지막으로 조회한 버전이며 서버 현재 버전과 비교합니다.
    */
   public record SubmitRequest(
-      @NotBlank @Size(max = 1000) String contentUrl,
+      @NotBlank
+          @Size(max = 1000)
+          @Pattern(regexp = "^https?://[^\\s]+$", message = "콘텐츠 URL은 http 또는 https 주소여야 합니다.")
+          String contentUrl,
       @Size(max = 2000) String note,
       Long expectedVersion) {}
+
+  /** 채널 유형과 공개 게시물 URL을 함께 전달합니다. */
+  public record LinkRequest(
+      @NotNull ContentChannel channelType,
+      @NotBlank
+          @Size(max = 1000)
+          @Pattern(regexp = "^https?://[^\\s]+$", message = "콘텐츠 URL은 http 또는 https 주소여야 합니다.")
+          String contentUrl) {}
+
+  /** 여러 채널 게시물을 한 번에 최초 제출하거나 재제출합니다. */
+  public record PackageSubmitRequest(
+      @NotEmpty @Size(max = 5) List<@Valid LinkRequest> links,
+      @Size(max = 2000) String note,
+      Long expectedVersion) {}
+
+  public record LinkResponse(ContentChannel channelType, String contentUrl) {}
 
   /**
    * 제출 콘텐츠의 콘텐츠 수정 요청 의견을 전달합니다.
@@ -67,5 +91,6 @@ public final class CampaignContentDtos {
       Long version,
       String reviewComment,
       LocalDateTime submittedAt,
-      LocalDateTime reviewedAt) {}
+      LocalDateTime reviewedAt,
+      List<LinkResponse> links) {}
 }

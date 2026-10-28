@@ -108,6 +108,12 @@ public class Campaign extends BaseEntity {
   @Column(name = "results_announced_at")
   private LocalDateTime resultsAnnouncedAt;
 
+  @Column(name = "contact_name", length = 100)
+  private String contactName;
+
+  @Column(name = "contact_phone", length = 30)
+  private String contactPhone;
+
   @Builder.Default
   @Column(name = "schedule_version", nullable = false)
   private Long scheduleVersion = 1L;
@@ -190,6 +196,12 @@ public class Campaign extends BaseEntity {
 
   public void updateDetailImage(String imageUrl) {
     this.detailImageUrl = imageUrl;
+  }
+
+  /** 신청 당사자에게 공개할 캠페인 담당자 연락처만 별도로 저장합니다. */
+  public void updateContact(String contactName, String contactPhone) {
+    this.contactName = contactName;
+    this.contactPhone = contactPhone;
   }
 
   private void validateSchedule(

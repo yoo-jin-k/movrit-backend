@@ -63,6 +63,13 @@ public class CampaignApplicationController {
     return service.findMine(memberId(jwt));
   }
 
+  /** 마이페이지에서 신청 상태와 캠페인 일정·안내·콘텐츠 검수 상태를 한 번에 조회합니다. */
+  @GetMapping("/applications/mine/workspaces")
+  public List<CampaignApplicationDtos.WorkspaceResponse> myWorkspaces(
+      @AuthenticationPrincipal Jwt jwt) {
+    return service.findMyWorkspaces(memberId(jwt));
+  }
+
   /** 캠페인 신청 관련 업체의 관리 대상 목록을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
   @GetMapping("/applications/seller")
   public List<CampaignApplicationDtos.Response> seller(@AuthenticationPrincipal Jwt jwt) {

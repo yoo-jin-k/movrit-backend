@@ -2,7 +2,9 @@ package com.movrit.movrit.campaignapplication.dto;
 
 import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
 import com.movrit.movrit.campaignapplication.entity.FulfillmentType;
+import com.movrit.movrit.campaigncontent.dto.CampaignContentDtos;
 import com.movrit.movrit.campaigneligibility.dto.CampaignEligibilityDtos;
+import com.movrit.movrit.collaboration.dto.CampaignManagementDtos;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -237,4 +239,11 @@ public final class CampaignApplicationDtos {
       LocalDateTime cancelledAt,
       String cancellationReason,
       LocalDateTime experienceConfirmedAt) {}
+
+  /** 마이페이지에서 신청·일정·안내·연락처·콘텐츠 검수 상태를 함께 표시하는 읽기 전용 응답입니다. */
+  public record WorkspaceResponse(
+      Response application,
+      CampaignManagementDtos.DetailResponse campaign,
+      CampaignManagementDtos.ContactResponse brandContact,
+      CampaignContentDtos.Response content) {}
 }

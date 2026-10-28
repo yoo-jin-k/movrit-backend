@@ -33,6 +33,16 @@ public class CampaignContentController {
         .body(service.submit(memberId(jwt), applicationId, request));
   }
 
+  /** 신청 당사자가 채널별 게시물 URL을 함께 제출하거나 수정 요청 후 재제출합니다. */
+  @PostMapping("/applications/{applicationId}/links")
+  public ResponseEntity<CampaignContentDtos.Response> submitLinks(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long applicationId,
+      @Valid @RequestBody CampaignContentDtos.PackageSubmitRequest request) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(service.submitLinks(memberId(jwt), applicationId, request));
+  }
+
   /** 제출 콘텐츠 관련 로그인 회원에게 연결된 정보를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
   @GetMapping("/mine")
   public List<CampaignContentDtos.Response> mine(@AuthenticationPrincipal Jwt jwt) {

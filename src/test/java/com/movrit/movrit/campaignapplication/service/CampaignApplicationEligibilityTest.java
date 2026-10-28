@@ -13,6 +13,7 @@ import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplicationForm;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationFormRepository;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
+import com.movrit.movrit.campaigncontent.service.CampaignContentService;
 import com.movrit.movrit.campaigneligibility.dto.CampaignEligibilityDtos;
 import com.movrit.movrit.campaigneligibility.service.CampaignEligibilityPolicyService;
 import com.movrit.movrit.campaigneligibility.service.MemberChannelMetricService;
@@ -121,7 +122,8 @@ class CampaignApplicationEligibilityTest {
             new ObjectMapper(),
             mock(NotificationService.class),
             mock(AuditLogService.class),
-            mock(com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService.class));
+            mock(com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService.class),
+            mock(CampaignContentService.class));
     CampaignApplicationDtos.CreateRequest request =
         new CampaignApplicationDtos.CreateRequest(
             "신청합니다.",
@@ -209,7 +211,8 @@ class CampaignApplicationEligibilityTest {
         new ObjectMapper(),
         mock(NotificationService.class),
         mock(AuditLogService.class),
-        mock(com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService.class));
+        mock(com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService.class),
+        mock(CampaignContentService.class));
   }
 
   private Creator activeCreator(Member member) {

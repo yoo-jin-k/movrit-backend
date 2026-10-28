@@ -8,8 +8,10 @@ import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
 import com.movrit.movrit.campaignapplication.entity.FulfillmentType;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationFormRepository;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
+import com.movrit.movrit.campaigncontent.service.CampaignContentService;
 import com.movrit.movrit.campaigneligibility.service.CampaignEligibilityPolicyService;
 import com.movrit.movrit.campaigneligibility.service.MemberChannelMetricService;
+import com.movrit.movrit.collaboration.dto.CampaignManagementDtos;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
 import com.movrit.movrit.creator.entity.Creator;
@@ -55,6 +57,7 @@ public class CampaignApplicationService {
   private final NotificationService notificationService;
   private final AuditLogService auditLogService;
   private final com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService visitEvidence;
+  private final CampaignContentService campaignContentService;
 
   @Transactional
   public CampaignApplicationDtos.FormResponse saveForm(
@@ -217,6 +220,32 @@ public class CampaignApplicationService {
   public List<CampaignApplicationDtos.Response> findMine(Long memberId) {
     return applicationRepository.findAllByCreatorMemberIdOrderByIdDesc(memberId).stream()
         .map(this::response)
+        .toList();
+  }
+
+  public List<CampaignApplicationDtos.WorkspaceResponse> findMyWorkspaces(Long memberId) {
+    return applicationRepository.findAllByCreatorMemberIdOrderByIdDesc(memberId).stream()
+        .map(
+            application -> {
+              Campaign campaign = application.getCampaign();
+              boolean contactVisible =
+                  application.getStatus() != CampaignApplicationStatus.SUBMITTED
+                      && application.getStatus() != CampaignApplicationStatus.REJECTED
+                      && application.getStatus() != CampaignApplicationStatus.CANCELLED;
+              CampaignManagementDtos.ContactResponse contact =
+                  !contactVisible
+                          || campaign.getContactName() == null
+                          || campaign.getContactPhone() == null
+                      ? null
+                      : new CampaignManagementDtos.ContactResponse(
+                          campaign.getContactName(), campaign.getContactPhone());
+              return new CampaignApplicationDtos.WorkspaceResponse(
+                  response(application),
+                  CampaignManagementDtos.DetailResponse.from(
+                      campaign, application.getFulfillmentType() == FulfillmentType.VISIT),
+                  contact,
+                  campaignContentService.findMineByApplication(memberId, application.getId()));
+            })
         .toList();
   }
 
