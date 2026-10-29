@@ -28,4 +28,7 @@ public class LoginResponse {
 
   /** 헤더와 프로필에서 사용하는 회원 표시용 닉네임입니다. */
   private String nickname;
+
+  /** 헤더에서 사용하는 재인코딩된 프로필 사진 URL이며 사진이 없으면 null입니다. */
+  private String avatarUrl;
 }

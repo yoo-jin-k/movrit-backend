@@ -51,6 +51,16 @@ public class Member extends BaseEntity {
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
+  /** 재인코딩된 프로필 표시본의 서버 생성 저장 키입니다. 원본 파일명이나 경로는 저장하지 않습니다. */
+  @Column(name = "avatar_key", length = 64)
+  private String avatarKey;
+
+  @Column(name = "avatar_content_type", length = 20)
+  private String avatarContentType;
+
+  @Column(name = "avatar_version", nullable = false)
+  private long avatarVersion;
+
   public void updateProfile(String name, String phone, String nickname) {
     this.name = name;
     this.phone = phone;
@@ -59,6 +69,18 @@ public class Member extends BaseEntity {
 
   public void changePassword(String passwordHash) {
     this.passwordHash = passwordHash;
+  }
+
+  public void changeAvatar(String key, String contentType) {
+    avatarKey = key;
+    avatarContentType = contentType;
+    avatarVersion++;
+  }
+
+  public void removeAvatar() {
+    avatarKey = null;
+    avatarContentType = null;
+    avatarVersion++;
   }
 
   public void updateLastLoginAt() {

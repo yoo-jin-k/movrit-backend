@@ -1,5 +1,6 @@
 package com.movrit.movrit.auth.dto;
 
+import com.movrit.movrit.member.dto.MemberAvatarUrl;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.entity.MemberRole;
 
@@ -11,8 +12,10 @@ import com.movrit.movrit.member.entity.MemberRole;
  * @param name 표시 이름입니다.
  * @param nickname 서비스에서 공개할 닉네임입니다.
  * @param role 서버가 부여한 회원 권한입니다.
+ * @param avatarUrl 재인코딩된 프로필 사진 URL이며 사진이 없으면 null입니다.
  */
-public record AuthMeResponse(Long id, String email, String name, String nickname, MemberRole role) {
+public record AuthMeResponse(
+    Long id, String email, String name, String nickname, MemberRole role, String avatarUrl) {
   /** 엔티티에서 공개할 응답 필드만 복사합니다. 이 변환 메서드 자체는 조회 권한을 판정하지 않습니다. */
   public static AuthMeResponse from(Member member) {
     return new AuthMeResponse(
@@ -20,6 +23,7 @@ public record AuthMeResponse(Long id, String email, String name, String nickname
         member.getEmail(),
         member.getName(),
         member.getNickname(),
-        member.getRole());
+        member.getRole(),
+        MemberAvatarUrl.from(member));
   }
 }

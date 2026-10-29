@@ -11,16 +11,24 @@ import com.movrit.movrit.collaboration.controller.CampaignManagementController;
 import com.movrit.movrit.collaboration.controller.CollaborationController;
 import com.movrit.movrit.collaboration.service.CampaignManagementService;
 import com.movrit.movrit.collaboration.service.CollaborationService;
+import com.movrit.movrit.memberavatar.controller.MemberAvatarController;
+import com.movrit.movrit.memberavatar.service.MemberAvatarService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.server.ResponseStatusException;
 
-@WebMvcTest({CollaborationController.class, CampaignManagementController.class})
+@WebMvcTest({
+  CollaborationController.class,
+  CampaignManagementController.class,
+  MemberAvatarController.class
+})
 @Import(SecurityConfig.class)
 @TestPropertySource(properties = "jwt.secret=movrit-security-test-secret-key-123456789")
 class SecurityConfigTest {
@@ -30,6 +38,8 @@ class SecurityConfigTest {
   @MockitoBean private CollaborationService collaborationService;
 
   @MockitoBean private CampaignManagementService campaignManagementService;
+
+  @MockitoBean private MemberAvatarService memberAvatarService;
 
   @Test
   void anonymousSellerCampaignRequestIsUnauthorized() throws Exception {
@@ -74,5 +84,13 @@ class SecurityConfigTest {
                 .header("Access-Control-Request-Method", "POST"))
         .andExpect(status().isOk())
         .andExpect(header().string("Access-Control-Allow-Origin", "http://127.0.0.1:5174"));
+  }
+
+  @Test
+  void publicAvatarContentDoesNotRequireLogin() throws Exception {
+    when(memberAvatarService.findPublic(1L, 2L))
+        .thenThrow(new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+    mockMvc.perform(get("/api/members/1/avatar?v=2")).andExpect(status().isNotFound());
   }
 }

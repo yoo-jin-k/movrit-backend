@@ -5,6 +5,7 @@ import com.movrit.movrit.auth.dto.LoginResponse;
 import com.movrit.movrit.auth.entity.RefreshToken;
 import com.movrit.movrit.auth.jwt.JwtTokenProvider;
 import com.movrit.movrit.auth.repository.RefreshTokenRepository;
+import com.movrit.movrit.member.dto.MemberAvatarUrl;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.entity.MemberStatus;
 import com.movrit.movrit.member.repository.MemberRepository;
@@ -58,7 +59,8 @@ public class AuthService {
         member.getId(),
         member.getEmail(),
         member.getName(),
-        member.getNickname());
+        member.getNickname(),
+        MemberAvatarUrl.from(member));
   }
 
   @Transactional
@@ -81,7 +83,8 @@ public class AuthService {
         m.getId(),
         m.getEmail(),
         m.getName(),
-        m.getNickname());
+        m.getNickname(),
+        MemberAvatarUrl.from(m));
   }
 
   @Transactional
