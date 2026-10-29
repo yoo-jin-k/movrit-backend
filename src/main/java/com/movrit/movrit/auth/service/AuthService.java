@@ -35,15 +35,15 @@ public class AuthService {
 
     // 1. 이메일로 회원 찾기
     Member member =
-        memberRepository
-            .findByEmail(request.getEmail())
-            .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않아."));
+        memberRepository.findByEmail(request.getEmail()).orElseThrow(this::invalidCredentials);
     if (member.getStatus() != MemberStatus.ACTIVE)
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이용할 수 없는 회원 상태야.");
 
     // 2. 입력한 비밀번호와 DB의 암호화된 비밀번호 비교
-    if (!passwordEncoder.matches(request.getPassword(), member.getPasswordHash())) {
-      throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않아.");
+    if (member.getPasswordHash() == null
+        || request.getPassword().getBytes(StandardCharsets.UTF_8).length > 72
+        || !passwordEncoder.matches(request.getPassword(), member.getPasswordHash())) {
+      throw invalidCredentials();
     }
 
     // 3. 이메일/비밀번호가 맞으면 JWT 생성
@@ -98,6 +98,11 @@ public class AuthService {
       refreshTokens.save(RefreshToken.builder().member(m).tokenHash(h).expiresAt(expires).build());
     else saved.rotate(h, expires);
     return raw;
+  }
+
+  /** 이메일 존재 여부를 구분하지 않고 같은 응답을 사용해 계정 정보 노출을 막습니다. */
+  private ResponseStatusException invalidCredentials() {
+    return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다.");
   }
 
   private String hash(String raw) {
