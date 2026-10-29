@@ -1,5 +1,8 @@
 package com.movrit.movrit.member.service;
 
+import com.movrit.movrit.auth.repository.RefreshTokenRepository;
+import com.movrit.movrit.member.dto.MemberPasswordCapabilityResponse;
+import com.movrit.movrit.member.dto.MemberPasswordChangeRequest;
 import com.movrit.movrit.member.dto.MemberSignupRequest;
 import com.movrit.movrit.member.dto.MemberSignupResponse;
 import com.movrit.movrit.member.dto.MemberUpdateRequest;
@@ -7,6 +10,7 @@ import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.entity.MemberRole;
 import com.movrit.movrit.member.entity.MemberStatus;
 import com.movrit.movrit.member.repository.MemberRepository;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +26,7 @@ public class MemberService {
 
   private final MemberRepository memberRepository;
   private final PasswordEncoder passwordEncoder;
+  private final RefreshTokenRepository refreshTokenRepository;
 
   @Transactional
   public MemberSignupResponse signup(MemberSignupRequest request) {
@@ -79,6 +84,37 @@ public class MemberService {
     return MemberSignupResponse.from(member);
   }
 
+  /** 현재 비밀번호를 다시 확인하고 모든 재발급 세션을 폐기한 뒤 비밀번호를 변경합니다. */
+  @Transactional
+  public void changePassword(Long memberId, MemberPasswordChangeRequest request) {
+    Member member = getMemberForUpdate(memberId);
+    if (member.getPasswordHash() == null || member.getPasswordHash().isBlank()) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "PASSWORD_NOT_CONFIGURED");
+    }
+    if (request.currentPassword().getBytes(StandardCharsets.UTF_8).length > 72) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "CURRENT_PASSWORD_TOO_LONG_IN_BYTES");
+    }
+    if (request.newPassword().getBytes(StandardCharsets.UTF_8).length > 72) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "PASSWORD_TOO_LONG_IN_BYTES");
+    }
+    if (!passwordEncoder.matches(request.currentPassword(), member.getPasswordHash())) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "CURRENT_PASSWORD_MISMATCH");
+    }
+    if (passwordEncoder.matches(request.newPassword(), member.getPasswordHash())) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "PASSWORD_REUSE");
+    }
+    member.changePassword(passwordEncoder.encode(request.newPassword()));
+    refreshTokenRepository.findByMemberId(memberId).ifPresent(token -> token.revoke());
+  }
+
+  public MemberPasswordCapabilityResponse passwordCapability(Long memberId) {
+    Member member = getMember(memberId);
+    boolean hasPassword = member.getPasswordHash() != null && !member.getPasswordHash().isBlank();
+    return new MemberPasswordCapabilityResponse(
+        hasPassword, hasPassword, hasPassword ? null : "SOCIAL_ONLY_ACCOUNT");
+  }
+
   @Transactional
   public MemberSignupResponse updateStatus(Long adminId, Long id, MemberStatus status) {
     getAdmin(adminId);
@@ -100,6 +136,18 @@ public class MemberService {
     Member member =
         memberRepository
             .findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."));
+    if (member.getDeletedAt() != null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다.");
+    }
+    return member;
+  }
+
+  /** 기본 주소 변경 같은 회원 단위 직렬화가 필요한 작업에서 회원 행을 잠급니다. */
+  public Member getMemberForUpdate(Long id) {
+    Member member =
+        memberRepository
+            .findByIdForUpdate(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."));
     if (member.getDeletedAt() != null) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다.");

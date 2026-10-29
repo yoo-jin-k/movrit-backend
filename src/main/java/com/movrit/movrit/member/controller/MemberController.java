@@ -37,6 +37,20 @@ public class MemberController {
     return service.update(id(j), r);
   }
 
+  /** 로그인 회원의 현재 비밀번호를 확인한 뒤 비밀번호를 변경하고 기존 재발급 세션을 폐기합니다. */
+  @PatchMapping("/me/password")
+  public ResponseEntity<Void> changePassword(
+      @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody MemberPasswordChangeRequest request) {
+    service.changePassword(id(jwt), request);
+    return ResponseEntity.noContent().build();
+  }
+
+  /** 로그인 회원의 비밀번호 보유 여부와 변경 가능 여부를 조회합니다. */
+  @GetMapping("/me/password-capability")
+  public MemberPasswordCapabilityResponse passwordCapability(@AuthenticationPrincipal Jwt jwt) {
+    return service.passwordCapability(id(jwt));
+  }
+
   /** 회원 관련 로그인 회원 탈퇴를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
   @DeleteMapping("/me")
   public ResponseEntity<Void> withdraw(@AuthenticationPrincipal Jwt j) {
