@@ -110,9 +110,13 @@ INSERT INTO campaign_application (
 SELECT campaign.id, creator.id, 'DELIVERY', fixture.status,
        '포트폴리오 상세 검수용 신청',
        '비공개 수령인', '010-0000-0999', '00000', '비공개 주소', '비공개 상세',
-       CASE WHEN campaign.title = '[QA-PORTFOLIO] 현재 후보'
-            THEN '[{"questionId":"motivation","value":"제품을 꾸준히 사용해 진솔하게 소개하겠습니다."}]'
-            ELSE '[]' END,
+       CASE
+           WHEN campaign.title = '[QA-PORTFOLIO] 현재 후보'
+               THEN '[{"questionId":"motivation","value":"제품을 꾸준히 사용해 진솔하게 소개하겠습니다."}]'
+           WHEN campaign.title = '[QA-PORTFOLIO] 타 브랜드 완료'
+               THEN '[{"questionId":"qa_private_portfolio_answer","value":"QA_PORTFOLIO_OTHER_BRAND_38_ONLY"}]'
+           ELSE '[]'
+       END,
        '[]', 1,
        CASE WHEN campaign.title = '[QA-PORTFOLIO] 현재 후보'
             THEN json_build_object(
@@ -144,6 +148,15 @@ WHERE NOT EXISTS (
     SELECT 1 FROM campaign_application existing
     WHERE existing.campaign_id = campaign.id AND existing.creator_id = creator.id
 );
+
+-- 기존에 먼저 생성된 fixture에도 동일한 비민감 누출 검수 식별값을 채웁니다.
+UPDATE campaign_application application
+SET answers_json = '[{"questionId":"qa_private_portfolio_answer","value":"QA_PORTFOLIO_OTHER_BRAND_38_ONLY"}]',
+    updated_at = NOW()
+FROM collaboration_campaign campaign
+WHERE campaign.id = application.campaign_id
+  AND campaign.title = '[QA-PORTFOLIO] 타 브랜드 완료'
+  AND application.answers_json <> '[{"questionId":"qa_private_portfolio_answer","value":"QA_PORTFOLIO_OTHER_BRAND_38_ONLY"}]';
 
 INSERT INTO campaign_content_submission (
     application_id, content_url, note, status, revision_count,
