@@ -223,6 +223,8 @@ public final class CampaignApplicationDtos {
       Long preorderId,
       Long creatorId,
       String creatorNickname,
+      String creatorChannelUrl,
+      List<CampaignParticipantDtos.ChannelMetric> creatorMetrics,
       FulfillmentType fulfillmentType,
       CampaignApplicationStatus status,
       String message,
@@ -241,7 +243,8 @@ public final class CampaignApplicationDtos {
       LocalDateTime respondedAt,
       LocalDateTime cancelledAt,
       String cancellationReason,
-      LocalDateTime experienceConfirmedAt) {}
+      LocalDateTime experienceConfirmedAt,
+      Long completedCampaignCount) {}
 
   /** 마이페이지에서 신청·일정·안내·연락처·콘텐츠 검수 상태를 함께 표시하는 읽기 전용 응답입니다. */
   public record WorkspaceResponse(

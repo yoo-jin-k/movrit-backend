@@ -2,6 +2,7 @@ package com.movrit.movrit.campaignapplication.service;
 
 import com.movrit.movrit.audit.service.AuditLogService;
 import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos;
+import com.movrit.movrit.campaignapplication.dto.CampaignParticipantDtos;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplication;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplicationForm;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
@@ -252,10 +253,43 @@ public class CampaignApplicationService {
 
   public List<CampaignApplicationDtos.Response> findSellerApplications(Long memberId) {
     sellerProfileService.getApprovedSeller(memberId);
-    return applicationRepository
-        .findAllByCampaignPreorderProductBrandSellerMemberIdOrderByIdDesc(memberId)
-        .stream()
-        .map(this::sellerResponse)
+    List<CampaignApplication> applications =
+        applicationRepository
+            .findAllByCampaignPreorderProductBrandSellerMemberIdOrderByIdDesc(memberId)
+            .stream()
+            .toList();
+    Set<Long> creatorIds =
+        applications.stream()
+            .map(application -> application.getCreator().getId())
+            .collect(java.util.stream.Collectors.toSet());
+    Map<Long, Long> completedCounts = new HashMap<>();
+    if (!creatorIds.isEmpty()) {
+      applicationRepository
+          .countCompletedCampaignsByCreatorIds(creatorIds)
+          .forEach(count -> completedCounts.put(count.getCreatorId(), count.getCompletedCount()));
+    }
+    Map<Long, List<CampaignParticipantDtos.ChannelMetric>> metricsByMember = new HashMap<>();
+    Set<Long> memberIds =
+        applications.stream()
+            .map(application -> application.getCreator().getMember().getId())
+            .collect(java.util.stream.Collectors.toSet());
+    if (!memberIds.isEmpty()) {
+      applicationRepository
+          .findMetricSummariesByMemberIds(memberIds)
+          .forEach(
+              metric ->
+                  metricsByMember
+                      .computeIfAbsent(metric.getMemberId(), key -> new ArrayList<>())
+                      .add(metric(metric)));
+    }
+    return applications.stream()
+        .map(
+            application ->
+                sellerResponse(
+                    application,
+                    completedCounts.getOrDefault(application.getCreator().getId(), 0L),
+                    metricsByMember.getOrDefault(
+                        application.getCreator().getMember().getId(), List.of())))
         .toList();
   }
 
@@ -661,8 +695,7 @@ public class CampaignApplicationService {
   private CampaignApplication getApplication(Long applicationId) {
     return applicationRepository
         .findById(applicationId)
-        .orElseThrow(
-            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
   }
 
   private void requireSelectionMode(
@@ -686,6 +719,18 @@ public class CampaignApplicationService {
   }
 
   private CampaignApplicationDtos.Response sellerResponse(CampaignApplication application) {
+    return sellerResponse(application, null);
+  }
+
+  private CampaignApplicationDtos.Response sellerResponse(
+      CampaignApplication application, Long completedCampaignCount) {
+    return sellerResponse(application, completedCampaignCount, List.of());
+  }
+
+  private CampaignApplicationDtos.Response sellerResponse(
+      CampaignApplication application,
+      Long completedCampaignCount,
+      List<CampaignParticipantDtos.ChannelMetric> creatorMetrics) {
     // 선정만으로는 참여가 확정되지 않습니다. 당사자가 수락해 ACTIVE가 된 뒤에만
     // 배송에 필요한 연락처를 업체에 제공하고, 취소·미선정 건에서는 다시 숨깁니다.
     boolean hideContact =
@@ -693,11 +738,24 @@ public class CampaignApplicationService {
             && application.getStatus() != CampaignApplicationStatus.CONTENT_SUBMITTED
             && application.getStatus() != CampaignApplicationStatus.REVISION_REQUESTED
             && application.getStatus() != CampaignApplicationStatus.COMPLETED;
-    return response(application, hideContact);
+    return response(application, hideContact, completedCampaignCount, creatorMetrics);
   }
 
   private CampaignApplicationDtos.Response response(
       CampaignApplication application, boolean hideContact) {
+    return response(application, hideContact, null);
+  }
+
+  private CampaignApplicationDtos.Response response(
+      CampaignApplication application, boolean hideContact, Long completedCampaignCount) {
+    return response(application, hideContact, completedCampaignCount, List.of());
+  }
+
+  private CampaignApplicationDtos.Response response(
+      CampaignApplication application,
+      boolean hideContact,
+      Long completedCampaignCount,
+      List<CampaignParticipantDtos.ChannelMetric> creatorMetrics) {
     CampaignApplicationDtos.ShippingContact contact =
         application.getFulfillmentType() == FulfillmentType.DELIVERY && !hideContact
             ? new CampaignApplicationDtos.ShippingContact(
@@ -718,6 +776,8 @@ public class CampaignApplicationService {
         application.getCampaign().getPreorder().getId(),
         application.getCreator().getId(),
         application.getCreator().getNickname(),
+        application.getCreator().getSnsUrl(),
+        creatorMetrics,
         application.getFulfillmentType(),
         application.getStatus(),
         application.getMessage(),
@@ -738,7 +798,27 @@ public class CampaignApplicationService {
         application.getRespondedAt(),
         application.getCancelledAt(),
         application.getCancellationReason(),
-        application.getExperienceConfirmedAt());
+        application.getExperienceConfirmedAt(),
+        completedCampaignCount);
+  }
+
+  private CampaignParticipantDtos.ChannelMetric metric(
+      CampaignApplicationRepository.CreatorMetricSummary metric) {
+    return new CampaignParticipantDtos.ChannelMetric(
+        metric.getChannelType(),
+        metric.getMetricType(),
+        switch (metric.getMetricType()) {
+          case "FOLLOWER_COUNT" -> "팔로워 수";
+          case "AVERAGE_VISITORS" -> "평균 방문자 수";
+          case "SUBSCRIBER_COUNT" -> "구독자 수";
+          default -> metric.getMetricType();
+        },
+        metric.getMetricValue(),
+        metric.getMeasurementPeriod(),
+        metric.getMeasuredAt(),
+        com.movrit.movrit.campaigneligibility.entity.MetricVerificationStatus.valueOf(
+            metric.getVerificationStatus()),
+        "UNKNOWN");
   }
 
   private CampaignApplicationDtos.Response transition(

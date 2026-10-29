@@ -1,7 +1,9 @@
 package com.movrit.movrit.campaignapplication.controller;
 
 import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos;
+import com.movrit.movrit.campaignapplication.dto.CampaignParticipantDtos;
 import com.movrit.movrit.campaignapplication.service.CampaignApplicationService;
+import com.movrit.movrit.campaignapplication.service.CampaignParticipantPortfolioService;
 import com.movrit.movrit.common.security.JwtMemberId;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/campaigns")
 public class CampaignApplicationController {
   private final CampaignApplicationService service;
+  private final CampaignParticipantPortfolioService participantPortfolioService;
 
   /**
    * 캠페인 신청 관련 캠페인 신청서의 질문·동의·참여 방식을 저장합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤
@@ -74,6 +77,13 @@ public class CampaignApplicationController {
   @GetMapping("/applications/seller")
   public List<CampaignApplicationDtos.Response> seller(@AuthenticationPrincipal Jwt jwt) {
     return service.findSellerApplications(memberId(jwt));
+  }
+
+  /** 업체가 소유한 캠페인의 신청자 활동 프로필과 완료 이력을 조회합니다. */
+  @GetMapping("/applications/{applicationId}/seller-detail")
+  public CampaignParticipantDtos.DetailResponse sellerDetail(
+      @AuthenticationPrincipal Jwt jwt, @PathVariable Long applicationId) {
+    return participantPortfolioService.find(memberId(jwt), applicationId);
   }
 
   /**
