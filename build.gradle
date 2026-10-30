@@ -11,7 +11,8 @@ description = 'movrit'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        // 표준 빌드는 Java 17입니다. JDK 17이 없는 로컬 PC는 -PmovritJavaVersion=18 처럼 설치된 버전으로 빌드할 수 있습니다.
+        languageVersion = JavaLanguageVersion.of((project.findProperty('movritJavaVersion') ?: '17') as int)
     }
 }
 
