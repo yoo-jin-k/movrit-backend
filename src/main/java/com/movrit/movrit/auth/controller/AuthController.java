@@ -15,17 +15,20 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 
 /** 로그인 및 소셜 인증의 HTTP 요청을 서비스로 연결합니다. 인증 주체는 토큰에서 읽고, 업무 권한과 상태 검증은 호출한 서비스의 정책을 따릅니다. */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Slf4j
 public class AuthController {
 
   private final GoogleAuthService googleAuthService;
@@ -132,8 +135,17 @@ public class AuthController {
       @RequestParam(value = "state", required = false) String state,
       HttpServletResponse response)
       throws IOException {
-    String kakaoAccessToken = kakaoAuthService.getAccessToken(code);
-    KakaoUserInfo userInfo = kakaoAuthService.getUserInfo(kakaoAccessToken);
+    // 외부 토큰 교환·사용자 조회가 실패하면(키·Secret·Redirect URI 설정 오류 등) 500 오류 화면 대신
+    // 로그인 화면으로 돌려보내 안내합니다. 인가 코드와 토큰 값은 로그에 남기지 않습니다.
+    KakaoUserInfo userInfo;
+    try {
+      String kakaoAccessToken = kakaoAuthService.getAccessToken(code);
+      userInfo = kakaoAuthService.getUserInfo(kakaoAccessToken);
+    } catch (RestClientException e) {
+      log.warn("KAKAO 소셜 로그인 외부 요청 실패: {}", e.getClass().getSimpleName());
+      redirectSocialLoginFailure(response, "KAKAO");
+      return;
+    }
 
     // state가 있으면 신규 로그인/회원가입이 아니라 기존 회원의 계정 연결 요청입니다.
     if (state != null && !state.isBlank()) {
@@ -158,8 +170,17 @@ public class AuthController {
       @RequestParam(value = "state", required = false) String state,
       HttpServletResponse response)
       throws IOException {
-    String googleAccessToken = googleAuthService.getAccessToken(code);
-    GoogleUserInfo userInfo = googleAuthService.getUserInfo(googleAccessToken);
+    // 외부 토큰 교환·사용자 조회가 실패하면(키·Secret·Redirect URI 설정 오류 등) 500 오류 화면 대신
+    // 로그인 화면으로 돌려보내 안내합니다. 인가 코드와 토큰 값은 로그에 남기지 않습니다.
+    GoogleUserInfo userInfo;
+    try {
+      String googleAccessToken = googleAuthService.getAccessToken(code);
+      userInfo = googleAuthService.getUserInfo(googleAccessToken);
+    } catch (RestClientException e) {
+      log.warn("GOOGLE 소셜 로그인 외부 요청 실패: {}", e.getClass().getSimpleName());
+      redirectSocialLoginFailure(response, "GOOGLE");
+      return;
+    }
 
     if (state != null && !state.isBlank()) {
       try {
@@ -187,6 +208,12 @@ public class AuthController {
             + URLEncoder.encode(movritAccessToken, StandardCharsets.UTF_8);
 
     response.sendRedirect(redirectUrl);
+  }
+
+  /** 소셜 로그인 실패를 로그인 화면에 전달합니다. 화면은 provider 값만 보고 안내 문구를 고르며 서버 오류 상세는 전달하지 않습니다. */
+  private void redirectSocialLoginFailure(HttpServletResponse response, String provider)
+      throws IOException {
+    response.sendRedirect(frontendBaseUrl + "/login?socialError=" + provider);
   }
 
   /** 계정 연결 결과를 프론트에 전달합니다. 결과 메시지는 쿼리 문자열에 넣기 전에 인코딩합니다. */
