@@ -21,8 +21,7 @@ public class AdminCampaignApplicationController {
   private final CampaignApplicationService service;
 
   @GetMapping
-  public List<CampaignApplicationDtos.Response> applications(
-      @AuthenticationPrincipal Jwt jwt) {
+  public List<CampaignApplicationDtos.Response> applications(@AuthenticationPrincipal Jwt jwt) {
     return service.findOperatorApplications(JwtMemberId.from(jwt));
   }
 

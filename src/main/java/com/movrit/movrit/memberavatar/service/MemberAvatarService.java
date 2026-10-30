@@ -67,8 +67,7 @@ public class MemberAvatarService {
         .findByIdForUpdate(memberId)
         .filter(member -> member.getDeletedAt() == null)
         .filter(member -> member.getStatus() == MemberStatus.ACTIVE)
-        .orElseThrow(
-            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."));
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."));
   }
 
   private void registerFileCompletion(String newKey, String previousKey) {

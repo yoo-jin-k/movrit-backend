@@ -48,8 +48,7 @@ public class CampaignManagementService {
         request.selectionMode() == null ? campaign.getSelectionMode() : request.selectionMode();
     if (requestedSelectionMode != campaign.getSelectionMode()
         && applicationRepository.existsByCampaignId(campaignId)) {
-      throw new ResponseStatusException(
-          HttpStatus.CONFLICT, "신청 이력이 있는 캠페인은 선정 방식을 변경할 수 없습니다.");
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "신청 이력이 있는 캠페인은 선정 방식을 변경할 수 없습니다.");
     }
     try {
       campaign.update(

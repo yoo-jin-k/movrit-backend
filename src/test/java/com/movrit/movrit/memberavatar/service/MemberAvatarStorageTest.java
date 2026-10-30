@@ -37,9 +37,7 @@ class MemberAvatarStorageTest {
     byte[] png = imageBytes(BufferedImage.TYPE_INT_RGB);
 
     assertThatThrownBy(
-            () ->
-                storage.store(
-                    new MockMultipartFile("file", "fake.jpg", "image/jpeg", png)))
+            () -> storage.store(new MockMultipartFile("file", "fake.jpg", "image/jpeg", png)))
         .isInstanceOf(ResponseStatusException.class);
     assertThatThrownBy(
             () ->
@@ -93,8 +91,7 @@ class MemberAvatarStorageTest {
     MemberAvatarStorage storage = new MemberAvatarStorage(root.toString());
     var stored =
         storage.store(
-            new MockMultipartFile(
-                "file", "portrait.jpg", "image/jpeg", tagged.toByteArray()));
+            new MockMultipartFile("file", "portrait.jpg", "image/jpeg", tagged.toByteArray()));
     byte[] result = Files.readAllBytes(storage.load(stored.key()));
     BufferedImage display = ImageIO.read(new ByteArrayInputStream(result));
 
@@ -114,8 +111,7 @@ class MemberAvatarStorageTest {
 
     var stored =
         storage.store(
-            new MockMultipartFile(
-                "file", "large.jpg", "image/jpeg", encoded.toByteArray()));
+            new MockMultipartFile("file", "large.jpg", "image/jpeg", encoded.toByteArray()));
     BufferedImage display = ImageIO.read(storage.load(stored.key()).toFile());
 
     assertThat(display.getWidth()).isEqualTo(1024);
@@ -131,5 +127,4 @@ class MemberAvatarStorageTest {
     ImageIO.write(new BufferedImage(3, 2, type), "png", output);
     return output.toByteArray();
   }
-
 }

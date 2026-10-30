@@ -33,8 +33,7 @@ public class MemberAvatarStorage {
   private static final Map<String, String> INPUT_MIME =
       Map.of("jpeg", "image/jpeg", "png", "image/png");
   private static final Pattern SAFE_KEY =
-      Pattern.compile(
-          "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(jpg|png)$");
+      Pattern.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.(jpg|png)$");
 
   private final Path root;
 
@@ -200,8 +199,7 @@ public class MemberAvatarStorage {
     try {
       graphics.setRenderingHint(
           RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-      graphics.setRenderingHint(
-          RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+      graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
       graphics.drawImage(source, 0, 0, width, height, null);
     } finally {
       graphics.dispose();

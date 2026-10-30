@@ -51,9 +51,7 @@ public class CollaborationService {
             .minFollowerCount(r.minFollowerCount())
             .recruitmentCount(r.recruitmentCount())
             .selectionMode(
-                r.selectionMode() == null
-                    ? CampaignSelectionMode.BRAND_DIRECT
-                    : r.selectionMode())
+                r.selectionMode() == null ? CampaignSelectionMode.BRAND_DIRECT : r.selectionMode())
             .rewardDescription(r.rewardDescription())
             .startAt(r.startAt())
             .endAt(r.endAt())
