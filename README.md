@@ -6,6 +6,12 @@
 - 기능별 패키지: `auth`, `member`, `seller`, `brand`, `collaboration`(캠페인), `campaignapplication`(신청·선정), `campaigncontent`(콘텐츠 제출·검수), `campaigneligibility`(신청 조건), `campaignmedia`(이미지·방문 증빙) 등
 - 각 기능은 `controller / service / repository / entity / dto` 계층으로 나뉩니다.
 
+## 포트폴리오 문서
+
+- [구조 설명](docs/portfolio/architecture.md): 시스템 구성, 기능 단위 구조, 신청 상태 흐름, 설계 결정
+- [시연 시나리오](docs/portfolio/demo-scenario.md): 캠페인 등록부터 최종 승인까지 10분 시연 순서
+- [ERD](docs/erd/README.md) · [DB 변경 이력](docs/db-migration.md)
+
 ## 로컬 통합 환경 실행
 
 | 구성 | 주소 |
