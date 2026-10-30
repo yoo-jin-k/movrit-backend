@@ -2,8 +2,20 @@ package com.movrit.movrit.creator.entity;
 
 import com.movrit.movrit.common.entity.BaseEntity;
 import com.movrit.movrit.member.entity.Member;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * 캠페인 참여자의 활동 프로필입니다(테이블 influencer_profile). 신청할 때 자동으로 만들어지며, 회원 한 명당 하나만 가집니다. 별도 인플루언서 가입은

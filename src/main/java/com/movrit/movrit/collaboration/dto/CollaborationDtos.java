@@ -1,8 +1,15 @@
 package com.movrit.movrit.collaboration.dto;
 
 import com.movrit.movrit.campaigncontent.entity.ContentChannel;
-import com.movrit.movrit.collaboration.entity.*;
-import jakarta.validation.constraints.*;
+import com.movrit.movrit.collaboration.entity.Campaign;
+import com.movrit.movrit.collaboration.entity.CampaignSelectionMode;
+import com.movrit.movrit.collaboration.entity.CampaignType;
+import com.movrit.movrit.collaboration.entity.Collaboration;
+import com.movrit.movrit.collaboration.entity.CollaborationStatus;
+import com.movrit.movrit.collaboration.entity.CollaborationType;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 /** 캠페인 및 협업 API에서 주고받는 요청·응답 형식을 모아 둔 클래스입니다. */

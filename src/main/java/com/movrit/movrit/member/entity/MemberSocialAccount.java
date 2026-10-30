@@ -1,8 +1,23 @@
 package com.movrit.movrit.member.entity;
 
 import com.movrit.movrit.common.entity.BaseEntity;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /** 회원과 소셜 로그인 계정(Google·카카오)의 연결 정보입니다. 같은 소셜 계정은 하나의 MOVRIT 회원에만 연결할 수 있습니다(제공자+제공자 ID 유일). */
 @Entity

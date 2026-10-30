@@ -2,8 +2,21 @@ package com.movrit.movrit.campaigneligibility.entity;
 
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.common.entity.BaseEntity;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * 캠페인별 신청 조건 한 가지(예: 인스타그램 팔로워 500명 이상)입니다. 조건이 없는 캠페인은 이 데이터가 없고, 캠페인 하나에 조건은 최대 하나입니다. version은

@@ -1,7 +1,8 @@
 package com.movrit.movrit.collaboration.repository;
 
-import com.movrit.movrit.collaboration.entity.*;
-import java.util.*;
+import com.movrit.movrit.collaboration.entity.Collaboration;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /** 기존 협업(프리오더·크리에이터)을 저장하고 조회합니다. */

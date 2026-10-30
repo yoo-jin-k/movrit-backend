@@ -1,8 +1,17 @@
 package com.movrit.movrit.campaignmedia.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /** 캠페인 방문 장소가 바뀐 기록 한 건입니다. 누가 언제 무엇을 무엇으로 바꿨는지 남깁니다. 기록은 추가만 하고 수정·삭제하지 않아 분쟁 시 증빙으로 쓸 수 있습니다. */
 /** 주소 변경 증빙은 추가만 하며 기존 이력을 수정하지 않습니다. */

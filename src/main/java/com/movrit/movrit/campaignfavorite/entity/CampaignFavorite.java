@@ -3,8 +3,20 @@ package com.movrit.movrit.campaignfavorite.entity;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.common.entity.BaseEntity;
 import com.movrit.movrit.member.entity.Member;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * 회원이 찜한 캠페인 한 건입니다.

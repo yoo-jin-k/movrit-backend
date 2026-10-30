@@ -2,7 +2,8 @@ package com.movrit.movrit.campaignmedia.service;
 
 import com.movrit.movrit.collaboration.service.CampaignImageStorageService;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import javax.imageio.ImageIO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;

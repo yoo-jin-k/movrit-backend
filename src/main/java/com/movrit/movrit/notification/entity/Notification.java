@@ -1,9 +1,21 @@
 package com.movrit.movrit.notification.entity;
 
 import com.movrit.movrit.member.entity.Member;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /** 회원에게 보내는 서비스 내부 알림입니다(선정 결과, 콘텐츠 검토 결과 등). 어떤 화면으로 이동할지 대상 종류·ID를 함께 저장합니다. */
 @Entity

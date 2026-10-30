@@ -1,9 +1,20 @@
 package com.movrit.movrit.member.entity;
 
 import com.movrit.movrit.common.entity.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * MOVRIT 회원 계정입니다. 로그인 정보(이메일·비밀번호 해시), 표시 닉네임, 프로필 사진, 이메일 인증 여부, 계정 상태를 가집니다. 업체 여부는 이 엔티티가 아니라

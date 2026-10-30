@@ -1,8 +1,15 @@
 package com.movrit.movrit.campaignmedia.entity;
 
 import com.movrit.movrit.common.entity.BaseEntity;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * 캠페인 하나의 현재 이미지·방문 장소 구성을 담는 상태입니다(새 이미지 관리 방식). 저장할 때마다 version이 1 올라가며, 동시 수정 충돌을 막기 위해 캠페인 행을

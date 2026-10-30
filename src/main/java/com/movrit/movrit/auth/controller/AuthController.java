@@ -1,8 +1,17 @@
 package com.movrit.movrit.auth.controller;
 
-import com.movrit.movrit.auth.dto.*;
+import com.movrit.movrit.auth.dto.AuthMeResponse;
+import com.movrit.movrit.auth.dto.GoogleUserInfo;
+import com.movrit.movrit.auth.dto.KakaoUserInfo;
+import com.movrit.movrit.auth.dto.LoginRequest;
+import com.movrit.movrit.auth.dto.LoginResponse;
+import com.movrit.movrit.auth.dto.SocialAccountResponse;
 import com.movrit.movrit.auth.jwt.JwtTokenProvider;
-import com.movrit.movrit.auth.service.*;
+import com.movrit.movrit.auth.service.AuthService;
+import com.movrit.movrit.auth.service.GoogleAuthService;
+import com.movrit.movrit.auth.service.KakaoAuthService;
+import com.movrit.movrit.auth.service.SocialAccountService;
+import com.movrit.movrit.auth.service.SocialLinkStateService;
 import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.service.MemberService;
@@ -20,7 +29,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 

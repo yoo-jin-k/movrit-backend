@@ -2,9 +2,23 @@ package com.movrit.movrit.brand.entity;
 
 import com.movrit.movrit.common.entity.BaseEntity;
 import com.movrit.movrit.seller.entity.SellerProfile;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /** 업체가 운영하는 브랜드입니다. 업체 한 곳이 여러 브랜드를 가질 수 있고, 캠페인은 브랜드 단위로 소유됩니다. 삭제는 실제 삭제 대신 삭제 시각을 기록합니다. */
 @Entity

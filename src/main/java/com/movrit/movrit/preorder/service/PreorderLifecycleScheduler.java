@@ -2,7 +2,8 @@ package com.movrit.movrit.preorder.service;
 
 import com.movrit.movrit.payment.repository.PaymentRepository;
 import com.movrit.movrit.payment.service.PaymentService;
-import com.movrit.movrit.preorder.entity.*;
+import com.movrit.movrit.preorder.entity.Preorder;
+import com.movrit.movrit.preorder.entity.PreorderStatus;
 import com.movrit.movrit.preorder.repository.PreorderRepository;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;

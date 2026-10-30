@@ -1,7 +1,10 @@
 package com.movrit.movrit.creator.dto;
 
 import com.movrit.movrit.creator.entity.Creator;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 /** 채널 프로필 API에서 주고받는 요청·응답 형식을 모아 둔 클래스입니다. */
 public final class CreatorDtos {

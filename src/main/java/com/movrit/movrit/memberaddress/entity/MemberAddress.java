@@ -2,8 +2,20 @@ package com.movrit.movrit.memberaddress.entity;
 
 import com.movrit.movrit.common.entity.BaseEntity;
 import com.movrit.movrit.member.entity.Member;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * 회원 배송지 주소록의 한 항목입니다. 기본 배송지는 회원당 하나만 지정됩니다. 캠페인 신청 때는 이 값이 신청서에 복사되므로, 나중에 주소록을 바꿔도 지난 신청 주소는 바뀌지

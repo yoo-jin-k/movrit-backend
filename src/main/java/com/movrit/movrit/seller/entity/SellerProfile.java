@@ -2,8 +2,22 @@ package com.movrit.movrit.seller.entity;
 
 import com.movrit.movrit.common.entity.BaseEntity;
 import com.movrit.movrit.member.entity.Member;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /** 업체(판매자) 등록 신청과 심사 결과를 담는 프로필입니다. 회원 한 명당 하나이며, 승인(APPROVED)되어야 업체 화면을 사용할 수 있습니다. */
 @Entity
