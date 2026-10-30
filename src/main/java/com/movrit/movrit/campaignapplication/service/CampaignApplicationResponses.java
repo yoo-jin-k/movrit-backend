@@ -33,11 +33,13 @@ class CampaignApplicationResponses {
     return sellerResponse(application, null);
   }
 
+  /** 업체 화면용 응답에 참여자의 완료 이력 수를 함께 담습니다. */
   CampaignApplicationDtos.Response sellerResponse(
       CampaignApplication application, Long completedCampaignCount) {
     return sellerResponse(application, completedCampaignCount, List.of());
   }
 
+  /** 업체 화면용 응답에 완료 이력 수와 채널 지표를 함께 담습니다. */
   CampaignApplicationDtos.Response sellerResponse(
       CampaignApplication application,
       Long completedCampaignCount,
@@ -52,15 +54,18 @@ class CampaignApplicationResponses {
     return response(application, hideContact, completedCampaignCount, creatorMetrics);
   }
 
+  /** 연락처 숨김 여부를 정해 응답을 만듭니다. */
   CampaignApplicationDtos.Response response(CampaignApplication application, boolean hideContact) {
     return response(application, hideContact, null);
   }
 
+  /** 연락처 숨김 여부와 완료 이력 수를 담아 응답을 만듭니다. */
   CampaignApplicationDtos.Response response(
       CampaignApplication application, boolean hideContact, Long completedCampaignCount) {
     return response(application, hideContact, completedCampaignCount, List.of());
   }
 
+  /** 모든 값을 받아 최종 응답을 만듭니다. 배송형이고 숨김이 아니면 배송 연락처를 담고, 준비되지 않은 항목은 안내 문구로 알려 줍니다. */
   CampaignApplicationDtos.Response response(
       CampaignApplication application,
       boolean hideContact,

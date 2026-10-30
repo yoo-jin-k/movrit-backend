@@ -5,9 +5,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+/** 배송지 주소록 API의 요청·응답 형식을 모아 둡니다. */
 public final class MemberAddressDtos {
   private MemberAddressDtos() {}
 
+  /** 배송지를 추가하거나 고칠 때 보내는 값입니다. 기본 배송지로 지정할지도 함께 보냅니다. */
   public record SaveRequest(
       @NotBlank @Size(max = 30) String label,
       @NotBlank @Size(max = 50) String recipientName,
@@ -19,6 +21,7 @@ public final class MemberAddressDtos {
       @Size(max = 300) String address2,
       boolean defaultAddress) {}
 
+  /** 화면에 보여줄 배송지 한 건입니다. */
   public record Response(
       Long id,
       String label,

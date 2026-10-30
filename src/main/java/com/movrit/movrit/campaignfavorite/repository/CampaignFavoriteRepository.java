@@ -19,6 +19,7 @@ public interface CampaignFavoriteRepository extends JpaRepository<CampaignFavori
   @Query("select f.campaign.id from CampaignFavorite f where f.member.id = :memberId")
   List<Long> findCampaignIdsByMemberId(@Param("memberId") Long memberId);
 
+  /** 회원이 특정 캠페인을 찜한 기록을 찾습니다. 찜 해제에 사용합니다. */
   Optional<CampaignFavorite> findByMemberIdAndCampaignId(Long memberId, Long campaignId);
 
   /**

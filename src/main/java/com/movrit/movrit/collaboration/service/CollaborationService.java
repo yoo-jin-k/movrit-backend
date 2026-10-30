@@ -227,7 +227,8 @@ public class CollaborationService {
     Collaboration c =
         collaborations
             .findByReferralCode(code)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "유효하지 않은 추천코드야."));
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "유효하지 않은 추천코드입니다."));
     if (c.getStatus() != CollaborationStatus.ACTIVE)
       throw new ResponseStatusException(HttpStatus.CONFLICT, "활성 협업의 추천코드가 아닙니다.");
     return c;

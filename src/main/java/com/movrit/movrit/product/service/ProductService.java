@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+/** 업체의 상품·옵션(SKU)·재고를 관리합니다. 주문·결제 서비스가 쓰는 옵션 조회(잠금 포함)도 제공합니다. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -30,6 +31,7 @@ public class ProductService {
   private final BrandService brandService;
   private final LocalFileStorageService fileStorageService;
 
+  /** 업체가 활성 브랜드에 상품을 등록합니다. */
   @Transactional
   public ProductDtos.Response create(Long memberId, ProductDtos.CreateRequest request) {
     Brand brand = brandService.getOwnedBrand(memberId, request.brandId());
@@ -50,6 +52,7 @@ public class ProductService {
     return ProductDtos.Response.from(productRepository.save(product));
   }
 
+  /** 업체가 소유한 브랜드의 상품 목록을 조회합니다. */
   public List<ProductDtos.Response> findMine(Long memberId) {
     return productRepository
         .findAllByBrandSellerMemberIdAndDeletedAtIsNullOrderByIdDesc(memberId)
@@ -58,10 +61,12 @@ public class ProductService {
         .toList();
   }
 
+  /** 상품 한 건을 조회합니다. */
   public ProductDtos.Response findById(Long id) {
     return ProductDtos.Response.from(getProduct(id));
   }
 
+  /** 업체가 자기 상품 정보를 고칩니다. */
   @Transactional
   public ProductDtos.Response update(Long memberId, Long id, ProductDtos.UpdateRequest request) {
     Product product = getOwnedProduct(memberId, id);
@@ -74,6 +79,7 @@ public class ProductService {
     return ProductDtos.Response.from(product);
   }
 
+  /** 상품 대표 이미지를 저장하고 주소를 기록합니다. */
   @Transactional
   public ProductDtos.Response uploadThumbnail(Long memberId, Long productId, MultipartFile file) {
     Product product = getOwnedProduct(memberId, productId);
@@ -93,7 +99,7 @@ public class ProductService {
     String skuCode = request.skuCode().trim().toUpperCase();
 
     if (productVariantRepository.existsBySkuCode(skuCode)) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 사용 중인 SKU 코드야.");
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 사용 중인 SKU 코드입니다.");
     }
 
     ProductVariant variant =
@@ -116,6 +122,7 @@ public class ProductService {
     return ProductDtos.VariantResponse.from(productVariantRepository.save(variant));
   }
 
+  /** 상품의 옵션 목록을 조회합니다. */
   public List<ProductDtos.VariantResponse> findVariants(Long productId) {
     getProduct(productId);
     return productVariantRepository.findAllByProductIdOrderByIdAsc(productId).stream()
@@ -145,6 +152,7 @@ public class ProductService {
     return new LinkedHashSet<>(variants);
   }
 
+  /** 옵션 보유 재고를 늘립니다. */
   @Transactional
   public ProductDtos.VariantResponse restock(Long memberId, Long variantId, long quantity) {
     ProductVariant variant = getOwnedVariant(memberId, variantId);
@@ -156,6 +164,7 @@ public class ProductService {
     return ProductDtos.VariantResponse.from(variant);
   }
 
+  /** 옵션 안전 재고 수량을 정합니다. */
   @Transactional
   public ProductDtos.VariantResponse updateSafetyStock(
       Long memberId, Long variantId, long quantity) {
@@ -168,6 +177,7 @@ public class ProductService {
     return ProductDtos.VariantResponse.from(variant);
   }
 
+  /** 옵션 이름·값·추가 금액·사용 여부를 고칩니다. */
   @Transactional
   public ProductDtos.VariantResponse updateVariant(
       Long memberId, Long variantId, ProductDtos.VariantUpdateRequest request) {
@@ -182,6 +192,7 @@ public class ProductService {
     return ProductDtos.VariantResponse.from(variant);
   }
 
+  /** 옵션 판매를 멈춥니다. 예약된 재고가 있으면 409입니다. */
   @Transactional
   public ProductDtos.VariantResponse deactivateVariant(Long memberId, Long variantId) {
     ProductVariant variant = getOwnedVariant(memberId, variantId);
@@ -193,6 +204,7 @@ public class ProductService {
     return ProductDtos.VariantResponse.from(variant);
   }
 
+  /** 옵션을 찾습니다. 없으면 404입니다. */
   public ProductVariant getVariant(Long variantId) {
     return productVariantRepository
         .findById(variantId)
@@ -206,17 +218,20 @@ public class ProductService {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "상품 옵션을 찾을 수 없습니다."));
   }
 
+  /** 업체가 자기 상품을 삭제 표시합니다. */
   @Transactional
   public void delete(Long memberId, Long id) {
     getOwnedProduct(memberId, id).softDelete();
   }
 
+  /** 상품을 찾고 요청한 업체가 브랜드 소유자인지 확인합니다. */
   public Product getOwnedProduct(Long memberId, Long productId) {
     Product product = getProduct(productId);
     brandService.getOwnedBrand(memberId, product.getBrand().getId());
     return product;
   }
 
+  /** 상품을 찾습니다. 없거나 삭제된 상품은 404입니다. */
   public Product getProduct(Long id) {
     Product product =
         productRepository
@@ -228,12 +243,14 @@ public class ProductService {
     return product;
   }
 
+  /** 옵션을 찾고 요청한 업체의 상품인지 확인합니다. */
   private ProductVariant getOwnedVariant(Long memberId, Long variantId) {
     ProductVariant variant = getVariant(variantId);
     getOwnedProduct(memberId, variant.getProduct().getId());
     return variant;
   }
 
+  /** 빈 값은 null로, 아니면 앞뒤 공백을 지운 값으로 바꿉니다. */
   private String blankToNull(String value) {
     return value == null || value.isBlank() ? null : value.trim();
   }

@@ -44,6 +44,7 @@ public final class CampaignContentDtos {
       @Size(max = 2000) String note,
       Long expectedVersion) {}
 
+  /** 제출한 콘텐츠 링크 한 건(채널·주소)입니다. */
   public record LinkResponse(ContentChannel channelType, String contentUrl) {}
 
   /**

@@ -23,6 +23,12 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+/**
+ * 프리오더 한 건의 정산입니다.
+ *
+ * <p>총 결제 금액, 환불 금액, 플랫폼 수수료, 업체 지급액을 계산해 보관합니다. 정산 대기(PENDING) → 확정(CONFIRMED) → 지급 완료(PAID) 순서로
+ * 진행하며, 지급 전에는 취소할 수 있습니다.
+ */
 @Entity
 @Table(name = "settlement")
 @Getter
@@ -71,6 +77,7 @@ public class Settlement extends BaseEntity {
   @Column(name = "paid_at")
   private LocalDateTime paidAt;
 
+  /** 관리용으로 정산 금액과 상태를 한 번에 덮어씁니다. 일반 흐름에서는 confirm·pay·cancel을 사용합니다. */
   public void update(
       SettlementStatus status,
       BigDecimal grossAmount,
@@ -90,6 +97,7 @@ public class Settlement extends BaseEntity {
     this.paidAt = paidAt;
   }
 
+  /** 정산 대기 상태의 정산을 확정하고 확정 시각을 기록합니다. */
   public void confirm() {
     if (status != SettlementStatus.PENDING)
       throw new IllegalStateException("정산 대기 상태에서만 확정할 수 있습니다.");
@@ -97,6 +105,7 @@ public class Settlement extends BaseEntity {
     this.confirmedAt = LocalDateTime.now();
   }
 
+  /** 확정된 정산을 지급 완료로 바꾸고 지급 시각을 기록합니다. */
   public void pay() {
     if (status != SettlementStatus.CONFIRMED)
       throw new IllegalStateException("확정된 정산만 지급 완료할 수 있습니다.");
@@ -104,6 +113,7 @@ public class Settlement extends BaseEntity {
     this.paidAt = LocalDateTime.now();
   }
 
+  /** 정산을 취소합니다. 이미 지급한 정산은 취소할 수 없습니다. */
   public void cancel() {
     if (status == SettlementStatus.PAID) throw new IllegalStateException("지급 완료된 정산은 취소할 수 없습니다.");
     this.status = SettlementStatus.CANCELLED;

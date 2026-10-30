@@ -43,7 +43,7 @@ public class AuthService {
     Member member =
         memberRepository.findByEmail(request.getEmail()).orElseThrow(this::invalidCredentials);
     if (member.getStatus() != MemberStatus.ACTIVE)
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이용할 수 없는 회원 상태야.");
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이용할 수 없는 회원 상태입니다.");
 
     // 2. 입력한 비밀번호와 DB의 암호화된 비밀번호 비교
     if (member.getPasswordHash() == null

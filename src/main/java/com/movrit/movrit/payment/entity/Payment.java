@@ -23,6 +23,12 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+/**
+ * 주문 한 건의 결제입니다.
+ *
+ * <p>결제 대기(READY)에서 승인(PAID) 또는 실패(FAILED)로 바뀌고, 승인된 결제는 환불(REFUNDED)할 수 있습니다. 실제 결제사 연동 없이 승인 키를
+ * 받아 기록하는 구조입니다.
+ */
 @Entity
 @Table(name = "payment")
 @Getter
@@ -79,6 +85,7 @@ public class Payment extends BaseEntity {
   @Column(name = "failure_message", length = 500)
   private String failureMessage;
 
+  /** 관리용으로 결제 정보를 한 번에 덮어씁니다. 일반 흐름에서는 approve·fail·refund를 사용합니다. */
   public void update(
       String paymentKey,
       String pgProvider,
@@ -102,6 +109,7 @@ public class Payment extends BaseEntity {
     this.failureMessage = failureMessage;
   }
 
+  /** 결제 대기 상태의 결제를 승인 완료로 바꾸고, 요청 금액을 승인 금액으로 기록합니다. */
   public void approve(String paymentKey, String pgProvider, String method) {
     if (status != PaymentStatus.READY) throw new IllegalStateException("결제 대기 상태에서만 승인할 수 있습니다.");
     this.paymentKey = paymentKey;
@@ -112,6 +120,7 @@ public class Payment extends BaseEntity {
     this.approvedAt = LocalDateTime.now();
   }
 
+  /** 결제 대기 상태의 결제를 실패로 바꾸고 실패 코드·사유를 기록합니다. */
   public void fail(String code, String message) {
     if (status != PaymentStatus.READY)
       throw new IllegalStateException("결제 대기 상태에서만 실패 처리할 수 있습니다.");
@@ -121,6 +130,7 @@ public class Payment extends BaseEntity {
     this.failureMessage = message;
   }
 
+  /** 승인된 결제를 환불 상태로 바꿉니다. */
   public void refund() {
     if (status != PaymentStatus.PAID) throw new IllegalStateException("승인된 결제만 환불할 수 있습니다.");
     this.status = PaymentStatus.REFUNDED;

@@ -13,6 +13,7 @@ public interface MemberSocialAccountRepository extends JpaRepository<MemberSocia
   Optional<MemberSocialAccount> findByProviderAndProviderId(
       AuthProvider provider, String providerId);
 
+  /** 회원에게 연결된 소셜 로그인 계정(Google·Kakao)을 모두 조회합니다. */
   List<MemberSocialAccount> findAllByMemberId(Long memberId);
 
   /** 회원에게 같은 종류의 소셜 계정이 이미 연결돼 있는지 확인합니다. */

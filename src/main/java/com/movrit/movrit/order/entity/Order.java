@@ -24,6 +24,12 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+/**
+ * 프리오더 주문 한 건입니다.
+ *
+ * <p>결제 대기(PENDING_PAYMENT) → 결제 완료(PAID) → 배송 준비(PREPARING) → 발송(SHIPPED) → 배송 완료(DELIVERED) 순서로
+ * 진행합니다. 결제 전에는 취소(CANCELLED), 결제 후 배송 전에는 환불(REFUNDED)할 수 있습니다. 주문 당시의 받는 사람·금액은 주문에 그대로 보관합니다.
+ */
 @Entity
 @Table(name = "orders")
 @Getter
@@ -97,6 +103,7 @@ public class Order extends BaseEntity {
   @Column(name = "cancelled_at")
   private LocalDateTime cancelledAt;
 
+  /** 받는 사람 정보를 바꿉니다. 배송 준비가 시작되기 전(결제 대기·결제 완료)까지만 바꿀 수 있습니다. */
   public void updateReceiver(
       String receiverName,
       String receiverPhone,
@@ -113,27 +120,32 @@ public class Order extends BaseEntity {
     this.address2 = address2;
   }
 
+  /** 결제가 승인되어 결제 완료 상태로 바꾸고 결제 시각을 기록합니다. */
   public void markPaid() {
     requireStatus(OrderStatus.PENDING_PAYMENT);
     this.status = OrderStatus.PAID;
     this.paidAt = LocalDateTime.now();
   }
 
+  /** 업체가 배송 준비를 시작해 배송 준비 상태로 바꿉니다. */
   public void markPreparing() {
     requireStatus(OrderStatus.PAID);
     this.status = OrderStatus.PREPARING;
   }
 
+  /** 택배를 보내 발송 상태로 바꿉니다. */
   public void markShipped() {
     requireStatus(OrderStatus.PREPARING);
     this.status = OrderStatus.SHIPPED;
   }
 
+  /** 배송이 끝나 배송 완료 상태로 바꿉니다. */
   public void markDelivered() {
     requireStatus(OrderStatus.SHIPPED);
     this.status = OrderStatus.DELIVERED;
   }
 
+  /** 결제 전 주문을 취소합니다. 결제가 끝난 주문은 환불로 처리해야 합니다. */
   public void cancel() {
     if (status != OrderStatus.PENDING_PAYMENT)
       throw new IllegalStateException("결제 대기 주문만 바로 취소할 수 있습니다.");
@@ -141,6 +153,7 @@ public class Order extends BaseEntity {
     this.cancelledAt = LocalDateTime.now();
   }
 
+  /** 결제 완료 또는 배송 준비 중인 주문을 환불 상태로 바꿉니다. 발송 후에는 환불할 수 없습니다. */
   public void refund() {
     if (status != OrderStatus.PAID && status != OrderStatus.PREPARING) {
       throw new IllegalStateException("결제 완료 또는 배송 준비 주문만 환불할 수 있습니다.");

@@ -28,6 +28,12 @@ import lombok.NoArgsConstructor;
           name = "uk_social_provider_id",
           columnNames = {"provider", "provider_id"})
     })
+/**
+ * 회원 계정에 연결된 소셜 로그인 계정 한 건입니다.
+ *
+ * <p>제공자(GOOGLE·KAKAO)와 제공자 쪽 사용자 ID 쌍은 한 회원에게만 연결됩니다. 한 회원이 Google과 Kakao를 모두 연결해 같은 계정으로 로그인할 수
+ * 있습니다.
+ */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

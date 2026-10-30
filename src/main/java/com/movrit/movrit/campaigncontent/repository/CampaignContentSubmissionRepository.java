@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 /** 캠페인 콘텐츠 제출 기록을 저장하고 조회합니다. 신청 한 건에 제출 기록은 하나입니다. */
 public interface CampaignContentSubmissionRepository
     extends JpaRepository<CampaignContentSubmission, Long> {
+  /** 신청 한 건의 콘텐츠 제출을 찾습니다. 신청 한 건에는 제출이 하나만 있고, 수정 요청 후에는 같은 제출을 고쳐 다시 냅니다. */
   Optional<CampaignContentSubmission> findByApplicationId(Long applicationId);
 
   /** 참여자 본인이 제출한 콘텐츠를 최신순으로 조회합니다. */

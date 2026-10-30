@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+/** 회원 프로필 사진 API입니다. 사진 올리기·삭제는 본인만, 사진 보기는 누구나 할 수 있습니다. */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/members")

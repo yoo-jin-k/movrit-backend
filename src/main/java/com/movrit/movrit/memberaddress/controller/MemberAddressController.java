@@ -20,17 +20,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/** 로그인한 회원의 배송지 주소록 API입니다. 캠페인 신청 시 배송 정보를 불러오는 데 사용합니다. */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/members/me/addresses")
 public class MemberAddressController {
   private final MemberAddressService service;
 
+  /** 내 배송지 목록을 기본 배송지부터 조회합니다. */
   @GetMapping
   public List<MemberAddressDtos.Response> list(@AuthenticationPrincipal Jwt jwt) {
     return service.findMine(JwtMemberId.from(jwt));
   }
 
+  /** 배송지를 추가합니다. 성공하면 201을 돌려줍니다. */
   @PostMapping
   public ResponseEntity<MemberAddressDtos.Response> create(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody MemberAddressDtos.SaveRequest request) {
@@ -38,6 +41,7 @@ public class MemberAddressController {
         .body(service.create(JwtMemberId.from(jwt), request));
   }
 
+  /** 내 배송지를 고칩니다. */
   @PutMapping("/{addressId}")
   public MemberAddressDtos.Response update(
       @AuthenticationPrincipal Jwt jwt,
@@ -46,12 +50,14 @@ public class MemberAddressController {
     return service.update(JwtMemberId.from(jwt), addressId, request);
   }
 
+  /** 지정한 배송지를 기본 배송지로 바꿉니다. */
   @PatchMapping("/{addressId}/default")
   public MemberAddressDtos.Response setDefault(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long addressId) {
     return service.setDefault(JwtMemberId.from(jwt), addressId);
   }
 
+  /** 내 배송지를 삭제합니다. 기본 배송지를 지우면 가장 최근 주소가 기본이 됩니다. */
   @DeleteMapping("/{addressId}")
   public ResponseEntity<Void> delete(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long addressId) {

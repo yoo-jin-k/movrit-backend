@@ -18,6 +18,7 @@ public class CampaignPrivateImageStorage {
   private final Path root;
   private final CampaignImageStorageService encoder;
 
+  /** 업로드 폴더(app.upload-dir) 아래 비공개 이미지 저장 위치를 정합니다. */
   public CampaignPrivateImageStorage(@Value("${app.upload-dir:uploads}") String uploadDir) {
     Path publicRoot = Path.of(uploadDir).toAbsolutePath().normalize();
     root = publicRoot.resolveSibling(publicRoot.getFileName() + "-campaign-private");

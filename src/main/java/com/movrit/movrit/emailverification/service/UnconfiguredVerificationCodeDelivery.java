@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
     name = "movrit.email.delivery",
     havingValue = "unconfigured",
     matchIfMissing = true)
+/** 메일 발송 설정이 없을 때 쓰는 발송기입니다. 코드를 보내지 않고 '발송 설정이 필요합니다'로 안내합니다. */
 public class UnconfiguredVerificationCodeDelivery implements VerificationCodeDelivery {
   /** 항상 503 오류를 냅니다. 로컬 환경에서 인증 메일이 실제로 발송됐다고 오해하지 않도록 하기 위함입니다. */
   @Override

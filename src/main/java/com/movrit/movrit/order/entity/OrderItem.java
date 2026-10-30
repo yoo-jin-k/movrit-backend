@@ -18,6 +18,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/** 주문에 담긴 상품 한 줄(옵션·단가·수량·합계)입니다. 상품명·옵션명은 주문 시점 값을 복사해 보관하므로 나중에 상품을 고쳐도 바뀌지 않습니다. */
 @Entity
 @Table(name = "order_item")
 @Getter

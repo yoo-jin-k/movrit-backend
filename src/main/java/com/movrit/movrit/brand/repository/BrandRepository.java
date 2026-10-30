@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 /** 업체가 소유한 브랜드를 조회합니다. 삭제(deletedAt 설정)된 브랜드는 제외합니다. */
 public interface BrandRepository extends JpaRepository<Brand, Long> {
+  /** 업체가 운영 중인(삭제하지 않은) 브랜드를 모두 조회합니다. */
   List<Brand> findAllBySellerIdAndDeletedAtIsNull(Long sellerId);
 
   /** 같은 업체 안에서 대소문자 구분 없이 같은 이름의 사용 중 브랜드가 있는지 확인합니다. */

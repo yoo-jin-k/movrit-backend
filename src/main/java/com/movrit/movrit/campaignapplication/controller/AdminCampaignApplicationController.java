@@ -20,17 +20,20 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminCampaignApplicationController {
   private final CampaignApplicationService service;
 
+  /** 운영자 선정 방식 캠페인의 신청 목록을 조회합니다. */
   @GetMapping
   public List<CampaignApplicationDtos.Response> applications(@AuthenticationPrincipal Jwt jwt) {
     return service.findOperatorApplications(JwtMemberId.from(jwt));
   }
 
+  /** 운영자가 신청을 선정합니다. */
   @PatchMapping("/{applicationId}/select")
   public CampaignApplicationDtos.Response select(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long applicationId) {
     return service.operatorSelect(JwtMemberId.from(jwt), applicationId);
   }
 
+  /** 운영자가 신청을 미선정 처리합니다. */
   @PatchMapping("/{applicationId}/reject")
   public CampaignApplicationDtos.Response reject(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long applicationId) {

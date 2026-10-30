@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/** 업체의 프리오더 등록·수정·상태 변경과 공개 조회를 처리합니다. 주문 서비스가 쓰는 주문 수량 증감도 맡습니다. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -23,6 +24,7 @@ public class PreorderService {
   private final PreorderRepository preorderRepository;
   private final ProductService productService;
 
+  /** 업체가 자기 상품으로 프리오더 초안을 만듭니다. 기간, 수량 규칙, 선택한 옵션의 판매 가능 재고가 목표 수량 이상인지 확인합니다. */
   @Transactional
   public PreorderDtos.Response create(Long memberId, PreorderDtos.CreateRequest request) {
     Product product = productService.getOwnedProduct(memberId, request.productId());
@@ -59,6 +61,7 @@ public class PreorderService {
     return PreorderDtos.Response.from(preorderRepository.save(preorder));
   }
 
+  /** 업체가 소유한 브랜드의 프리오더 목록을 조회합니다. 삭제한 프리오더는 빼고 보여줍니다. */
   public List<PreorderDtos.Response> findMine(Long memberId) {
     return preorderRepository.findAll().stream()
         .filter(preorder -> preorder.getDeletedAt() == null)
@@ -69,6 +72,7 @@ public class PreorderService {
         .toList();
   }
 
+  /** 판매 중인 프리오더 목록을 조회합니다. */
   public List<PreorderDtos.Response> findOpen() {
     return preorderRepository.findAll().stream()
         .filter(preorder -> preorder.getDeletedAt() == null)
@@ -77,6 +81,7 @@ public class PreorderService {
         .toList();
   }
 
+  /** 공개 프리오더를 검색합니다. 검색어(제목·상품명·브랜드명), 카테고리, 상태로 거를 수 있고, 초안·취소 등 비공개 상태는 조회할 수 없습니다. */
   public List<PreorderDtos.Response> browse(
       String keyword, String category, PreorderStatus status) {
     Set<PreorderStatus> publicStatuses =
@@ -89,7 +94,7 @@ public class PreorderService {
             PreorderStatus.SHIPPING,
             PreorderStatus.COMPLETED);
     if (status != null && !publicStatuses.contains(status))
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "공개 조회할 수 없는 상태야.");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "공개 조회할 수 없는 상태입니다.");
     String q = keyword == null ? "" : keyword.trim().toLowerCase();
     return preorderRepository.findAll().stream()
         .filter(p -> p.getDeletedAt() == null && publicStatuses.contains(p.getStatus()))
@@ -109,10 +114,12 @@ public class PreorderService {
         .toList();
   }
 
+  /** 프리오더 한 건을 조회합니다. */
   public PreorderDtos.Response findById(Long id) {
     return PreorderDtos.Response.from(getPreorder(id));
   }
 
+  /** 프리오더 조건과 판매 옵션을 고칩니다. 판매가 시작된 뒤에는 409로 거절합니다. */
   @Transactional
   public PreorderDtos.Response update(Long memberId, Long id, PreorderDtos.UpdateRequest request) {
     Preorder preorder = getOwnedPreorder(memberId, id);
@@ -149,48 +156,57 @@ public class PreorderService {
     return PreorderDtos.Response.from(preorder);
   }
 
+  /** 초안을 판매 예약 상태로 바꿉니다. 시작 시각이 되면 자동으로 판매를 시작합니다. */
   @Transactional
   public PreorderDtos.Response schedule(Long memberId, Long id) {
     return applyTransition(getOwnedPreorder(memberId, id), Preorder::schedule);
   }
 
+  /** 업체가 판매를 바로 시작합니다. */
   @Transactional
   public PreorderDtos.Response open(Long memberId, Long id) {
     Preorder preorder = getOwnedPreorder(memberId, id);
     return applyTransition(preorder, value -> value.open(LocalDateTime.now()));
   }
 
+  /** 업체가 판매를 마감합니다. */
   @Transactional
   public PreorderDtos.Response close(Long memberId, Long id) {
     return applyTransition(getOwnedPreorder(memberId, id), Preorder::close);
   }
 
+  /** 마감된 프리오더의 성공·실패를 확정합니다. */
   @Transactional
   public PreorderDtos.Response finalizeResult(Long memberId, Long id) {
     return applyTransition(getOwnedPreorder(memberId, id), Preorder::finalizeResult);
   }
 
+  /** 프리오더를 취소하고 사유를 남깁니다. */
   @Transactional
   public PreorderDtos.Response cancel(Long memberId, Long id, String reason) {
     Preorder preorder = getOwnedPreorder(memberId, id);
     return applyTransition(preorder, value -> value.cancel(reason.trim()));
   }
 
+  /** 성공한 프리오더의 생산을 시작합니다. */
   @Transactional
   public PreorderDtos.Response startProduction(Long memberId, Long id) {
     return applyTransition(getOwnedPreorder(memberId, id), Preorder::startProduction);
   }
 
+  /** 생산 중인 프리오더를 배송 단계로 넘깁니다. */
   @Transactional
   public PreorderDtos.Response startShipping(Long memberId, Long id) {
     return applyTransition(getOwnedPreorder(memberId, id), Preorder::startShipping);
   }
 
+  /** 배송 단계 프리오더를 완료합니다. */
   @Transactional
   public PreorderDtos.Response complete(Long memberId, Long id) {
     return applyTransition(getOwnedPreorder(memberId, id), Preorder::complete);
   }
 
+  /** 프리오더를 삭제 표시합니다. 판매 중이면 409입니다. */
   @Transactional
   public void delete(Long memberId, Long id) {
     Preorder preorder = getOwnedPreorder(memberId, id);
@@ -201,6 +217,7 @@ public class PreorderService {
     }
   }
 
+  /** 프리오더를 찾습니다. 없거나 삭제된 프리오더는 404입니다. */
   public Preorder getPreorder(Long id) {
     Preorder preorder =
         preorderRepository
@@ -226,6 +243,7 @@ public class PreorderService {
     return preorder;
   }
 
+  /** 주문이 들어온 만큼 프리오더 주문 수량을 늘립니다. 판매 중이 아니거나 수량 규칙을 어기면 409입니다. */
   @Transactional
   public void addOrderQuantity(Preorder preorder, long quantity) {
     try {
@@ -235,17 +253,20 @@ public class PreorderService {
     }
   }
 
+  /** 취소·환불된 만큼 프리오더 주문 수량을 줄입니다. */
   @Transactional
   public void removeOrderQuantity(Preorder preorder, long quantity) {
     preorder.decreaseOrderedQuantity(quantity);
   }
 
+  /** 프리오더를 찾고 요청한 업체가 상품 소유자인지 확인합니다. */
   private Preorder getOwnedPreorder(Long memberId, Long id) {
     Preorder preorder = getPreorder(id);
     productService.getOwnedProduct(memberId, preorder.getProduct().getId());
     return preorder;
   }
 
+  /** 상태 변경을 실행하고, 상태 규칙 위반은 409로 바꿔 사유를 전달합니다. */
   private PreorderDtos.Response applyTransition(
       Preorder preorder, java.util.function.Consumer<Preorder> transition) {
     try {
@@ -256,12 +277,14 @@ public class PreorderService {
     }
   }
 
+  /** 종료 시각이 시작 시각보다 뒤인지 확인합니다. */
   private void validatePeriod(LocalDateTime startAt, LocalDateTime endAt) {
     if (!startAt.isBefore(endAt)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "종료 시간은 시작 시간보다 뒤여야 합니다.");
     }
   }
 
+  /** 최대 판매 수량 ≥ 목표 수량, 회원별 최대 주문 수량 ≥ 최소 주문 수량인지 확인합니다. */
   private void validateQuantityRules(Long target, Long max, Long minOrder, Long maxPerMember) {
     if (max != null && max < target) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "최대 판매 수량은 목표 수량보다 작을 수 없습니다.");
@@ -272,6 +295,7 @@ public class PreorderService {
     }
   }
 
+  /** 선택한 옵션의 판매 가능 재고 합계가 목표 수량 이상이고 최대 판매 수량 이상인지 확인합니다. */
   private void validateStockPolicy(Set<ProductVariant> variants, Long target, Long max) {
     long available = variants.stream().mapToLong(ProductVariant::getAvailableQuantity).sum();
     if (available < target) {
@@ -279,7 +303,7 @@ public class PreorderService {
     }
     if (max != null && max > available) {
       throw new ResponseStatusException(
-          HttpStatus.BAD_REQUEST, "최대 판매 수량이 선택한 SKU의 판매 가능 재고보다 많아.");
+          HttpStatus.BAD_REQUEST, "최대 판매 수량이 선택한 SKU의 판매 가능 재고보다 많습니다.");
     }
   }
 }

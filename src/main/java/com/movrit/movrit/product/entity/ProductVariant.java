@@ -18,6 +18,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * 상품 옵션 조합(SKU) 하나와 그 재고입니다.
+ *
+ * <p>보유 재고(onHand), 주문 예약(reserved), 안전 재고(safetyStock), 판매 확정(sold) 수량을 따로 관리합니다. 판매 가능 수량 = 보유 −
+ * 예약 − 안전 재고입니다. 동시 수정은 버전(@Version)으로 막습니다.
+ */
 @Entity
 @Table(name = "product_variant")
 @Getter
@@ -73,10 +79,12 @@ public class ProductVariant extends BaseEntity {
 
   @Version private Long version;
 
+  /** 지금 주문받을 수 있는 수량입니다(보유 − 예약 − 안전 재고, 0 미만이면 0). */
   public long getAvailableQuantity() {
     return Math.max(0L, onHandQuantity - reservedQuantity - safetyStockQuantity);
   }
 
+  /** 옵션 이름·값·추가 금액·사용 여부를 고칩니다. */
   public void updateOption(
       String optionName1,
       String optionValue1,
@@ -92,21 +100,25 @@ public class ProductVariant extends BaseEntity {
     this.active = active;
   }
 
+  /** 옵션 판매를 멈춥니다. 예약된 재고가 있으면 멈출 수 없습니다. */
   public void deactivate() {
     if (reservedQuantity > 0) throw new IllegalStateException("예약된 재고가 있는 SKU는 비활성화할 수 없습니다.");
     this.active = false;
   }
 
+  /** 보유 재고를 늘립니다. */
   public void restock(long quantity) {
     requirePositive(quantity);
     this.onHandQuantity += quantity;
   }
 
+  /** 판매하지 않고 남겨 둘 안전 재고 수량을 정합니다. */
   public void adjustSafetyStock(long quantity) {
     if (quantity < 0) throw new IllegalArgumentException("안전재고는 0 이상이어야 합니다.");
     this.safetyStockQuantity = quantity;
   }
 
+  /** 주문이 들어오면 결제 전까지 재고를 예약합니다. 판매 가능 수량보다 많으면 거절합니다. */
   public void reserve(long quantity) {
     requirePositive(quantity);
     if (getAvailableQuantity() < quantity) {
@@ -115,10 +127,11 @@ public class ProductVariant extends BaseEntity {
     this.reservedQuantity += quantity;
   }
 
+  /** 결제 전 주문이 취소되면 예약한 재고를 풉니다. */
   public void releaseReservation(long quantity) {
     requirePositive(quantity);
     if (reservedQuantity < quantity) {
-      throw new IllegalStateException("해제할 예약 재고보다 요청 수량이 많아.");
+      throw new IllegalStateException("해제할 예약 재고보다 요청 수량이 많습니다.");
     }
     this.reservedQuantity -= quantity;
   }
@@ -134,6 +147,7 @@ public class ProductVariant extends BaseEntity {
     this.soldQuantity += quantity;
   }
 
+  /** 환불된 수량을 판매 확정에서 빼고 보유 재고로 되돌립니다. 판매 확정 수량보다 많이 되돌릴 수는 없습니다. */
   public void refundSale(long quantity) {
     requirePositive(quantity);
     if (soldQuantity < quantity) throw new IllegalStateException("환불할 판매 수량이 부족합니다.");

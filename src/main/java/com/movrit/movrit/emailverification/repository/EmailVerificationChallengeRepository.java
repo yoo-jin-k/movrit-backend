@@ -20,6 +20,7 @@ public interface EmailVerificationChallengeRepository
   /** 일정 시간 안에 보낸 인증 코드 수를 셉니다. 짧은 시간에 너무 자주 보내는 것을 막는 데 씁니다. */
   long countByMemberIdAndCreatedAtAfter(Long memberId, LocalDateTime since);
 
+  /** 회원이 가장 최근에 받은 인증 코드를 찾습니다. */
   Optional<EmailVerificationChallenge> findFirstByMemberIdOrderByIdDesc(Long memberId);
 
   /** 본인 인증 코드를 쓰기 잠금으로 조회합니다. 같은 코드를 동시에 여러 번 확인하는 것을 막습니다. */

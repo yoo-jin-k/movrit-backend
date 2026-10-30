@@ -31,22 +31,26 @@ import org.springframework.web.bind.annotation.RestController;
 public class CampaignFavoriteController {
   private final CampaignFavoriteService service;
 
+  /** 내가 찜한 캠페인 목록을 최근 찜한 순으로 돌려줍니다. */
   @GetMapping
   public List<CampaignFavoriteDtos.Item> list(@AuthenticationPrincipal Jwt jwt) {
     return service.findMine(JwtMemberId.from(jwt));
   }
 
+  /** 내가 찜한 캠페인 ID만 돌려줍니다. 카드의 찜 표시에 사용합니다. */
   @GetMapping("/ids")
   public List<Long> ids(@AuthenticationPrincipal Jwt jwt) {
     return service.findMyCampaignIds(JwtMemberId.from(jwt));
   }
 
+  /** 캠페인을 찜합니다. 이미 찜했어도 204로 응답합니다. */
   @PutMapping("/{campaignId}")
   public ResponseEntity<Void> add(@AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {
     service.add(JwtMemberId.from(jwt), campaignId);
     return ResponseEntity.noContent().build();
   }
 
+  /** 캠페인 찜을 해제합니다. 찜하지 않았어도 204로 응답합니다. */
   @DeleteMapping("/{campaignId}")
   public ResponseEntity<Void> remove(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {

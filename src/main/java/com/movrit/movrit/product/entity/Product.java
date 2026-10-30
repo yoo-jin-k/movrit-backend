@@ -21,6 +21,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/** 브랜드가 판매하는 상품입니다. 재고와 옵션은 상품 아래의 옵션(SKU) 단위로 관리합니다. */
 @Entity
 @Table(name = "product")
 @Getter
@@ -58,6 +59,7 @@ public class Product extends BaseEntity {
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
+  /** 상품 이름·설명·카테고리·정상가·판매 상태를 고칩니다. */
   public void update(
       String name,
       String description,
@@ -71,10 +73,12 @@ public class Product extends BaseEntity {
     this.status = status;
   }
 
+  /** 대표 이미지 주소를 바꿉니다. */
   public void updateThumbnail(String thumbnailUrl) {
     this.thumbnailUrl = thumbnailUrl;
   }
 
+  /** 상품을 삭제 표시합니다(데이터는 남깁니다). */
   public void softDelete() {
     this.deletedAt = LocalDateTime.now();
   }

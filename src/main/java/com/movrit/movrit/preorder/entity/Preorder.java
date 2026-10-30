@@ -30,6 +30,13 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+/**
+ * 상품을 미리 주문받는 프리오더 한 건입니다.
+ *
+ * <p>초안(DRAFT) → 판매 예약(SCHEDULED) → 판매 중(OPEN) → 마감(CLOSED) → 성공(SUCCESS) 또는 실패(FAILED)로 진행합니다.
+ * 성공하면 생산(PRODUCTION) → 배송(SHIPPING) → 완료(COMPLETED)로 이어지고, 결과 확정 전에는 취소(CANCELLED)할 수 있습니다. 목표 수량을
+ * 채우면 성공, 못 채우면 실패입니다.
+ */
 @Entity
 @Table(name = "preorder")
 @Getter
@@ -111,6 +118,7 @@ public class Preorder extends BaseEntity {
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
+  /** 프리오더 조건(제목·가격·수량·기간 등)을 고칩니다. 판매가 시작되었거나 결과가 확정된 뒤에는 고칠 수 없습니다. */
   public void update(
       String title,
       String description,
@@ -143,6 +151,7 @@ public class Preorder extends BaseEntity {
     this.shippingExpectedAt = shippingExpectedAt;
   }
 
+  /** 판매할 옵션(SKU) 구성을 바꿉니다. 판매가 시작된 뒤에는 바꿀 수 없고, 하나 이상 선택해야 합니다. */
   public void replaceSaleVariants(Collection<ProductVariant> variants) {
     if (status == PreorderStatus.OPEN
         || status == PreorderStatus.CLOSED
@@ -157,16 +166,19 @@ public class Preorder extends BaseEntity {
     this.saleVariants.addAll(variants);
   }
 
+  /** 이 프리오더에서 판매하는 옵션인지 확인합니다. */
   public boolean canSellVariant(Long variantId) {
     return saleVariants.stream().anyMatch(variant -> variant.getId().equals(variantId));
   }
 
+  /** 초안을 판매 예약 상태로 바꿉니다. 판매할 옵션이 하나 이상 있어야 합니다. */
   public void schedule() {
     if (status != PreorderStatus.DRAFT) throw new IllegalStateException("초안 상태에서만 판매 예약할 수 있습니다.");
     if (saleVariants.isEmpty()) throw new IllegalStateException("판매할 SKU를 하나 이상 연결해 주세요.");
     this.status = PreorderStatus.SCHEDULED;
   }
 
+  /** 판매를 시작합니다. 재고가 있는 활성 옵션이 있어야 하고, 시작 시각 이후·종료 시각 이전이어야 합니다. */
   public void open(LocalDateTime now) {
     if (status != PreorderStatus.SCHEDULED && status != PreorderStatus.DRAFT) {
       throw new IllegalStateException("예약 또는 초안 상태에서만 판매를 시작할 수 있습니다.");
@@ -177,10 +189,11 @@ public class Preorder extends BaseEntity {
       throw new IllegalStateException("판매 가능한 재고가 있는 SKU가 없습니다.");
     }
     if (now.isBefore(startAt)) throw new IllegalStateException("프리오더 시작 시간이 아직 되지 않았습니다.");
-    if (!now.isBefore(endAt)) throw new IllegalStateException("이미 종료 시간이 지난 프리오더야.");
+    if (!now.isBefore(endAt)) throw new IllegalStateException("이미 종료 시간이 지난 프리오더입니다.");
     this.status = PreorderStatus.OPEN;
   }
 
+  /** 판매 중인 프리오더를 마감합니다. */
   public void close() {
     if (status != PreorderStatus.OPEN) throw new IllegalStateException("판매 중인 프리오더만 마감할 수 있습니다.");
     this.status = PreorderStatus.CLOSED;
@@ -194,6 +207,7 @@ public class Preorder extends BaseEntity {
         orderedQuantity >= targetQuantity ? PreorderStatus.SUCCESS : PreorderStatus.FAILED;
   }
 
+  /** 프리오더를 취소하고 사유를 기록합니다. 성공·실패가 확정된 뒤에는 취소할 수 없습니다. */
   public void cancel(String reason) {
     if (status == PreorderStatus.SUCCESS || status == PreorderStatus.FAILED) {
       throw new IllegalStateException("결과가 확정된 프리오더는 취소할 수 없습니다.");
@@ -202,24 +216,28 @@ public class Preorder extends BaseEntity {
     this.cancellationReason = reason;
   }
 
+  /** 성공한 프리오더의 생산을 시작합니다. */
   public void startProduction() {
     if (status != PreorderStatus.SUCCESS)
       throw new IllegalStateException("성공 확정 프리오더만 생산을 시작할 수 있습니다.");
     status = PreorderStatus.PRODUCTION;
   }
 
+  /** 생산 중인 프리오더를 배송 단계로 넘깁니다. */
   public void startShipping() {
     if (status != PreorderStatus.PRODUCTION)
       throw new IllegalStateException("생산 중 프리오더만 배송 단계로 변경할 수 있습니다.");
     status = PreorderStatus.SHIPPING;
   }
 
+  /** 배송 단계 프리오더를 완료합니다. */
   public void complete() {
     if (status != PreorderStatus.SHIPPING)
       throw new IllegalStateException("배송 단계 프리오더만 완료할 수 있습니다.");
     status = PreorderStatus.COMPLETED;
   }
 
+  /** 주문이 들어오면 주문 수량을 늘립니다. 판매 중이어야 하고, 최소 주문 수량 이상·최대 판매 수량 이하여야 합니다. */
   public void increaseOrderedQuantity(long quantity) {
     if (status != PreorderStatus.OPEN) throw new IllegalStateException("판매 중인 프리오더가 아닙니다.");
     if (quantity < minOrderQuantity) throw new IllegalStateException("최소 주문 수량보다 적습니다.");
@@ -229,12 +247,14 @@ public class Preorder extends BaseEntity {
     this.orderedQuantity += quantity;
   }
 
+  /** 주문 취소·환불 시 주문 수량을 줄입니다. */
   public void decreaseOrderedQuantity(long quantity) {
     if (quantity <= 0 || orderedQuantity < quantity)
       throw new IllegalArgumentException("취소 수량이 올바르지 않습니다.");
     this.orderedQuantity -= quantity;
   }
 
+  /** 프리오더를 삭제 표시합니다(데이터는 남깁니다). 판매 중에는 삭제할 수 없습니다. */
   public void softDelete() {
     if (status == PreorderStatus.OPEN) throw new IllegalStateException("판매 중인 프리오더는 삭제할 수 없습니다.");
     this.deletedAt = LocalDateTime.now();

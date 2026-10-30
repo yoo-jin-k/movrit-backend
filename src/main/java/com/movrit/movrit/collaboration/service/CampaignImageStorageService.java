@@ -34,6 +34,7 @@ public class CampaignImageStorageService {
       Map.of("jpeg", "image/jpeg", "png", "image/png", "webp", "image/webp");
   private final Path root;
 
+  /** 업로드 폴더(app.upload-dir) 아래 캠페인 공개 이미지 저장 위치를 정합니다. */
   public CampaignImageStorageService(@Value("${app.upload-dir:uploads}") String uploadDir) {
     root = Path.of(uploadDir).toAbsolutePath().normalize();
   }

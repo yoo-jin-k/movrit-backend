@@ -59,8 +59,10 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
   List<CampaignApplicationCount> countActiveApplicationsByCampaignIds(
       @Param("campaignIds") Collection<Long> campaignIds);
 
+  /** 같은 크리에이터가 이 캠페인에 이미 신청했는지 확인합니다. */
   boolean existsByCampaignIdAndCreatorId(Long campaignId, Long creatorId);
 
+  /** 참여자 포트폴리오 화면용으로 신청 한 건과 캠페인·브랜드·업체 소유자 정보를 한 번에 읽습니다. 소유 업체 권한 확인에 필요한 연관을 함께 가져옵니다. */
   @EntityGraph(
       attributePaths = {
         "creator",
@@ -71,7 +73,6 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
         "campaign.brand.seller",
         "campaign.brand.seller.member"
       })
-  /** 참여자 포트폴리오 화면용으로 신청 한 건과 캠페인·브랜드·업체 소유자 정보를 한 번에 읽습니다. 소유 업체 권한 확인에 필요한 연관을 함께 가져옵니다. */
   @Query("select application from CampaignApplication application where application.id = :id")
   Optional<CampaignApplication> findPortfolioById(@Param("id") Long id);
 
@@ -81,11 +82,13 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
   /** 캠페인에 신청 이력이 하나라도 있는지 확인합니다. 신청 이력이 생긴 뒤에는 선정 방식을 바꿀 수 없습니다. */
   boolean existsByCampaignId(Long campaignId);
 
+  /** 캠페인의 신청 전체를 조회합니다. */
   List<CampaignApplication> findAllByCampaignId(Long campaignId);
 
   /** 신청 ID와 회원 ID가 모두 일치할 때만 찾습니다. 본인 신청만 다루도록 권한 확인을 겸합니다. */
   Optional<CampaignApplication> findByIdAndCreatorMemberId(Long id, Long memberId);
 
+  /** 회원 본인의 신청을 최근 순으로 조회합니다. */
   List<CampaignApplication> findAllByCreatorMemberIdOrderByIdDesc(Long memberId);
 
   @EntityGraph(
