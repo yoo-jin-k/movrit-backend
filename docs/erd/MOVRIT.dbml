@@ -132,6 +132,17 @@ Table campaign_eligibility_requirement {
   version "bigint"
 }
 
+Table campaign_favorite {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  campaign_id "bigint" [not null]
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+  indexes {
+    (member_id, campaign_id) [unique]
+  }
+}
+
 Table campaign_image_asset {
   id "varchar(36)" [pk]
   owner_member_id "bigint" [not null]
@@ -745,6 +756,8 @@ Ref: campaign_content_link.submission_id > campaign_content_submission.id
 Ref: campaign_content_submission.application_id > campaign_application.id
 Ref: campaign_detail_image.campaign_id > collaboration_campaign.id
 Ref: campaign_eligibility_requirement.campaign_id > collaboration_campaign.id
+Ref: campaign_favorite.campaign_id > collaboration_campaign.id
+Ref: campaign_favorite.member_id > member.id
 Ref: campaign_image_asset.campaign_id > collaboration_campaign.id
 Ref: campaign_image_asset.owner_member_id > member.id
 Ref: campaign_media_state.campaign_id > collaboration_campaign.id

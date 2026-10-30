@@ -27,7 +27,7 @@ DOMAINS = [
     ("02_캠페인_신청", "캠페인·신청·콘텐츠", [
         "collaboration_campaign", "campaign_application_form", "campaign_application",
         "campaign_eligibility_requirement", "campaign_content_submission", "campaign_content_link",
-        "collaboration", "referral_link", "referral_click", "attribution",
+        "campaign_favorite", "collaboration", "referral_link", "referral_click", "attribution",
     ]),
     ("03_이미지_방문증빙", "캠페인 이미지·방문 증빙", [
         "campaign_detail_image", "campaign_image_asset", "campaign_media_state",

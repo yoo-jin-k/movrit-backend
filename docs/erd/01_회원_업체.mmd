@@ -130,6 +130,7 @@ erDiagram
   member ||--o{ audit_log : "actor_member_id"
   seller_profile ||--o{ brand : "seller_id"
   influencer_profile ||--o{ campaign_application : "creator_id"
+  member ||--o{ campaign_favorite : "member_id"
   member ||--o{ campaign_image_asset : "owner_member_id"
   member ||--o{ campaign_visit_history : "actor_member_id"
   influencer_profile ||--o{ collaboration : "creator_id"

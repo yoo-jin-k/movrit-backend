@@ -113,6 +113,13 @@ erDiagram
     timestamp created_at
     timestamp updated_at
   }
+  campaign_favorite {
+    bigint id PK
+    bigint member_id FK
+    bigint campaign_id FK
+    timestamp created_at
+    timestamp updated_at
+  }
   collaboration {
     bigint id PK
     bigint preorder_id FK
@@ -179,6 +186,8 @@ erDiagram
   campaign_application ||--o{ campaign_content_submission : "application_id"
   collaboration_campaign ||--o{ campaign_detail_image : "campaign_id"
   collaboration_campaign ||--o{ campaign_eligibility_requirement : "campaign_id"
+  collaboration_campaign ||--o{ campaign_favorite : "campaign_id"
+  member ||--o{ campaign_favorite : "member_id"
   collaboration_campaign ||--o{ campaign_image_asset : "campaign_id"
   collaboration_campaign ||--o{ campaign_media_state : "campaign_id"
   collaboration_campaign ||--o{ campaign_visit_history : "campaign_id"

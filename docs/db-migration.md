@@ -10,6 +10,7 @@
 | 2 | `V2__widen_text_and_amount_columns.sql` | 두 DB가 다르게 좁혀 둔 컬럼을 넓은 쪽으로 통일(신청 배송지 300자, 사유 500자, 알림 1000자, 금액 numeric(38,2)) |
 | 3 | `V3__campaign_owned_by_brand.sql` | 캠페인이 브랜드에 직접 속하도록 brand_id 추가(기존 캠페인은 프리오더의 브랜드로 채움), 프리오더 연결은 선택 항목으로 변경 |
 | 4 | `V4__campaign_type_region_channel.sql` | 탐색 메뉴용 분류 추가: 캠페인 종류(제품·지역·기자단), 방문 지역, 콘텐츠 채널, 프리미어 여부. 방문 전용 신청 폼을 가진 기존 캠페인은 지역 캠페인으로, 방문 주소 앞부분으로 지역을 채움 |
+| 5 | `V5__campaign_favorite.sql` | 캠페인 찜 테이블(campaign_favorite) 추가. 회원·캠페인 쌍은 한 번만 저장되며 회원·캠페인 삭제 시 함께 정리 |
 
 - 적용 이력 테이블: `movrit_schema_history`
   - 8월 실험 때 남은 `flyway_schema_history` 와는 별개입니다. 기존 표는 사용하지 않으며 지우지 않았습니다.
