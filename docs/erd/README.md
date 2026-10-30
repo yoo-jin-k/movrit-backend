@@ -2,7 +2,7 @@
 
 실제 DB 스키마로 생성한 ERD입니다. `scripts/generate-erd.py` 로 다시 만들 수 있습니다.
 
-- 테이블 49개, 외래 키 관계 73개
+- 테이블 49개, 외래 키 관계 74개
 - `MOVRIT.dbml`: 전체 관계(dbdiagram.io에 붙여 넣기)
 
 | 파일 | 도메인 | 테이블 |

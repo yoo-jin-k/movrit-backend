@@ -7,8 +7,8 @@ import com.movrit.movrit.campaignmedia.entity.*;
 import com.movrit.movrit.campaignmedia.repository.*;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
+import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.notification.service.NotificationService;
-import com.movrit.movrit.product.service.ProductService;
 import com.movrit.movrit.seller.service.SellerProfileService;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -32,7 +32,7 @@ public class CampaignVisitEvidenceService {
   private final CampaignMediaStateRepository states;
   private final CampaignApplicationRepository applications;
   private final CampaignRepository campaigns;
-  private final ProductService products;
+  private final CampaignOwnershipService campaignOwnership;
   private final SellerProfileService sellers;
   private final NotificationService notifications;
   private final ObjectMapper json;
@@ -198,7 +198,7 @@ public class CampaignVisitEvidenceService {
   /** 승인된 업체이면서 해당 캠페인 상품의 소유자인지 확인합니다. */
   private void requireOwner(Long memberId, Campaign campaign) {
     sellers.getApprovedSeller(memberId);
-    products.getOwnedProduct(memberId, campaign.getPreorder().getProduct().getId());
+    campaignOwnership.requireOwner(memberId, campaign);
   }
 
   private Location location(String value) {

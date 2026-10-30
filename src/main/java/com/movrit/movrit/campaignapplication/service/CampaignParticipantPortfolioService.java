@@ -16,8 +16,8 @@ import com.movrit.movrit.campaigneligibility.dto.CampaignEligibilityDtos;
 import com.movrit.movrit.campaigneligibility.entity.MemberChannelMetric;
 import com.movrit.movrit.campaigneligibility.entity.MetricVerificationStatus;
 import com.movrit.movrit.campaigneligibility.repository.MemberChannelMetricRepository;
+import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.creator.entity.Creator;
-import com.movrit.movrit.product.service.ProductService;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,7 +47,7 @@ public class CampaignParticipantPortfolioService {
   private final CampaignContentSubmissionRepository submissionRepository;
   private final CampaignContentLinkRepository linkRepository;
   private final MemberChannelMetricRepository metricRepository;
-  private final ProductService productService;
+  private final CampaignOwnershipService campaignOwnership;
   private final ObjectMapper objectMapper;
 
   /**
@@ -63,8 +63,7 @@ public class CampaignParticipantPortfolioService {
             .findPortfolioById(applicationId)
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
-    productService.getOwnedProduct(
-        sellerMemberId, application.getCampaign().getPreorder().getProduct().getId());
+    campaignOwnership.requireOwner(sellerMemberId, application.getCampaign());
 
     Creator creator = application.getCreator();
     List<MemberChannelMetric> metrics =

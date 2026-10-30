@@ -8,6 +8,7 @@
 |---|---|---|
 | 1 | `V1__baseline_schema.sql` | 2026-10-31 통합 DB의 public 스키마 전체(49개 테이블). 기존 DB는 이 파일을 건너뛰고 기준선으로만 기록 |
 | 2 | `V2__widen_text_and_amount_columns.sql` | 두 DB가 다르게 좁혀 둔 컬럼을 넓은 쪽으로 통일(신청 배송지 300자, 사유 500자, 알림 1000자, 금액 numeric(38,2)) |
+| 3 | `V3__campaign_owned_by_brand.sql` | 캠페인이 브랜드에 직접 속하도록 brand_id 추가(기존 캠페인은 프리오더의 브랜드로 채움), 프리오더 연결은 선택 항목으로 변경 |
 
 - 적용 이력 테이블: `movrit_schema_history`
   - 8월 실험 때 남은 `flyway_schema_history` 와는 별개입니다. 기존 표는 사용하지 않으며 지우지 않았습니다.

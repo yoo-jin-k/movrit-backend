@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.movrit.movrit.brand.entity.Brand;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplication;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplicationForm;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
@@ -17,11 +18,11 @@ import com.movrit.movrit.campaigneligibility.entity.MemberChannelMetric;
 import com.movrit.movrit.campaigneligibility.entity.MetricVerificationStatus;
 import com.movrit.movrit.campaigneligibility.repository.MemberChannelMetricRepository;
 import com.movrit.movrit.collaboration.entity.Campaign;
+import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.creator.entity.Creator;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.preorder.entity.Preorder;
 import com.movrit.movrit.product.entity.Product;
-import com.movrit.movrit.product.service.ProductService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +39,7 @@ class CampaignParticipantPortfolioServiceTest {
         mock(CampaignContentSubmissionRepository.class);
     CampaignContentLinkRepository links = mock(CampaignContentLinkRepository.class);
     MemberChannelMetricRepository metrics = mock(MemberChannelMetricRepository.class);
-    ProductService products = mock(ProductService.class);
+    CampaignOwnershipService products = mock(CampaignOwnershipService.class);
 
     Member member = Member.builder().id(7L).nickname("account_name").build();
     Creator creator =
@@ -51,7 +52,13 @@ class CampaignParticipantPortfolioServiceTest {
             .build();
     Product product = Product.builder().id(9L).build();
     Preorder preorder = Preorder.builder().id(10L).product(product).build();
-    Campaign campaign = Campaign.builder().id(11L).preorder(preorder).title("캠페인").build();
+    Campaign campaign =
+        Campaign.builder()
+            .brand(Brand.builder().id(99L).name("테스트 브랜드").build())
+            .id(11L)
+            .preorder(preorder)
+            .title("캠페인")
+            .build();
     CampaignApplication application =
         CampaignApplication.builder()
             .id(12L)
@@ -97,7 +104,9 @@ class CampaignParticipantPortfolioServiceTest {
                 applications, forms, submissions, links, metrics, products, new ObjectMapper())
             .find(20L, 12L);
 
-    verify(products).getOwnedProduct(20L, 9L);
+    verify(products)
+        .requireOwner(
+            org.mockito.ArgumentMatchers.eq(20L), org.mockito.ArgumentMatchers.any(Campaign.class));
     assertThat(result.profile().channelNickname()).isEqualTo("channel_name");
     assertThat(result.profile().accountNickname()).isEqualTo("account_name");
     assertThat(result.profile().nicknameConsistent()).isFalse();

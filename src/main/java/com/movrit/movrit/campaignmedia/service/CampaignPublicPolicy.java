@@ -6,18 +6,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * 캠페인을 사용자에게 보여줘도 되는지 판단하는 공통 규칙입니다. 캠페인은 만들자마자 공개되며, 연결된 프리오더나 상품이 삭제되었으면 보이지 않습니다. open 값은 모집 가능
- * 여부만 뜻합니다.
+ * 캠페인을 사용자에게 보여줘도 되는지 판단하는 공통 규칙입니다. 캠페인은 만들자마자 공개되며, 운영 브랜드가 삭제되었거나 연결된 프리오더·상품이 삭제되었으면 보이지 않습니다.
+ * open 값은 모집 가능 여부만 뜻합니다.
  */
-/** 현재 캠페인은 별도 공개 상태 없이 생성 즉시 공개되며 open은 모집 가능 여부입니다. */
 public final class CampaignPublicPolicy {
   private CampaignPublicPolicy() {}
 
-  /** 연결된 프리오더와 상품이 모두 살아 있으면 공개 대상으로 봅니다. */
+  /** 운영 브랜드가 살아 있고, 프리오더를 연결했다면 그 프리오더와 상품도 살아 있을 때 공개 대상으로 봅니다. */
   public static boolean visible(Campaign campaign) {
-    return campaign != null
-        && campaign.getPreorder() != null
-        && campaign.getPreorder().getDeletedAt() == null
+    if (campaign == null
+        || campaign.getBrand() == null
+        || campaign.getBrand().getDeletedAt() != null) return false;
+    // 프리오더 없이 운영하는 체험단 캠페인은 브랜드만 확인합니다.
+    if (campaign.getPreorder() == null) return true;
+    return campaign.getPreorder().getDeletedAt() == null
         && campaign.getPreorder().getProduct() != null
         && campaign.getPreorder().getProduct().getDeletedAt() == null;
   }

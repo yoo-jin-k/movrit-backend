@@ -1,5 +1,6 @@
 package com.movrit.movrit.collaboration.entity;
 
+import com.movrit.movrit.brand.entity.Brand;
 import com.movrit.movrit.common.entity.BaseEntity;
 import com.movrit.movrit.preorder.entity.Preorder;
 import jakarta.persistence.Column;
@@ -11,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
@@ -21,8 +23,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 브랜드가 등록하는 체험단 캠페인(모집 공고)입니다. 모집 내용·참여 안내·일정·선정 방식·공개 여부를 담고, 프리오더 하나에 캠페인 하나가 연결됩니다. 일정을 바꿀 때마다
- * scheduleVersion이 1씩 올라가 동시에 다른 화면에서 고친 내용을 덮어쓰지 않게 합니다.
+ * 브랜드가 등록하는 체험단 캠페인(모집 공고)입니다. 모집 내용·참여 안내·일정·선정 방식·공개 여부를 담고, 운영 브랜드에 직접 속합니다(프리오더 연결은 선택이며 연결하면
+ * 프리오더 하나에 캠페인 하나). 일정을 바꿀 때마다 scheduleVersion이 1씩 올라가 동시에 다른 화면에서 고친 내용을 덮어쓰지 않게 합니다.
  */
 @Entity
 @Table(name = "collaboration_campaign")
@@ -35,8 +37,14 @@ public class Campaign extends BaseEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @OneToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "preorder_id", nullable = false, unique = true)
+  /** 캠페인을 운영하는 브랜드입니다. 소유 확인(수정·선정·검수 권한)은 이 브랜드의 판매자를 기준으로 합니다. */
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "brand_id", nullable = false)
+  private Brand brand;
+
+  /** 함께 판매하는 프리오더입니다(선택). 프리오더 없이 체험단 캠페인만 운영할 수도 있습니다. */
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "preorder_id", unique = true)
   private Preorder preorder;
 
   @Column(nullable = false)

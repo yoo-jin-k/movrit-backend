@@ -23,5 +23,5 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
   List<Campaign> findAllByOpenTrueOrderByIdDesc();
 
   /** 해당 회원이 소유한 브랜드의 캠페인을 최신순으로 조회합니다(업체 화면용). */
-  List<Campaign> findAllByPreorderProductBrandSellerMemberIdOrderByIdDesc(Long id);
+  List<Campaign> findAllByBrandSellerMemberIdOrderByIdDesc(Long id);
 }

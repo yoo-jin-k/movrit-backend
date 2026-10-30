@@ -3,6 +3,7 @@ package com.movrit.movrit.collaboration.entity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.movrit.movrit.brand.entity.Brand;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 
@@ -10,14 +11,19 @@ class CampaignTest {
 
   @Test
   void existingCompatibleCampaignDefaultsToBrandDirectSelection() {
-    Campaign campaign = Campaign.builder().build();
+    Campaign campaign =
+        Campaign.builder().brand(Brand.builder().id(99L).name("테스트 브랜드").build()).build();
 
     assertThat(campaign.getSelectionMode()).isEqualTo(CampaignSelectionMode.BRAND_DIRECT);
   }
 
   @Test
   void updateStoresCampaignSpecificGuides() {
-    Campaign campaign = Campaign.builder().open(true).build();
+    Campaign campaign =
+        Campaign.builder()
+            .brand(Brand.builder().id(99L).name("테스트 브랜드").build())
+            .open(true)
+            .build();
     LocalDateTime startAt = LocalDateTime.now().plusDays(1);
     LocalDateTime endAt = startAt.plusDays(7);
 
@@ -52,7 +58,11 @@ class CampaignTest {
 
   @Test
   void updateRejectsInvalidRecruitmentPeriod() {
-    Campaign campaign = Campaign.builder().open(true).build();
+    Campaign campaign =
+        Campaign.builder()
+            .brand(Brand.builder().id(99L).name("테스트 브랜드").build())
+            .open(true)
+            .build();
     LocalDateTime startAt = LocalDateTime.now().plusDays(7);
 
     assertThatThrownBy(
@@ -86,7 +96,12 @@ class CampaignTest {
 
   @Test
   void updateStoresEachScheduleWithoutDerivingMissingDates() {
-    Campaign campaign = Campaign.builder().open(true).scheduleVersion(1L).build();
+    Campaign campaign =
+        Campaign.builder()
+            .brand(Brand.builder().id(99L).name("테스트 브랜드").build())
+            .open(true)
+            .scheduleVersion(1L)
+            .build();
     LocalDateTime recruitmentStart = LocalDateTime.of(2026, 10, 12, 0, 0);
     LocalDateTime recruitmentEnd = LocalDateTime.of(2026, 10, 21, 0, 0);
     LocalDateTime selectionAt = LocalDateTime.of(2026, 10, 22, 12, 0);
@@ -127,7 +142,11 @@ class CampaignTest {
 
   @Test
   void updateStoresOperatorSelectionMode() {
-    Campaign campaign = Campaign.builder().scheduleVersion(1L).build();
+    Campaign campaign =
+        Campaign.builder()
+            .brand(Brand.builder().id(99L).name("테스트 브랜드").build())
+            .scheduleVersion(1L)
+            .build();
     LocalDateTime startAt = LocalDateTime.now().plusDays(1);
 
     campaign.update(

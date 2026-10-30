@@ -215,7 +215,7 @@ Table collaboration {
 
 Table collaboration_campaign {
   id "bigint" [pk]
-  preorder_id "bigint" [unique, not null]
+  preorder_id "bigint" [unique]
   title "varchar(255)" [not null]
   description "text"
   category "varchar(100)"
@@ -248,6 +248,7 @@ Table collaboration_campaign {
   contact_name "varchar(100)"
   contact_phone "varchar(30)"
   selection_mode "varchar(20)"
+  brand_id "bigint" [not null]
 }
 
 Table email_verification_challenge {
@@ -751,6 +752,7 @@ Ref: campaign_visit_snapshot.campaign_id > collaboration_campaign.id
 Ref: collaboration.creator_id > influencer_profile.id
 Ref: collaboration.influencer_id > influencer_profile.id
 Ref: collaboration.preorder_id > preorder.id
+Ref: collaboration_campaign.brand_id > brand.id
 Ref: collaboration_campaign.preorder_id > preorder.id
 Ref: email_verification_challenge.member_id > member.id
 Ref: file_asset.uploader_member_id > member.id

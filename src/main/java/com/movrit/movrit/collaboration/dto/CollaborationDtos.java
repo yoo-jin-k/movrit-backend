@@ -11,7 +11,8 @@ public final class CollaborationDtos {
   /**
    * 캠페인 및 협업의 기존 캠페인 생성 요청을 전달합니다.
    *
-   * @param preorderId 연결된 프리오더 식별자입니다. null을 허용하지 않습니다.
+   * @param preorderId 함께 판매할 프리오더 식별자입니다. 프리오더 없이 체험단만 운영하면 비워 둡니다.
+   * @param brandId 캠페인을 운영할 본인 브랜드 식별자입니다. 프리오더를 고르면 그 브랜드로 정해지고, 브랜드가 하나뿐이면 생략할 수 있습니다.
    * @param title 제목입니다. 빈 문자열을 허용하지 않습니다.
    * @param description 상세 설명입니다.
    * @param category 분류값입니다.
@@ -22,7 +23,8 @@ public final class CollaborationDtos {
    * @param endAt 모집 종료 시각입니다.
    */
   public record CampaignRequest(
-      @NotNull Long preorderId,
+      Long preorderId,
+      Long brandId,
       @NotBlank String title,
       String description,
       String category,
@@ -85,9 +87,9 @@ public final class CollaborationDtos {
     public static CampaignResponse from(Campaign c, Long applicationCount) {
       return new CampaignResponse(
           c.getId(),
-          c.getPreorder().getId(),
-          c.getPreorder().getTitle(),
-          c.getPreorder().getProduct().getBrand().getName(),
+          c.getPreorder() == null ? null : c.getPreorder().getId(),
+          c.getPreorder() == null ? null : c.getPreorder().getTitle(),
+          c.getBrand().getName(),
           c.getTitle(),
           c.getDescription(),
           c.getCategory(),

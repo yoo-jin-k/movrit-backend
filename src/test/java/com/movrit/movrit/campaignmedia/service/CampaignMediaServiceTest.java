@@ -3,6 +3,7 @@ package com.movrit.movrit.campaignmedia.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.movrit.movrit.brand.entity.Brand;
 import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos.*;
 import com.movrit.movrit.campaignapplication.entity.FulfillmentType;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
@@ -12,9 +13,9 @@ import com.movrit.movrit.campaignmedia.entity.*;
 import com.movrit.movrit.campaignmedia.repository.*;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
+import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.preorder.entity.Preorder;
 import com.movrit.movrit.product.entity.Product;
-import com.movrit.movrit.product.service.ProductService;
 import com.movrit.movrit.seller.service.SellerProfileService;
 import java.nio.file.*;
 import java.util.*;
@@ -31,7 +32,7 @@ class CampaignMediaServiceTest {
   private final CampaignImageAssetRepository assets = mock(CampaignImageAssetRepository.class);
   private final CampaignMediaStateRepository states = mock(CampaignMediaStateRepository.class);
   private final CampaignRepository campaigns = mock(CampaignRepository.class);
-  private final ProductService products = mock(ProductService.class);
+  private final CampaignOwnershipService products = mock(CampaignOwnershipService.class);
   private final SellerProfileService sellers = mock(SellerProfileService.class);
   private final CampaignApplicationService forms = mock(CampaignApplicationService.class);
   private final CampaignApplicationRepository applications =
@@ -259,6 +260,7 @@ class CampaignMediaServiceTest {
   private Campaign campaign(boolean open) {
     Product product = Product.builder().id(20L).build();
     return Campaign.builder()
+        .brand(Brand.builder().id(99L).name("테스트 브랜드").build())
         .id(10L)
         .preorder(Preorder.builder().id(30L).product(product).build())
         .open(open)

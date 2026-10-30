@@ -150,11 +150,12 @@ public final class CampaignManagementDtos {
     public static DetailResponse from(Campaign campaign, boolean includeVisit) {
       return new DetailResponse(
           campaign.getId(),
-          campaign.getPreorder().getId(),
-          campaign.getPreorder().getTitle(),
-          campaign.getPreorder().getProduct().getId(),
-          campaign.getPreorder().getProduct().getName(),
-          campaign.getPreorder().getProduct().getBrand().getName(),
+          // 프리오더 없이 운영하는 캠페인은 프리오더·상품 정보를 비워 응답합니다.
+          campaign.getPreorder() == null ? null : campaign.getPreorder().getId(),
+          campaign.getPreorder() == null ? null : campaign.getPreorder().getTitle(),
+          campaign.getPreorder() == null ? null : campaign.getPreorder().getProduct().getId(),
+          campaign.getPreorder() == null ? null : campaign.getPreorder().getProduct().getName(),
+          campaign.getBrand().getName(),
           campaign.getTitle(),
           campaign.getDescription(),
           campaign.getCategory(),

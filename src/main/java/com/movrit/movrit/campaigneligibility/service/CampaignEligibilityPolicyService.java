@@ -8,7 +8,7 @@ import com.movrit.movrit.campaigneligibility.repository.CampaignEligibilityRequi
 import com.movrit.movrit.campaigneligibility.repository.MemberChannelMetricRepository;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
-import com.movrit.movrit.product.service.ProductService;
+import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,7 +27,7 @@ public class CampaignEligibilityPolicyService {
   private final CampaignEligibilityRequirementRepository requirementRepository;
   private final MemberChannelMetricRepository metricRepository;
   private final CampaignRepository campaignRepository;
-  private final ProductService productService;
+  private final CampaignOwnershipService campaignOwnership;
 
   /** 조건 판정 결과입니다. blockingReason이 null이면 신청할 수 있고, 값이 있으면 신청을 막는 이유 코드입니다. */
   public record Evaluation(
@@ -165,7 +165,7 @@ public class CampaignEligibilityPolicyService {
             .findById(campaignId)
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "캠페인을 찾을 수 없습니다."));
-    productService.getOwnedProduct(memberId, campaign.getPreorder().getProduct().getId());
+    campaignOwnership.requireOwner(memberId, campaign);
     return campaign;
   }
 

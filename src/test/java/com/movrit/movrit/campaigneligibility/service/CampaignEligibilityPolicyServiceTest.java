@@ -6,6 +6,7 @@ import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.movrit.movrit.brand.entity.Brand;
 import com.movrit.movrit.campaigneligibility.entity.CampaignEligibilityRequirement;
 import com.movrit.movrit.campaigneligibility.entity.MemberChannelMetric;
 import com.movrit.movrit.campaigneligibility.entity.MetricVerificationStatus;
@@ -13,7 +14,7 @@ import com.movrit.movrit.campaigneligibility.repository.CampaignEligibilityRequi
 import com.movrit.movrit.campaigneligibility.repository.MemberChannelMetricRepository;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
-import com.movrit.movrit.product.service.ProductService;
+import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,7 +24,7 @@ class CampaignEligibilityPolicyServiceTest {
       mock(CampaignEligibilityRequirementRepository.class);
   private final MemberChannelMetricRepository metrics = mock(MemberChannelMetricRepository.class);
   private final CampaignRepository campaigns = mock(CampaignRepository.class);
-  private final ProductService products = mock(ProductService.class);
+  private final CampaignOwnershipService products = mock(CampaignOwnershipService.class);
   private final CampaignEligibilityPolicyService service =
       new CampaignEligibilityPolicyService(requirements, metrics, campaigns, products);
 
@@ -109,7 +110,8 @@ class CampaignEligibilityPolicyServiceTest {
   }
 
   private void stubRequirement() {
-    Campaign campaign = Campaign.builder().id(10L).build();
+    Campaign campaign =
+        Campaign.builder().brand(Brand.builder().id(99L).name("테스트 브랜드").build()).id(10L).build();
     CampaignEligibilityRequirement requirement =
         CampaignEligibilityRequirement.builder()
             .id(20L)

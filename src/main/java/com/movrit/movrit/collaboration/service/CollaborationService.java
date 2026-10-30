@@ -1,5 +1,6 @@
 package com.movrit.movrit.collaboration.service;
 
+import com.movrit.movrit.brand.entity.Brand;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
 import com.movrit.movrit.collaboration.dto.CollaborationDtos;
 import com.movrit.movrit.collaboration.entity.*;
@@ -39,21 +40,41 @@ public class CollaborationService {
   private final PreorderService preorders;
   private final ProductService products;
   private final CampaignApplicationRepository campaignApplications;
+  private final CampaignOwnershipService campaignOwnership;
 
   /**
-   * 업체가 자기 프리오더 상품에 캠페인(모집 공고)을 새로 등록합니다. 프리오더 하나에는 캠페인 하나만 만들 수 있고, 모집 종료일은 시작일보다 뒤여야 합니다. 선정 방식을
-   * 고르지 않으면 브랜드 직접 선정으로 저장하고 바로 공개합니다.
+   * 업체가 자기 브랜드의 캠페인(모집 공고)을 새로 등록합니다. 선정 방식을 고르지 않으면 브랜드 직접 선정으로 저장하고 바로 공개합니다.
+   *
+   * <p>운영 브랜드 정하기:
+   *
+   * <ul>
+   *   <li>프리오더를 함께 고르면 그 프리오더 상품의 브랜드가 운영 브랜드가 됩니다. 프리오더 하나에는 캠페인 하나만 만들 수 있습니다.
+   *   <li>프리오더 없이 만들면 brandId의 브랜드(본인 소유)를 쓰고, 생략하면 운영 중인 브랜드가 하나일 때 그 브랜드를 씁니다.
+   *   <li>프리오더와 brandId를 함께 보냈는데 브랜드가 다르면 400으로 거절합니다.
+   * </ul>
+   *
+   * @throws ResponseStatusException 본인 브랜드·프리오더가 아니거나, 이미 캠페인이 있는 프리오더이거나(409), 모집 종료일이 시작일보다 빠르면
+   *     거절합니다
    */
   @Transactional
   public CollaborationDtos.CampaignResponse createCampaign(
       Long memberId, CollaborationDtos.CampaignRequest r) {
-    Preorder p = preorders.getPreorder(r.preorderId());
-    products.getOwnedProduct(memberId, p.getProduct().getId());
-    if (campaigns.findByPreorderId(p.getId()).isPresent())
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 모집공고가 있습니다.");
+    Preorder p = null;
+    Brand brand;
+    if (r.preorderId() != null) {
+      p = preorders.getPreorder(r.preorderId());
+      brand = products.getOwnedProduct(memberId, p.getProduct().getId()).getBrand();
+      if (r.brandId() != null && !r.brandId().equals(brand.getId()))
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "선택한 프리오더는 선택한 브랜드의 상품이 아닙니다.");
+      if (campaigns.findByPreorderId(p.getId()).isPresent())
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 모집공고가 있습니다.");
+    } else {
+      brand = campaignOwnership.resolveBrandForNewCampaign(memberId, r.brandId());
+    }
     validatePeriod(r.startAt(), r.endAt());
     Campaign c =
         Campaign.builder()
+            .brand(brand)
             .preorder(p)
             .title(r.title().trim())
             .description(r.description())
@@ -94,7 +115,7 @@ public class CollaborationService {
 
   /** 업체 본인이 소유한 캠페인을 최신순으로 조회합니다. 공개·마감 여부와 관계없이 모두 보여줍니다. */
   public List<CollaborationDtos.CampaignResponse> sellerCampaigns(Long id) {
-    return campaigns.findAllByPreorderProductBrandSellerMemberIdOrderByIdDesc(id).stream()
+    return campaigns.findAllByBrandSellerMemberIdOrderByIdDesc(id).stream()
         .map(CollaborationDtos.CampaignResponse::from)
         .toList();
   }
@@ -121,6 +142,10 @@ public class CollaborationService {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "활동 채널 정보를 먼저 등록해 주세요.");
     if (!creator.getMember().isEmailVerified())
       throw new ResponseStatusException(HttpStatus.CONFLICT, "이메일 소유 확인 후 캠페인에 신청할 수 있습니다.");
+    // 기존 협업 지원은 프리오더 판매 협업이므로, 프리오더가 연결되지 않은 체험단 캠페인에는 사용할 수 없습니다.
+    if (c.getPreorder() == null)
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "프리오더가 연결된 캠페인만 판매 협업에 지원할 수 있습니다. 캠페인 신청을 이용해 주세요.");
     return save(c.getPreorder(), creator, CollaborationType.APPLICATION, r.message());
   }
 
@@ -278,6 +303,7 @@ public class CollaborationService {
 
   private Collaboration ownedBySeller(Long m, Long id) {
     Collaboration c = get(id);
+    // 기존 프리오더 협업은 프리오더 상품의 주인 기준으로 확인합니다.
     products.getOwnedProduct(m, c.getPreorder().getProduct().getId());
     return c;
   }

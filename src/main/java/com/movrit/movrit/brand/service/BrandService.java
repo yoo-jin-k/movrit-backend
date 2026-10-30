@@ -54,6 +54,12 @@ public class BrandService {
         .toList();
   }
 
+  /** 승인된 업체 본인의 삭제되지 않은 브랜드 엔티티 목록입니다. 새 캠페인의 운영 브랜드를 정할 때 사용합니다. */
+  public List<Brand> findOwnedBrands(Long memberId) {
+    SellerProfile seller = sellerProfileService.getApprovedSeller(memberId);
+    return brandRepository.findAllBySellerIdAndDeletedAtIsNull(seller.getId());
+  }
+
   /** 본인 브랜드의 이름·소개를 수정합니다. 다른 브랜드와 이름이 겹치면 409로 거절합니다. */
   @Transactional
   public BrandDtos.Response update(Long memberId, Long brandId, BrandDtos.UpdateRequest request) {

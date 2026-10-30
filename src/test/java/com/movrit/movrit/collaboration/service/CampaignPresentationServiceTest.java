@@ -5,13 +5,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.movrit.movrit.brand.entity.Brand;
 import com.movrit.movrit.collaboration.dto.CampaignPresentationDtos;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignDetailImageRepository;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
 import com.movrit.movrit.preorder.entity.Preorder;
 import com.movrit.movrit.product.entity.Product;
-import com.movrit.movrit.product.service.ProductService;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
@@ -20,7 +20,7 @@ class CampaignPresentationServiceTest {
   private final CampaignRepository campaigns = mock(CampaignRepository.class);
   private final CampaignDetailImageRepository detailImages =
       mock(CampaignDetailImageRepository.class);
-  private final ProductService products = mock(ProductService.class);
+  private final CampaignOwnershipService products = mock(CampaignOwnershipService.class);
   private final CampaignImageStorageService files = mock(CampaignImageStorageService.class);
   private final CampaignPresentationService service =
       new CampaignPresentationService(
@@ -46,7 +46,9 @@ class CampaignPresentationServiceTest {
 
     assertThat(result.visitPlaceName()).isEqualTo("모브릿 체험관");
     assertThat(result.visitAddress()).isEqualTo("서울특별시 강남구 테헤란로 1");
-    verify(products).getOwnedProduct(1L, 20L);
+    verify(products)
+        .requireOwner(
+            org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.any(Campaign.class));
   }
 
   @Test
@@ -108,6 +110,10 @@ class CampaignPresentationServiceTest {
         .thenReturn(java.util.List.of());
     Product product = Product.builder().id(20L).build();
     Preorder preorder = Preorder.builder().id(30L).product(product).build();
-    return Campaign.builder().id(10L).preorder(preorder).build();
+    return Campaign.builder()
+        .brand(Brand.builder().id(99L).name("테스트 브랜드").build())
+        .id(10L)
+        .preorder(preorder)
+        .build();
   }
 }

@@ -35,6 +35,7 @@ erDiagram
     varchar contact_name
     varchar contact_phone
     varchar selection_mode
+    bigint brand_id FK
   }
   campaign_application_form {
     bigint id PK
@@ -182,6 +183,7 @@ erDiagram
   influencer_profile ||--o{ collaboration : "creator_id"
   influencer_profile ||--o{ collaboration : "influencer_id"
   preorder ||--o{ collaboration : "preorder_id"
+  brand ||--o{ collaboration_campaign : "brand_id"
   preorder ||--o{ collaboration_campaign : "preorder_id"
   attribution ||--o{ orders : "attribution_id"
   collaboration ||--o{ referral_click : "collaboration_id"

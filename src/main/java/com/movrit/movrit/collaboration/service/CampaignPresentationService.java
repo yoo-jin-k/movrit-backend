@@ -9,7 +9,6 @@ import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.entity.CampaignDetailImage;
 import com.movrit.movrit.collaboration.repository.CampaignDetailImageRepository;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
-import com.movrit.movrit.product.service.ProductService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,7 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class CampaignPresentationService {
   private final CampaignRepository campaignRepository;
   private final CampaignDetailImageRepository detailImageRepository;
-  private final ProductService productService;
+  private final CampaignOwnershipService campaignOwnership;
   private final CampaignImageStorageService fileStorageService;
   private final CampaignMediaStateRepository mediaStates;
   private final CampaignApplicationFormRepository forms;
@@ -188,7 +187,7 @@ public class CampaignPresentationService {
             .findByIdForUpdate(campaignId)
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "캠페인을 찾을 수 없습니다."));
-    productService.getOwnedProduct(memberId, campaign.getPreorder().getProduct().getId());
+    campaignOwnership.requireOwner(memberId, campaign);
     if (mediaStates.existsById(campaignId)) {
       throw new ResponseStatusException(
           HttpStatus.CONFLICT, "새 이미지 관리 방식으로 전환된 캠페인입니다. 최신 정보를 조회하고 함께 저장해 주세요.");

@@ -8,7 +8,6 @@ import com.movrit.movrit.collaboration.dto.CampaignManagementDtos;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.entity.CampaignSelectionMode;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
-import com.movrit.movrit.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,7 +22,7 @@ public class CampaignManagementService {
   private final CampaignRepository campaignRepository;
   private final CampaignApplicationRepository applicationRepository;
   private final CampaignApplicationFormRepository formRepository;
-  private final ProductService productService;
+  private final CampaignOwnershipService campaignOwnership;
   private final AuditLogService auditLogService;
 
   /** 사용자에게 공개된 캠페인 상세를 조회합니다. 공개 조건을 만족하지 않으면 찾을 수 없음으로 응답하고, 신청서에 방문형이 있으면 방문 정보를 함께 보여줍니다. */
@@ -143,7 +142,7 @@ public class CampaignManagementService {
   /** 캠페인을 찾고, 요청한 회원이 그 캠페인 상품의 소유 업체인지 확인합니다. */
   private Campaign getOwnedCampaign(Long memberId, Long campaignId) {
     Campaign campaign = getCampaign(campaignId);
-    productService.getOwnedProduct(memberId, campaign.getPreorder().getProduct().getId());
+    campaignOwnership.requireOwner(memberId, campaign);
     return campaign;
   }
 

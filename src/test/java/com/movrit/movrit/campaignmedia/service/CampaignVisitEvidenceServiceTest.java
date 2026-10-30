@@ -3,16 +3,17 @@ package com.movrit.movrit.campaignmedia.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.movrit.movrit.brand.entity.Brand;
 import com.movrit.movrit.campaignapplication.entity.*;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
 import com.movrit.movrit.campaignmedia.entity.*;
 import com.movrit.movrit.campaignmedia.repository.*;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
+import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.creator.entity.Creator;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.notification.service.NotificationService;
-import com.movrit.movrit.product.service.ProductService;
 import com.movrit.movrit.seller.service.SellerProfileService;
 import java.util.*;
 import org.junit.jupiter.api.Test;
@@ -36,11 +37,16 @@ class CampaignVisitEvidenceServiceTest {
           states,
           applications,
           mock(CampaignRepository.class),
-          mock(ProductService.class),
+          mock(CampaignOwnershipService.class),
           sellers,
           notifications,
           new ObjectMapper());
-  private final Campaign campaign = Campaign.builder().id(10L).visitGuide("예약 후 방문해 주세요.").build();
+  private final Campaign campaign =
+      Campaign.builder()
+          .brand(Brand.builder().id(99L).name("테스트 브랜드").build())
+          .id(10L)
+          .visitGuide("예약 후 방문해 주세요.")
+          .build();
   private static final String OLD =
       "{\"venueName\":\"장소\",\"postalCode\":null,\"address1\":\"이전 주소\",\"address2\":null}";
   private static final String NEXT = OLD.replace("이전 주소", "변경 주소");

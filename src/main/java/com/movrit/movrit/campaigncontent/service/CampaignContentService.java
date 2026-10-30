@@ -9,9 +9,9 @@ import com.movrit.movrit.campaigncontent.entity.CampaignContentSubmission;
 import com.movrit.movrit.campaigncontent.entity.ContentSubmissionStatus;
 import com.movrit.movrit.campaigncontent.repository.CampaignContentLinkRepository;
 import com.movrit.movrit.campaigncontent.repository.CampaignContentSubmissionRepository;
+import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.member.service.MemberService;
 import com.movrit.movrit.notification.service.NotificationService;
-import com.movrit.movrit.product.service.ProductService;
 import com.movrit.movrit.seller.service.SellerProfileService;
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -39,7 +39,7 @@ public class CampaignContentService {
   private final CampaignApplicationRepository applicationRepository;
   private final CampaignContentSubmissionRepository submissionRepository;
   private final CampaignContentLinkRepository linkRepository;
-  private final ProductService productService;
+  private final CampaignOwnershipService campaignOwnership;
   private final NotificationService notificationService;
   private final AuditLogService auditLogService;
   private final MemberService memberService;
@@ -172,7 +172,7 @@ public class CampaignContentService {
   public List<CampaignContentDtos.Response> findSellerContents(Long memberId) {
     sellerProfileService.getApprovedSeller(memberId);
     return submissionRepository
-        .findAllByApplicationCampaignPreorderProductBrandSellerMemberIdOrderByIdDesc(memberId)
+        .findAllByApplicationCampaignBrandSellerMemberIdOrderByIdDesc(memberId)
         .stream()
         .map(this::response)
         .toList();
@@ -288,8 +288,7 @@ public class CampaignContentService {
   /** 제출 기록을 찾고, 요청한 업체 회원이 해당 캠페인 상품의 소유자인지 확인합니다. */
   private CampaignContentSubmission getOwnedSubmission(Long memberId, Long submissionId) {
     CampaignContentSubmission submission = getSubmission(submissionId);
-    productService.getOwnedProduct(
-        memberId, submission.getApplication().getCampaign().getPreorder().getProduct().getId());
+    campaignOwnership.requireOwner(memberId, submission.getApplication().getCampaign());
     return submission;
   }
 
@@ -375,14 +374,7 @@ public class CampaignContentService {
   }
 
   private Long sellerMemberId(CampaignApplication application) {
-    return application
-        .getCampaign()
-        .getPreorder()
-        .getProduct()
-        .getBrand()
-        .getSeller()
-        .getMember()
-        .getId();
+    return application.getCampaign().getBrand().getSeller().getMember().getId();
   }
 
   /**

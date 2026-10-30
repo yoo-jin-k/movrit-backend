@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.movrit.movrit.audit.service.AuditLogService;
+import com.movrit.movrit.brand.entity.Brand;
 import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplicationForm;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationFormRepository;
@@ -19,12 +20,12 @@ import com.movrit.movrit.campaigneligibility.service.CampaignEligibilityPolicySe
 import com.movrit.movrit.campaigneligibility.service.MemberChannelMetricService;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
+import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.creator.entity.Creator;
 import com.movrit.movrit.creator.service.CreatorService;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.service.MemberService;
 import com.movrit.movrit.notification.service.NotificationService;
-import com.movrit.movrit.product.service.ProductService;
 import com.movrit.movrit.seller.service.SellerProfileService;
 import java.lang.reflect.RecordComponent;
 import java.time.LocalDateTime;
@@ -118,7 +119,7 @@ class CampaignApplicationEligibilityTest {
             policyService,
             metricService,
             mock(SellerProfileService.class),
-            mock(ProductService.class),
+            mock(CampaignOwnershipService.class),
             new ObjectMapper(),
             mock(NotificationService.class),
             mock(AuditLogService.class),
@@ -159,6 +160,7 @@ class CampaignApplicationEligibilityTest {
             .build();
     Campaign closed =
         Campaign.builder()
+            .brand(Brand.builder().id(99L).name("테스트 브랜드").build())
             .id(10L)
             .open(false)
             .startAt(LocalDateTime.now().minusDays(2))
@@ -207,7 +209,7 @@ class CampaignApplicationEligibilityTest {
         policyService,
         metricService,
         mock(SellerProfileService.class),
-        mock(ProductService.class),
+        mock(CampaignOwnershipService.class),
         new ObjectMapper(),
         mock(NotificationService.class),
         mock(AuditLogService.class),
@@ -227,6 +229,7 @@ class CampaignApplicationEligibilityTest {
 
   private Campaign openCampaign() {
     return Campaign.builder()
+        .brand(Brand.builder().id(99L).name("테스트 브랜드").build())
         .id(10L)
         .open(true)
         .startAt(LocalDateTime.now().minusDays(1))

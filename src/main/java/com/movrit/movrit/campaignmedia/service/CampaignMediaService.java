@@ -9,7 +9,7 @@ import com.movrit.movrit.campaignmedia.entity.*;
 import com.movrit.movrit.campaignmedia.repository.*;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
-import com.movrit.movrit.product.service.ProductService;
+import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.seller.service.SellerProfileService;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,7 +36,7 @@ public class CampaignMediaService {
   private final CampaignImageAssetRepository assets;
   private final CampaignMediaStateRepository states;
   private final CampaignRepository campaigns;
-  private final ProductService products;
+  private final CampaignOwnershipService campaignOwnership;
   private final SellerProfileService sellers;
   private final CampaignApplicationService forms;
   private final CampaignApplicationRepository applications;
@@ -404,7 +404,7 @@ public class CampaignMediaService {
     Campaign campaign =
         (lock ? campaigns.findByIdForUpdate(campaignId) : campaigns.findById(campaignId))
             .orElseThrow(CampaignMediaService::missing);
-    products.getOwnedProduct(memberId, campaign.getPreorder().getProduct().getId());
+    campaignOwnership.requireOwner(memberId, campaign);
     return campaign;
   }
 

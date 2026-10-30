@@ -17,8 +17,8 @@ public interface CampaignContentSubmissionRepository
   List<CampaignContentSubmission> findAllByApplicationCreatorMemberIdOrderByIdDesc(Long memberId);
 
   /** 업체 회원이 소유한 브랜드의 캠페인에 제출된 콘텐츠를 최신순으로 조회합니다. */
-  List<CampaignContentSubmission>
-      findAllByApplicationCampaignPreorderProductBrandSellerMemberIdOrderByIdDesc(Long memberId);
+  List<CampaignContentSubmission> findAllByApplicationCampaignBrandSellerMemberIdOrderByIdDesc(
+      Long memberId);
 
   /** 운영자 검토 화면용으로 전체 제출 기록을 최신순으로 조회합니다. */
   List<CampaignContentSubmission> findAllByOrderByIdDesc();

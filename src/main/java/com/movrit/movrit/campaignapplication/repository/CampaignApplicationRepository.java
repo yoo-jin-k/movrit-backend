@@ -67,10 +67,9 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
         "creator.member",
         "campaign",
         "campaign.preorder",
-        "campaign.preorder.product",
-        "campaign.preorder.product.brand",
-        "campaign.preorder.product.brand.seller",
-        "campaign.preorder.product.brand.seller.member"
+        "campaign.brand",
+        "campaign.brand.seller",
+        "campaign.brand.seller.member"
       })
   /** 참여자 포트폴리오 화면용으로 신청 한 건과 캠페인·브랜드·업체 소유자 정보를 한 번에 읽습니다. 소유 업체 권한 확인에 필요한 연관을 함께 가져옵니다. */
   @Query("select application from CampaignApplication application where application.id = :id")
@@ -95,12 +94,10 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
         "creator.member",
         "campaign",
         "campaign.preorder",
-        "campaign.preorder.product",
-        "campaign.preorder.product.brand"
+        "campaign.brand"
       })
   /** 업체 회원이 소유한 브랜드의 캠페인에 들어온 신청을 최신순으로 조회합니다(업체 참여자 관리 화면). */
-  List<CampaignApplication> findAllByCampaignPreorderProductBrandSellerMemberIdOrderByIdDesc(
-      Long memberId);
+  List<CampaignApplication> findAllByCampaignBrandSellerMemberIdOrderByIdDesc(Long memberId);
 
   /** 선정 방식별 신청 목록입니다. 운영자 선정(OPERATOR) 캠페인의 신청을 운영자 화면에 보여줄 때 사용합니다. */
   @EntityGraph(attributePaths = {"creator", "campaign", "campaign.preorder"})

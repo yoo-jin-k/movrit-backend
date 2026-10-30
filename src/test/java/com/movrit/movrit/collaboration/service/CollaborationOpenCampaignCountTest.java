@@ -42,7 +42,8 @@ class CollaborationOpenCampaignCountTest {
           mock(CreatorService.class),
           mock(PreorderService.class),
           mock(ProductService.class),
-          applicationRepository);
+          applicationRepository,
+          mock(CampaignOwnershipService.class));
 
   @Test
   void openCampaignsIncludeActiveApplicationCountAndZeroForNoApplications() {
@@ -75,6 +76,7 @@ class CollaborationOpenCampaignCountTest {
     Product product = Product.builder().brand(brand).build();
     Preorder preorder = Preorder.builder().id(id * 10).title("연결 프리오더").product(product).build();
     return Campaign.builder()
+        .brand(Brand.builder().id(99L).name("테스트 브랜드").build())
         .id(id)
         .preorder(preorder)
         .title("캠페인 " + id)

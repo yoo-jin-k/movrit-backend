@@ -10,9 +10,9 @@ import com.movrit.movrit.campaignapplication.repository.*;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
 import com.movrit.movrit.collaboration.service.CampaignManagementService;
+import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.preorder.entity.Preorder;
 import com.movrit.movrit.product.entity.Product;
-import com.movrit.movrit.product.service.ProductService;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +24,7 @@ class CampaignPublicCompatibilityTest {
     var product = Product.builder().id(20L).brand(Brand.builder().name("업체").build()).build();
     var campaign =
         Campaign.builder()
+            .brand(Brand.builder().id(99L).name("테스트 브랜드").build())
             .id(10L)
             .open(false)
             .preorder(Preorder.builder().id(30L).product(product).build())
@@ -43,7 +44,7 @@ class CampaignPublicCompatibilityTest {
             repository,
             mock(CampaignApplicationRepository.class),
             forms,
-            mock(ProductService.class),
+            mock(CampaignOwnershipService.class),
             mock(AuditLogService.class));
     var response = service.getDetail(10L);
     assertNull(response.visitGuide());

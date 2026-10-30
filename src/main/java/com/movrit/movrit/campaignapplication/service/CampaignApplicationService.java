@@ -16,12 +16,12 @@ import com.movrit.movrit.collaboration.dto.CampaignManagementDtos;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.entity.CampaignSelectionMode;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
+import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.creator.entity.Creator;
 import com.movrit.movrit.creator.service.CreatorService;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.service.MemberService;
 import com.movrit.movrit.notification.service.NotificationService;
-import com.movrit.movrit.product.service.ProductService;
 import com.movrit.movrit.seller.service.SellerProfileService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -61,7 +61,7 @@ public class CampaignApplicationService {
   private final CampaignEligibilityPolicyService eligibilityPolicyService;
   private final MemberChannelMetricService memberChannelMetricService;
   private final SellerProfileService sellerProfileService;
-  private final ProductService productService;
+  private final CampaignOwnershipService campaignOwnership;
   private final ObjectMapper objectMapper;
   private final NotificationService notificationService;
   private final AuditLogService auditLogService;
@@ -234,8 +234,7 @@ public class CampaignApplicationService {
     try {
       CampaignApplication saved = applicationRepository.saveAndFlush(application);
       visitEvidence.capture(saved);
-      Long sellerMemberId =
-          campaign.getPreorder().getProduct().getBrand().getSeller().getMember().getId();
+      Long sellerMemberId = campaign.getBrand().getSeller().getMember().getId();
       notificationService.send(
           sellerMemberId,
           "CAMPAIGN_APPLICATION",
@@ -303,9 +302,7 @@ public class CampaignApplicationService {
   public List<CampaignApplicationDtos.Response> findSellerApplications(Long memberId) {
     sellerProfileService.getApprovedSeller(memberId);
     List<CampaignApplication> applications =
-        applicationRepository
-            .findAllByCampaignPreorderProductBrandSellerMemberIdOrderByIdDesc(memberId)
-            .stream()
+        applicationRepository.findAllByCampaignBrandSellerMemberIdOrderByIdDesc(memberId).stream()
             .toList();
     Set<Long> creatorIds =
         applications.stream()
@@ -473,15 +470,7 @@ public class CampaignApplicationService {
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
     CampaignApplicationDtos.Response response =
         transition(application, CampaignApplication::activate);
-    Long sellerMemberId =
-        application
-            .getCampaign()
-            .getPreorder()
-            .getProduct()
-            .getBrand()
-            .getSeller()
-            .getMember()
-            .getId();
+    Long sellerMemberId = application.getCampaign().getBrand().getSeller().getMember().getId();
     notificationService.send(
         sellerMemberId,
         "CAMPAIGN_APPLICATION",
@@ -516,15 +505,7 @@ public class CampaignApplicationService {
     CampaignApplicationStatus previousStatus = application.getStatus();
     CampaignApplicationDtos.Response response =
         transition(application, value -> value.cancel(request.reason().trim()));
-    Long sellerMemberId =
-        application
-            .getCampaign()
-            .getPreorder()
-            .getProduct()
-            .getBrand()
-            .getSeller()
-            .getMember()
-            .getId();
+    Long sellerMemberId = application.getCampaign().getBrand().getSeller().getMember().getId();
     notificationService.send(
         sellerMemberId,
         "CAMPAIGN_APPLICATION",
@@ -557,15 +538,7 @@ public class CampaignApplicationService {
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
     CampaignApplicationDtos.Response response =
         transition(application, CampaignApplication::confirmExperience);
-    Long sellerMemberId =
-        application
-            .getCampaign()
-            .getPreorder()
-            .getProduct()
-            .getBrand()
-            .getSeller()
-            .getMember()
-            .getId();
+    Long sellerMemberId = application.getCampaign().getBrand().getSeller().getMember().getId();
     notificationService.send(
         sellerMemberId,
         "CAMPAIGN_EXPERIENCE",
@@ -773,7 +746,7 @@ public class CampaignApplicationService {
   /** 캠페인을 찾고, 요청한 업체 회원이 연결 상품의 소유자인지 확인합니다. */
   private Campaign getOwnedCampaign(Long memberId, Long id) {
     Campaign campaign = getCampaign(id);
-    productService.getOwnedProduct(memberId, campaign.getPreorder().getProduct().getId());
+    campaignOwnership.requireOwner(memberId, campaign);
     return campaign;
   }
 
@@ -879,7 +852,10 @@ public class CampaignApplicationService {
         application.getCampaign().getId(),
         application.getCampaign().getTitle(),
         application.getCampaign().getSelectionMode(),
-        application.getCampaign().getPreorder().getId(),
+        // 프리오더 없이 운영하는 캠페인은 연결 프리오더 ID를 비워 응답합니다.
+        application.getCampaign().getPreorder() == null
+            ? null
+            : application.getCampaign().getPreorder().getId(),
         application.getCreator().getId(),
         application.getCreator().getNickname(),
         application.getCreator().getSnsUrl(),

@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.movrit.movrit.brand.entity.Brand;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
 import com.movrit.movrit.collaboration.dto.CollaborationDtos;
 import com.movrit.movrit.collaboration.entity.Campaign;
@@ -42,6 +43,7 @@ class CollaborationLegacyApplicationTest {
             .build();
     Campaign campaign =
         Campaign.builder()
+            .brand(Brand.builder().id(99L).name("테스트 브랜드").build())
             .open(true)
             .startAt(LocalDateTime.now().minusDays(1))
             .endAt(LocalDateTime.now().plusDays(1))
@@ -59,7 +61,8 @@ class CollaborationLegacyApplicationTest {
             creatorService,
             mock(PreorderService.class),
             mock(ProductService.class),
-            mock(CampaignApplicationRepository.class));
+            mock(CampaignApplicationRepository.class),
+            mock(CampaignOwnershipService.class));
 
     assertThatThrownBy(() -> service.apply(12L, 10L, new CollaborationDtos.ApplyRequest("신청")))
         .isInstanceOfSatisfying(
