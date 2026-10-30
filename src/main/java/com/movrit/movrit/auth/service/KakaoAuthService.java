@@ -169,11 +169,12 @@ public class KakaoAuthService {
       if (existing.get().getMember().getId().equals(memberId)) {
         return;
       }
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "이 카카오 계정은 이미 다른 MOVRIT 계정에 연결되어 있어.");
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "이 카카오 계정은 이미 다른 MOVRIT 계정에 연결되어 있습니다.");
     }
 
     if (socialAccountRepository.existsByMemberIdAndProvider(memberId, AuthProvider.KAKAO)) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 카카오 계정이 연결되어 있어.");
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 카카오 계정이 연결되어 있습니다.");
     }
 
     socialAccountRepository.save(

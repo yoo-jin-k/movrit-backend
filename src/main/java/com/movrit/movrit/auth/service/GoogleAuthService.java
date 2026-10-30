@@ -111,6 +111,15 @@ public class GoogleAuthService {
     return new GoogleUserInfo(providerId, email, name);
   }
 
+  /** 같은 이메일의 기존 회원이 있어 Google 신규 가입을 막을 때 사용하는 안내 문구입니다. */
+  public static final String EMAIL_ALREADY_REGISTERED =
+      "이미 가입된 이메일입니다. 기존 방법으로 로그인한 뒤 설정에서 Google 계정을 연결해 주세요.";
+
+  /**
+   * Google 계정으로 로그인하거나 처음이면 가입합니다.
+   *
+   * <p>이미 연결된 Google 계정이면 해당 회원으로 로그인합니다. 연결 기록이 없고 같은 이메일의 회원이 이미 있으면 409로 거절해 중복 계정을 만들지 않습니다.
+   */
   @Transactional
   public Member loginOrSignup(GoogleUserInfo userInfo) {
     String providerId = userInfo.getProviderId();
@@ -125,6 +134,13 @@ public class GoogleAuthService {
             })
         .orElseGet(
             () -> {
+              // 같은 이메일로 이미 가입한 회원이 있으면 새 계정을 만들지 않습니다.
+              // 자동 병합은 다른 사람 계정에 잘못 붙는 사고를 막기 위해 하지 않고,
+              // 기존 계정으로 로그인한 뒤 설정에서 Google을 연결하도록 안내합니다.
+              String email = userInfo.getEmail();
+              if (email != null && !email.isBlank() && memberRepository.existsByEmail(email)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, EMAIL_ALREADY_REGISTERED);
+              }
               String name = userInfo.getName();
               if (name == null || name.isBlank()) {
                 name = "구글회원";
@@ -174,11 +190,12 @@ public class GoogleAuthService {
       if (existing.get().getMember().getId().equals(memberId)) {
         return;
       }
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "이 구글 계정은 이미 다른 MOVRIT 계정에 연결되어 있어.");
+      throw new ResponseStatusException(
+          HttpStatus.CONFLICT, "이 Google 계정은 이미 다른 MOVRIT 계정에 연결되어 있습니다.");
     }
 
     if (socialAccountRepository.existsByMemberIdAndProvider(memberId, AuthProvider.GOOGLE)) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 구글 계정이 연결되어 있어.");
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 Google 계정이 연결되어 있습니다.");
     }
 
     socialAccountRepository.save(

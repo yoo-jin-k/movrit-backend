@@ -193,7 +193,14 @@ public class AuthController {
       return;
     }
 
-    Member member = googleAuthService.loginOrSignup(userInfo);
+    // 같은 이메일의 기존 회원이 있으면 새 계정을 만들지 않고 로그인 화면에서 연결 방법을 안내합니다.
+    Member member;
+    try {
+      member = googleAuthService.loginOrSignup(userInfo);
+    } catch (ResponseStatusException e) {
+      redirectSocialLoginFailure(response, "GOOGLE_EMAIL_EXISTS");
+      return;
+    }
     redirectLogin(response, member);
   }
 
