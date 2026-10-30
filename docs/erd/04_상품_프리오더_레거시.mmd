@@ -1,0 +1,129 @@
+%% 상품·프리오더(레거시) — scripts/generate-erd.py로 생성
+erDiagram
+  product {
+    bigint id PK
+    varchar name
+    text description
+    varchar category
+    numeric normal_price
+    varchar status
+    timestamp created_at
+    timestamp updated_at
+    timestamp deleted_at
+    bigint brand_id FK
+    varchar thumbnail_url
+  }
+  product_variant {
+    bigint id PK
+    bigint product_id FK
+    varchar sku_code
+    varchar option_name_1
+    varchar option_value_1
+    varchar option_name_2
+    varchar option_value_2
+    numeric additional_price
+    bigint on_hand_quantity
+    bigint reserved_quantity
+    bigint safety_stock_quantity
+    bigint sold_quantity
+    boolean active
+    bigint version
+    timestamp created_at
+    timestamp updated_at
+  }
+  product_review {
+    bigint id PK
+    bigint order_id FK
+    bigint member_id FK
+    bigint product_id FK
+    integer rating
+    text content
+    text seller_reply
+    timestamp seller_replied_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  preorder {
+    bigint id PK
+    bigint product_id FK
+    varchar title
+    text description
+    numeric preorder_price
+    character currency
+    bigint target_quantity
+    bigint max_quantity
+    bigint ordered_quantity
+    timestamp start_at
+    timestamp end_at
+    timestamp production_expected_at
+    timestamp shipping_expected_at
+    varchar status
+    varchar cancellation_reason
+    bigint version
+    timestamp created_at
+    timestamp updated_at
+    timestamp deleted_at
+    bigint min_order_quantity
+    bigint max_order_quantity_per_member
+  }
+  preorder_variant {
+    bigint id PK
+    bigint preorder_id FK
+    bigint product_variant_id FK
+    numeric preorder_price
+    bigint target_quantity
+    bigint max_quantity
+    bigint ordered_quantity
+    varchar status
+    timestamp created_at
+    timestamp updated_at
+  }
+  preorder_sale_variant {
+    bigint preorder_id PK
+    bigint product_variant_id PK
+  }
+  preorder_history {
+    bigint id PK
+    bigint preorder_id FK
+    varchar from_status
+    varchar to_status
+    bigint changed_by_member_id FK
+    varchar reason
+    timestamp created_at
+  }
+  preorder_interest {
+    bigint id PK
+    bigint preorder_id FK
+    bigint member_id FK
+    timestamp created_at
+  }
+  preorder_favorite {
+    bigint id PK
+    bigint member_id FK
+    bigint preorder_id FK
+    timestamp created_at
+    timestamp updated_at
+  }
+  preorder ||--o{ collaboration : "preorder_id"
+  preorder ||--o{ collaboration_campaign : "preorder_id"
+  preorder ||--o{ inquiry : "preorder_id"
+  preorder_variant ||--o{ order_item : "preorder_variant_id"
+  product ||--o{ order_item : "product_id"
+  preorder ||--o{ orders : "preorder_id"
+  product ||--o{ preorder : "product_id"
+  member ||--o{ preorder_favorite : "member_id"
+  preorder ||--o{ preorder_favorite : "preorder_id"
+  member ||--o{ preorder_history : "changed_by_member_id"
+  preorder ||--o{ preorder_history : "preorder_id"
+  member ||--o{ preorder_interest : "member_id"
+  preorder ||--o{ preorder_interest : "preorder_id"
+  preorder ||--o{ preorder_sale_variant : "preorder_id"
+  product_variant ||--o{ preorder_sale_variant : "product_variant_id"
+  preorder ||--o{ preorder_variant : "preorder_id"
+  product_variant ||--o{ preorder_variant : "product_variant_id"
+  brand ||--o{ product : "brand_id"
+  member ||--o{ product_review : "member_id"
+  orders ||--o{ product_review : "order_id"
+  product ||--o{ product_review : "product_id"
+  product ||--o{ product_variant : "product_id"
+  preorder ||--o{ settlement : "preorder_id"

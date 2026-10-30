@@ -40,6 +40,7 @@ public class AuditLog {
   @Column(name = "after_data", columnDefinition = "jsonb")
   private String afterData;
 
+  @Column(length = 500)
   private String reason;
 
   @Column(name = "ip_hash")

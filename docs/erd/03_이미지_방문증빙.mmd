@@ -1,0 +1,95 @@
+%% 캠페인 이미지·방문 증빙 — scripts/generate-erd.py로 생성
+erDiagram
+  campaign_detail_image {
+    bigint id PK
+    timestamp created_at
+    timestamp updated_at
+    varchar alt_text
+    integer display_order
+    varchar image_url
+    bigint campaign_id FK
+  }
+  campaign_image_asset {
+    varchar id PK
+    bigint owner_member_id FK
+    bigint campaign_id FK
+    varchar storage_key
+    varchar content_type
+    bigint byte_size
+    integer width
+    integer height
+    timestamp created_at
+    timestamp updated_at
+  }
+  campaign_media_state {
+    bigint campaign_id PK
+    bigint version
+    varchar representative_asset_id FK
+    text detail_images_json
+    text visit_location_json
+    text retained_visit_location_json
+    varchar legacy_representative_url
+    varchar legacy_detail_url
+    timestamp created_at
+    timestamp updated_at
+  }
+  campaign_visit_history {
+    bigint id PK
+    bigint campaign_id FK
+    bigint actor_member_id FK
+    bigint presentation_version
+    text before_location_json
+    text after_location_json
+    text legacy_place_name
+    text legacy_address
+    text legacy_after_place_name
+    text legacy_after_address
+    timestamp changed_at
+  }
+  campaign_visit_snapshot {
+    bigint application_id PK
+    bigint campaign_id FK
+    bigint presentation_version
+    text location_json
+    text visit_guide
+    text legacy_place_name
+    text legacy_address
+    timestamp captured_at
+  }
+  file_asset {
+    bigint id PK
+    bigint uploader_member_id FK
+    varchar original_name
+    varchar stored_name
+    varchar storage_provider
+    varchar bucket_name
+    varchar object_key
+    varchar file_url
+    varchar content_type
+    varchar file_extension
+    bigint file_size
+    varchar file_category
+    varchar status
+    timestamp created_at
+    timestamp deleted_at
+  }
+  file_attachment {
+    bigint id PK
+    bigint file_asset_id FK
+    varchar target_type
+    bigint target_id
+    varchar usage_type
+    integer sort_order
+    timestamp created_at
+  }
+  collaboration_campaign ||--o{ campaign_detail_image : "campaign_id"
+  collaboration_campaign ||--o{ campaign_image_asset : "campaign_id"
+  member ||--o{ campaign_image_asset : "owner_member_id"
+  collaboration_campaign ||--o{ campaign_media_state : "campaign_id"
+  campaign_image_asset ||--o{ campaign_media_state : "representative_asset_id"
+  member ||--o{ campaign_visit_history : "actor_member_id"
+  collaboration_campaign ||--o{ campaign_visit_history : "campaign_id"
+  campaign_application ||--o{ campaign_visit_snapshot : "application_id"
+  collaboration_campaign ||--o{ campaign_visit_snapshot : "campaign_id"
+  member ||--o{ file_asset : "uploader_member_id"
+  file_asset ||--o{ file_attachment : "file_asset_id"

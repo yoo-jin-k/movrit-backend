@@ -62,7 +62,7 @@ public class Payment extends BaseEntity {
   @Column(name = "failure_code")
   private String failureCode;
 
-  @Column(name = "failure_message")
+  @Column(name = "failure_message", length = 500)
   private String failureMessage;
 
   public void update(

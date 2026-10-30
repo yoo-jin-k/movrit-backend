@@ -1,0 +1,45 @@
+%% 알림·문의·감사 — scripts/generate-erd.py로 생성
+erDiagram
+  notification {
+    bigint id PK
+    bigint member_id FK
+    varchar type
+    varchar title
+    varchar message
+    varchar target_type
+    bigint target_id
+    boolean is_read
+    timestamp read_at
+    timestamp created_at
+  }
+  inquiry {
+    bigint id PK
+    bigint member_id FK
+    bigint preorder_id FK
+    varchar category
+    varchar title
+    text content
+    varchar status
+    text answer
+    bigint answered_by_member_id FK
+    timestamp answered_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  audit_log {
+    bigint id PK
+    bigint actor_member_id FK
+    varchar action
+    varchar target_type
+    bigint target_id
+    jsonb before_data
+    jsonb after_data
+    varchar reason
+    varchar ip_hash
+    timestamp created_at
+  }
+  member ||--o{ audit_log : "actor_member_id"
+  member ||--o{ inquiry : "answered_by_member_id"
+  member ||--o{ inquiry : "member_id"
+  preorder ||--o{ inquiry : "preorder_id"
+  member ||--o{ notification : "member_id"

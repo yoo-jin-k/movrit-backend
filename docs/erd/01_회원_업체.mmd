@@ -1,0 +1,156 @@
+%% 회원·인증·업체 — scripts/generate-erd.py로 생성
+erDiagram
+  member {
+    bigint id PK
+    varchar email
+    varchar password_hash
+    varchar name
+    varchar phone
+    varchar status
+    timestamp last_login_at
+    timestamp created_at
+    timestamp updated_at
+    timestamp deleted_at
+    varchar role
+    timestamp email_verified_at
+    varchar nickname
+    varchar avatar_key
+    varchar avatar_content_type
+    bigint avatar_version
+  }
+  member_role {
+    bigint id PK
+    bigint member_id FK
+    varchar role
+    timestamp created_at
+  }
+  member_social_account {
+    bigint id PK
+    bigint member_id FK
+    varchar provider
+    varchar provider_id
+    varchar email
+    timestamp created_at
+    timestamp updated_at
+  }
+  member_address {
+    bigint id PK
+    bigint member_id FK
+    varchar address_name
+    varchar receiver_name
+    varchar receiver_phone
+    varchar postal_code
+    varchar address1
+    varchar address2
+    boolean is_default
+    timestamp created_at
+    timestamp updated_at
+  }
+  member_channel_metric {
+    bigint id PK
+    bigint member_id FK
+    varchar channel_type
+    varchar metric_type
+    bigint metric_value
+    varchar measurement_period
+    timestamp measured_at
+    varchar verification_status
+    timestamp created_at
+    timestamp updated_at
+  }
+  refresh_token {
+    bigint id PK
+    bigint member_id FK
+    varchar token_hash
+    timestamp expires_at
+    timestamp revoked_at
+  }
+  email_verification_challenge {
+    bigint id PK
+    bigint member_id FK
+    varchar email_snapshot
+    varchar code_hash
+    timestamp expires_at
+    timestamp consumed_at
+    timestamp invalidated_at
+    integer attempt_count
+    timestamp created_at
+    timestamp updated_at
+  }
+  seller_profile {
+    bigint id PK
+    bigint member_id FK
+    varchar business_name
+    varchar brand_name
+    varchar business_number
+    varchar representative_name
+    varchar status
+    varchar settlement_bank_code
+    varchar settlement_account_masked
+    timestamp created_at
+    timestamp updated_at
+  }
+  brand {
+    bigint id PK
+    bigint seller_id FK
+    varchar name
+    text description
+    varchar logo_url
+    varchar cover_url
+    varchar status
+    timestamp deleted_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  influencer_profile {
+    bigint id PK
+    bigint member_id FK
+    varchar nickname
+    text bio
+    varchar primary_category
+    varchar status
+    timestamp created_at
+    timestamp updated_at
+    varchar sns_url
+    bigint follower_count
+  }
+  influencer_social_account {
+    bigint id PK
+    bigint influencer_id FK
+    varchar platform
+    varchar account_handle
+    varchar profile_url
+    bigint follower_count
+    numeric engagement_rate
+    timestamp last_synced_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  member ||--o{ attribution : "member_id"
+  member ||--o{ audit_log : "actor_member_id"
+  seller_profile ||--o{ brand : "seller_id"
+  influencer_profile ||--o{ campaign_application : "creator_id"
+  member ||--o{ campaign_image_asset : "owner_member_id"
+  member ||--o{ campaign_visit_history : "actor_member_id"
+  influencer_profile ||--o{ collaboration : "creator_id"
+  influencer_profile ||--o{ collaboration : "influencer_id"
+  member ||--o{ email_verification_challenge : "member_id"
+  member ||--o{ file_asset : "uploader_member_id"
+  member ||--o{ influencer_profile : "member_id"
+  influencer_profile ||--o{ influencer_social_account : "influencer_id"
+  member ||--o{ inquiry : "answered_by_member_id"
+  member ||--o{ inquiry : "member_id"
+  member ||--o{ member_address : "member_id"
+  member ||--o{ member_channel_metric : "member_id"
+  member ||--o{ member_role : "member_id"
+  member ||--o{ member_social_account : "member_id"
+  member ||--o{ notification : "member_id"
+  member ||--o{ orders : "member_id"
+  member ||--o{ preorder_favorite : "member_id"
+  member ||--o{ preorder_history : "changed_by_member_id"
+  member ||--o{ preorder_interest : "member_id"
+  brand ||--o{ product : "brand_id"
+  member ||--o{ product_review : "member_id"
+  member ||--o{ refresh_token : "member_id"
+  member ||--o{ seller_profile : "member_id"
+  member ||--o{ settlement_participant : "participant_member_id"

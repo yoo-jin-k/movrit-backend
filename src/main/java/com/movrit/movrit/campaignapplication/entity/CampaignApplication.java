@@ -58,10 +58,10 @@ public class CampaignApplication extends BaseEntity {
   @Column(name = "postal_code")
   private String postalCode;
 
-  @Column(name = "address1")
+  @Column(name = "address1", length = 300)
   private String address1;
 
-  @Column(name = "address2")
+  @Column(name = "address2", length = 300)
   private String address2;
 
   @Column(name = "answers_json", nullable = false, columnDefinition = "TEXT")
@@ -104,7 +104,7 @@ public class CampaignApplication extends BaseEntity {
   @Column(name = "cancelled_at")
   private LocalDateTime cancelledAt;
 
-  @Column(name = "cancellation_reason")
+  @Column(name = "cancellation_reason", length = 500)
   private String cancellationReason;
 
   /** 참여자가 체험 완료(배송 수령 또는 방문)를 확인한 시각입니다. 이 값이 있어야 콘텐츠를 제출할 수 있습니다. */

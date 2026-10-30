@@ -1,0 +1,803 @@
+// MOVRIT 실제 스키마 ERD(DBML) — scripts/generate-erd.py로 생성합니다. 직접 수정하지 마세요.
+
+Table attribution {
+  id "bigint" [pk]
+  referral_link_id "bigint" [not null]
+  member_id "bigint"
+  session_key "varchar(150)"
+  attribution_type "varchar(30)" [not null]
+  order_id "bigint"
+  ip_hash "varchar(255)"
+  user_agent "varchar(500)"
+  occurred_at "timestamp" [not null]
+  created_at "timestamp"
+}
+
+Table audit_log {
+  id "bigint" [pk]
+  actor_member_id "bigint"
+  action "varchar(255)" [not null]
+  target_type "varchar(255)" [not null]
+  target_id "bigint"
+  before_data "jsonb"
+  after_data "jsonb"
+  reason "varchar(500)"
+  ip_hash "varchar(255)"
+  created_at "timestamp"
+}
+
+Table brand {
+  id "bigint" [pk]
+  seller_id "bigint" [not null]
+  name "varchar(100)" [not null]
+  description "text"
+  logo_url "varchar(500)"
+  cover_url "varchar(500)"
+  status "varchar(20)" [not null]
+  deleted_at "timestamp"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+}
+
+Table campaign_application {
+  id "bigint" [pk]
+  campaign_id "bigint" [not null]
+  creator_id "bigint" [not null]
+  fulfillment_type "varchar(255)" [not null]
+  status "varchar(255)" [not null]
+  message "text"
+  recipient_name "varchar(255)"
+  recipient_phone "varchar(255)"
+  postal_code "varchar(255)"
+  address1 "varchar(300)"
+  address2 "varchar(300)"
+  answers_json "text" [not null]
+  agreement_acceptances_json "text" [not null]
+  form_version "bigint CONSTRAINT campaign_application_form_version_not_null1" [not null]
+  identity_verification_configured "boolean" [not null]
+  identity_verified "boolean" [not null]
+  channel_ready "boolean" [not null]
+  submitted_at "timestamp" [not null]
+  responded_at "timestamp"
+  cancelled_at "timestamp"
+  cancellation_reason "varchar(500)"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+  experience_confirmed_at "timestamp"
+  email_verified "boolean"
+  eligibility_requirement_snapshot_json "text"
+  eligibility_requirement_version "bigint"
+  indexes {
+    (campaign_id, creator_id) [unique]
+  }
+}
+
+Table campaign_application_form {
+  id "bigint" [pk]
+  campaign_id "bigint" [unique, not null]
+  allowed_fulfillment_types_json "text CONSTRAINT campaign_application_form_allowed_fulfillment_types_js_not_null" [not null]
+  questions_json "text" [not null]
+  agreements_json "text" [not null]
+  version "bigint" [not null]
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+}
+
+Table campaign_content_link {
+  id "bigint" [pk]
+  submission_id "bigint" [not null]
+  channel_type "varchar(30)" [not null]
+  content_url "varchar(1000)" [not null]
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+}
+
+Table campaign_content_submission {
+  id "bigint" [pk]
+  application_id "bigint" [unique, not null]
+  content_url "varchar(1000)" [not null]
+  note "text"
+  status "varchar(255)" [not null]
+  revision_count "integer"
+  review_comment "text"
+  submitted_at "timestamp" [not null]
+  reviewed_at "timestamp"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+  version "bigint"
+}
+
+Table campaign_detail_image {
+  id "bigint" [pk]
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+  alt_text "varchar(200)"
+  display_order "integer" [not null]
+  image_url "varchar(1000)" [not null]
+  campaign_id "bigint" [not null]
+  indexes {
+    (campaign_id, display_order) [unique]
+  }
+}
+
+Table campaign_eligibility_requirement {
+  id "bigint" [pk]
+  campaign_id "bigint" [unique, not null]
+  channel_type "varchar(40)" [not null]
+  metric_type "varchar(40)" [not null]
+  minimum_value "bigint" [not null]
+  measurement_period "varchar(40)"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+  version "bigint"
+}
+
+Table campaign_image_asset {
+  id "varchar(36)" [pk]
+  owner_member_id "bigint" [not null]
+  campaign_id "bigint"
+  storage_key "varchar(100)" [unique, not null]
+  content_type "varchar(30)" [not null]
+  byte_size "bigint" [not null]
+  width "integer" [not null]
+  height "integer" [not null]
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+}
+
+Table campaign_media_state {
+  campaign_id "bigint" [pk]
+  version "bigint" [not null]
+  representative_asset_id "varchar(36)"
+  detail_images_json "text" [not null]
+  visit_location_json "text"
+  retained_visit_location_json "text"
+  legacy_representative_url "varchar(1000)"
+  legacy_detail_url "varchar(1000)"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+}
+
+Table campaign_visit_history {
+  id "bigint" [pk]
+  campaign_id "bigint" [not null]
+  actor_member_id "bigint" [not null]
+  presentation_version "bigint" [not null]
+  before_location_json "text"
+  after_location_json "text"
+  legacy_place_name "text"
+  legacy_address "text"
+  legacy_after_place_name "text"
+  legacy_after_address "text"
+  changed_at "timestamp" [not null]
+}
+
+Table campaign_visit_snapshot {
+  application_id "bigint" [pk]
+  campaign_id "bigint" [not null]
+  presentation_version "bigint" [not null]
+  location_json "text"
+  visit_guide "text"
+  legacy_place_name "text"
+  legacy_address "text"
+  captured_at "timestamp" [not null]
+}
+
+Table collaboration {
+  id "bigint" [pk]
+  preorder_id "bigint" [not null]
+  influencer_id "bigint" [not null]
+  type "varchar(20)" [not null]
+  status "varchar(20)" [not null]
+  reward_type "varchar(30)"
+  reward_rate "numeric(7,4)"
+  reward_amount "numeric(15,2)"
+  applied_at "timestamp"
+  offered_at "timestamp"
+  accepted_at "timestamp"
+  activated_at "timestamp"
+  withdrawn_at "timestamp"
+  terminated_at "timestamp"
+  completed_at "timestamp"
+  termination_reason "varchar(500)"
+  terminated_by "varchar(30)"
+  created_at "timestamp"
+  updated_at "timestamp"
+  message "text"
+  referral_code "varchar(40)"
+  responded_at "timestamp"
+  creator_id "bigint"
+  indexes {
+    (preorder_id, influencer_id) [unique]
+    (preorder_id, creator_id) [unique]
+  }
+}
+
+Table collaboration_campaign {
+  id "bigint" [pk]
+  preorder_id "bigint" [unique, not null]
+  title "varchar(255)" [not null]
+  description "text"
+  category "varchar(100)"
+  min_follower_count "bigint" [not null]
+  recruitment_count "integer" [not null]
+  reward_description "text"
+  start_at "timestamp" [not null]
+  end_at "timestamp" [not null]
+  open "boolean"
+  created_at "timestamp"
+  updated_at "timestamp"
+  mission "text"
+  channel_guide "text"
+  schedule_guide "text"
+  delivery_guide "text"
+  visit_guide "text"
+  caution "text"
+  submission_requirement "text"
+  selection_announced_at "timestamp"
+  experience_start_at "timestamp"
+  experience_end_at "timestamp"
+  content_submission_start_at "timestamp"
+  content_submission_end_at "timestamp"
+  results_announced_at "timestamp"
+  schedule_version "bigint"
+  representative_image_url "varchar(1000)"
+  detail_image_url "varchar(1000)"
+  visit_place_name "varchar(200)"
+  visit_address "varchar(500)"
+  contact_name "varchar(100)"
+  contact_phone "varchar(30)"
+  selection_mode "varchar(20)"
+}
+
+Table email_verification_challenge {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  email_snapshot "varchar(100)" [not null]
+  code_hash "varchar(100)" [not null]
+  expires_at "timestamp" [not null]
+  consumed_at "timestamp"
+  invalidated_at "timestamp"
+  attempt_count "integer"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+}
+
+Table file_asset {
+  id "bigint" [pk]
+  uploader_member_id "bigint" [not null]
+  original_name "varchar(255)" [not null]
+  stored_name "varchar(255)"
+  storage_provider "varchar(30)"
+  bucket_name "varchar(100)"
+  object_key "varchar(500)" [not null]
+  file_url "varchar(1000)"
+  content_type "varchar(100)"
+  file_extension "varchar(30)"
+  file_size "bigint" [not null]
+  file_category "varchar(50)" [not null]
+  status "varchar(30)"
+  created_at "timestamp"
+  deleted_at "timestamp"
+}
+
+Table file_attachment {
+  id "bigint" [pk]
+  file_asset_id "bigint" [not null]
+  target_type "varchar(50)" [not null]
+  target_id "bigint" [not null]
+  usage_type "varchar(50)" [not null]
+  sort_order "integer"
+  created_at "timestamp"
+}
+
+Table influencer_profile {
+  id "bigint" [pk]
+  member_id "bigint" [unique, not null]
+  nickname "varchar(255)" [not null]
+  bio "text"
+  primary_category "varchar(255)"
+  status "varchar(255)"
+  created_at "timestamp"
+  updated_at "timestamp"
+  sns_url "varchar(500)"
+  follower_count "bigint"
+}
+
+Table influencer_social_account {
+  id "bigint" [pk]
+  influencer_id "bigint" [not null]
+  platform "varchar(30)" [not null]
+  account_handle "varchar(100)"
+  profile_url "varchar(500)"
+  follower_count "bigint"
+  engagement_rate "numeric(7,4)"
+  last_synced_at "timestamp"
+  created_at "timestamp"
+  updated_at "timestamp"
+  indexes {
+    (influencer_id, platform, account_handle) [unique]
+  }
+}
+
+Table inquiry {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  preorder_id "bigint"
+  category "varchar(255)" [not null]
+  title "varchar(255)" [not null]
+  content "text" [not null]
+  status "varchar(255)"
+  answer "text"
+  answered_by_member_id "bigint"
+  answered_at "timestamp"
+  created_at "timestamp"
+  updated_at "timestamp"
+}
+
+Table member {
+  id "bigint" [pk]
+  email "varchar(100)" [unique]
+  password_hash "varchar(255)"
+  name "varchar(50)" [not null]
+  phone "varchar(20)"
+  status "varchar(20)"
+  last_login_at "timestamp"
+  created_at "timestamp"
+  updated_at "timestamp"
+  deleted_at "timestamp"
+  role "varchar(20)"
+  email_verified_at "timestamp"
+  nickname "varchar(20)" [not null]
+  avatar_key "varchar(64)"
+  avatar_content_type "varchar(20)"
+  avatar_version "bigint"
+}
+
+Table member_address {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  address_name "varchar(100)"
+  receiver_name "varchar(100)" [not null]
+  receiver_phone "varchar(30)" [not null]
+  postal_code "varchar(20)" [not null]
+  address1 "varchar(300)" [not null]
+  address2 "varchar(300)"
+  is_default "boolean"
+  created_at "timestamp"
+  updated_at "timestamp"
+}
+
+Table member_channel_metric {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  channel_type "varchar(40)" [not null]
+  metric_type "varchar(40)" [not null]
+  metric_value "bigint" [not null]
+  measurement_period "varchar(40)"
+  measured_at "timestamp"
+  verification_status "varchar(20)"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+  indexes {
+    (member_id, channel_type, metric_type) [unique]
+  }
+}
+
+Table member_role {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  role "varchar(30)" [not null]
+  created_at "timestamp"
+  indexes {
+    (member_id, role) [unique]
+  }
+}
+
+Table member_social_account {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  provider "varchar(20)" [not null]
+  provider_id "varchar(100)" [not null]
+  email "varchar(100)"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+  indexes {
+    (provider, provider_id) [unique]
+    (provider, provider_id) [unique]
+  }
+}
+
+Table notification {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  type "varchar(255)" [not null]
+  title "varchar(255)" [not null]
+  message "varchar(1000)" [not null]
+  target_type "varchar(255)"
+  target_id "bigint"
+  is_read "boolean"
+  read_at "timestamp"
+  created_at "timestamp"
+}
+
+Table order_item {
+  id "bigint" [pk]
+  order_id "bigint" [not null]
+  product_id "bigint" [not null]
+  product_variant_id "bigint"
+  preorder_variant_id "bigint"
+  product_name "varchar(255)" [not null]
+  option_name "varchar(255)"
+  unit_price "numeric(38,2)" [not null]
+  quantity "bigint" [not null]
+  total_price "numeric(38,2)" [not null]
+  created_at "timestamp"
+}
+
+Table orders {
+  id "bigint" [pk]
+  order_number "varchar(255)" [unique, not null]
+  request_key "varchar(255)" [not null]
+  member_id "bigint" [not null]
+  preorder_id "bigint" [not null]
+  attribution_id "bigint"
+  acquisition_source "varchar(255)"
+  status "varchar(255)"
+  total_product_amount "numeric(38,2)" [not null]
+  discount_amount "numeric(38,2)"
+  shipping_amount "numeric(38,2)"
+  total_payment_amount "numeric(38,2)" [not null]
+  currency "character(3)"
+  receiver_name "varchar(255)" [not null]
+  receiver_phone "varchar(255)" [not null]
+  postal_code "varchar(255)"
+  address1 "varchar(255)" [not null]
+  address2 "varchar(255)"
+  paid_at "timestamp"
+  cancelled_at "timestamp"
+  created_at "timestamp"
+  updated_at "timestamp"
+  indexes {
+    (member_id, request_key) [unique]
+  }
+}
+
+Table payment {
+  id "bigint" [pk]
+  order_id "bigint" [not null]
+  payment_key "varchar(255)" [unique]
+  pg_provider "varchar(255)"
+  method "varchar(255)"
+  status "varchar(255)"
+  requested_amount "numeric(38,2)" [not null]
+  approved_amount "numeric(38,2)"
+  currency "character(3)"
+  idempotency_key "varchar(255)" [unique]
+  requested_at "timestamp"
+  approved_at "timestamp"
+  failed_at "timestamp"
+  failure_code "varchar(255)"
+  failure_message "varchar(500)"
+  created_at "timestamp"
+  updated_at "timestamp"
+}
+
+Table preorder {
+  id "bigint" [pk]
+  product_id "bigint" [not null]
+  title "varchar(255)" [not null]
+  description "text"
+  preorder_price "numeric(38,2)" [not null]
+  currency "character(3)"
+  target_quantity "bigint" [not null]
+  max_quantity "bigint"
+  ordered_quantity "bigint"
+  start_at "timestamp" [not null]
+  end_at "timestamp" [not null]
+  production_expected_at "timestamp"
+  shipping_expected_at "timestamp"
+  status "varchar(255)"
+  cancellation_reason "varchar(500)"
+  version "bigint"
+  created_at "timestamp"
+  updated_at "timestamp"
+  deleted_at "timestamp"
+  min_order_quantity "bigint" [not null]
+  max_order_quantity_per_member "bigint"
+}
+
+Table preorder_favorite {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  preorder_id "bigint" [not null]
+  created_at "timestamp"
+  updated_at "timestamp"
+  indexes {
+    (member_id, preorder_id) [unique]
+  }
+}
+
+Table preorder_history {
+  id "bigint" [pk]
+  preorder_id "bigint" [not null]
+  from_status "varchar(30)"
+  to_status "varchar(30)" [not null]
+  changed_by_member_id "bigint"
+  reason "varchar(500)"
+  created_at "timestamp"
+}
+
+Table preorder_interest {
+  id "bigint" [pk]
+  preorder_id "bigint" [not null]
+  member_id "bigint" [not null]
+  created_at "timestamp"
+  indexes {
+    (preorder_id, member_id) [unique]
+  }
+}
+
+Table preorder_sale_variant {
+  preorder_id "bigint" [pk]
+  product_variant_id "bigint" [pk]
+}
+
+Table preorder_variant {
+  id "bigint" [pk]
+  preorder_id "bigint" [not null]
+  product_variant_id "bigint" [not null]
+  preorder_price "numeric(15,2)" [not null]
+  target_quantity "bigint"
+  max_quantity "bigint"
+  ordered_quantity "bigint"
+  status "varchar(30)"
+  created_at "timestamp"
+  updated_at "timestamp"
+  indexes {
+    (preorder_id, product_variant_id) [unique]
+  }
+}
+
+Table product {
+  id "bigint" [pk]
+  name "varchar(255)" [not null]
+  description "text"
+  category "varchar(255)"
+  normal_price "numeric(38,2)" [not null]
+  status "varchar(255)"
+  created_at "timestamp"
+  updated_at "timestamp"
+  deleted_at "timestamp"
+  brand_id "bigint" [not null]
+  thumbnail_url "varchar(500)"
+}
+
+Table product_review {
+  id "bigint" [pk]
+  order_id "bigint" [unique, not null]
+  member_id "bigint" [not null]
+  product_id "bigint" [not null]
+  rating "integer" [not null]
+  content "text" [not null]
+  seller_reply "text"
+  seller_replied_at "timestamp"
+  created_at "timestamp"
+  updated_at "timestamp"
+}
+
+Table product_variant {
+  id "bigint" [pk]
+  product_id "bigint" [not null]
+  sku_code "varchar(80)" [unique, not null]
+  option_name_1 "varchar(50)"
+  option_value_1 "varchar(100)"
+  option_name_2 "varchar(50)"
+  option_value_2 "varchar(100)"
+  additional_price "numeric(38,2)" [not null]
+  on_hand_quantity "bigint" [not null]
+  reserved_quantity "bigint" [not null]
+  safety_stock_quantity "bigint" [not null]
+  sold_quantity "bigint" [not null]
+  active "boolean" [not null]
+  version "bigint"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+}
+
+Table referral_click {
+  id "bigint" [pk]
+  collaboration_id "bigint" [not null]
+  visitor_key "varchar(100)"
+  user_agent "varchar(500)"
+  created_at "timestamp"
+  updated_at "timestamp"
+}
+
+Table referral_link {
+  id "bigint" [pk]
+  collaboration_id "bigint" [not null]
+  referral_code "varchar(100)" [unique, not null]
+  landing_url "varchar(500)"
+  is_active "boolean"
+  activated_at "timestamp"
+  deactivated_at "timestamp"
+  created_at "timestamp"
+  updated_at "timestamp"
+}
+
+Table refresh_token {
+  id "bigint" [pk]
+  member_id "bigint" [unique, not null]
+  token_hash "varchar(64)" [unique, not null]
+  expires_at "timestamp" [not null]
+  revoked_at "timestamp"
+}
+
+Table refund {
+  id "bigint" [pk]
+  payment_id "bigint" [not null]
+  refund_number "varchar(50)" [unique, not null]
+  amount "numeric(15,2)" [not null]
+  status "varchar(30)"
+  reason "varchar(500)"
+  idempotency_key "varchar(100)" [unique]
+  requested_at "timestamp"
+  completed_at "timestamp"
+  failed_at "timestamp"
+  created_at "timestamp"
+  updated_at "timestamp"
+}
+
+Table refund_item {
+  id "bigint" [pk]
+  refund_id "bigint" [not null]
+  order_item_id "bigint" [not null]
+  quantity "bigint" [not null]
+  amount "numeric(15,2)" [not null]
+  created_at "timestamp"
+}
+
+Table seller_profile {
+  id "bigint" [pk]
+  member_id "bigint" [unique, not null]
+  business_name "varchar(255)" [not null]
+  brand_name "varchar(255)"
+  business_number "varchar(255)" [unique]
+  representative_name "varchar(255)"
+  status "varchar(20)"
+  settlement_bank_code "varchar(255)"
+  settlement_account_masked "varchar(255)"
+  created_at "timestamp"
+  updated_at "timestamp"
+}
+
+Table settlement {
+  id "bigint" [pk]
+  preorder_id "bigint" [not null]
+  settlement_number "varchar(255)" [unique, not null]
+  status "varchar(255)"
+  gross_amount "numeric(38,2)" [not null]
+  refund_amount "numeric(38,2)"
+  platform_fee_amount "numeric(38,2)"
+  net_amount "numeric(38,2)" [not null]
+  currency "character(3)"
+  calculated_at "timestamp"
+  confirmed_at "timestamp"
+  paid_at "timestamp"
+  created_at "timestamp"
+  updated_at "timestamp"
+}
+
+Table settlement_participant {
+  id "bigint" [pk]
+  settlement_id "bigint" [not null]
+  participant_type "varchar(30)" [not null]
+  participant_member_id "bigint" [not null]
+  gross_amount "numeric(15,2)" [not null]
+  fee_amount "numeric(15,2)"
+  settlement_amount "numeric(15,2)" [not null]
+  status "varchar(30)"
+  created_at "timestamp"
+  updated_at "timestamp"
+  indexes {
+    (settlement_id, participant_type, participant_member_id) [unique]
+  }
+}
+
+Table shipment {
+  id "bigint" [pk]
+  order_id "bigint" [not null]
+  courier_code "varchar(255)"
+  tracking_number "varchar(255)"
+  status "varchar(255)"
+  shipped_at "timestamp"
+  delivered_at "timestamp"
+  created_at "timestamp"
+  updated_at "timestamp"
+}
+
+Table shipment_item {
+  id "bigint" [pk]
+  shipment_id "bigint" [not null]
+  order_item_id "bigint" [not null]
+  quantity "bigint" [not null]
+  created_at "timestamp"
+  indexes {
+    (shipment_id, order_item_id) [unique]
+  }
+}
+
+Ref: attribution.member_id > member.id
+Ref: attribution.order_id > orders.id
+Ref: attribution.referral_link_id > referral_link.id
+Ref: audit_log.actor_member_id > member.id
+Ref: brand.seller_id > seller_profile.id
+Ref: campaign_application.campaign_id > collaboration_campaign.id
+Ref: campaign_application.creator_id > influencer_profile.id
+Ref: campaign_application_form.campaign_id > collaboration_campaign.id
+Ref: campaign_content_link.submission_id > campaign_content_submission.id
+Ref: campaign_content_submission.application_id > campaign_application.id
+Ref: campaign_detail_image.campaign_id > collaboration_campaign.id
+Ref: campaign_eligibility_requirement.campaign_id > collaboration_campaign.id
+Ref: campaign_image_asset.campaign_id > collaboration_campaign.id
+Ref: campaign_image_asset.owner_member_id > member.id
+Ref: campaign_media_state.campaign_id > collaboration_campaign.id
+Ref: campaign_media_state.representative_asset_id > campaign_image_asset.id
+Ref: campaign_visit_history.actor_member_id > member.id
+Ref: campaign_visit_history.campaign_id > collaboration_campaign.id
+Ref: campaign_visit_snapshot.application_id > campaign_application.id
+Ref: campaign_visit_snapshot.campaign_id > collaboration_campaign.id
+Ref: collaboration.creator_id > influencer_profile.id
+Ref: collaboration.influencer_id > influencer_profile.id
+Ref: collaboration.preorder_id > preorder.id
+Ref: collaboration_campaign.preorder_id > preorder.id
+Ref: email_verification_challenge.member_id > member.id
+Ref: file_asset.uploader_member_id > member.id
+Ref: file_attachment.file_asset_id > file_asset.id
+Ref: influencer_profile.member_id > member.id
+Ref: influencer_social_account.influencer_id > influencer_profile.id
+Ref: inquiry.answered_by_member_id > member.id
+Ref: inquiry.member_id > member.id
+Ref: inquiry.preorder_id > preorder.id
+Ref: member_address.member_id > member.id
+Ref: member_channel_metric.member_id > member.id
+Ref: member_role.member_id > member.id
+Ref: member_social_account.member_id > member.id
+Ref: notification.member_id > member.id
+Ref: order_item.order_id > orders.id
+Ref: order_item.preorder_variant_id > preorder_variant.id
+Ref: order_item.product_id > product.id
+Ref: orders.attribution_id > attribution.id
+Ref: orders.member_id > member.id
+Ref: orders.preorder_id > preorder.id
+Ref: payment.order_id > orders.id
+Ref: preorder.product_id > product.id
+Ref: preorder_favorite.member_id > member.id
+Ref: preorder_favorite.preorder_id > preorder.id
+Ref: preorder_history.changed_by_member_id > member.id
+Ref: preorder_history.preorder_id > preorder.id
+Ref: preorder_interest.member_id > member.id
+Ref: preorder_interest.preorder_id > preorder.id
+Ref: preorder_sale_variant.preorder_id > preorder.id
+Ref: preorder_sale_variant.product_variant_id > product_variant.id
+Ref: preorder_variant.preorder_id > preorder.id
+Ref: preorder_variant.product_variant_id > product_variant.id
+Ref: product.brand_id > brand.id
+Ref: product_review.member_id > member.id
+Ref: product_review.order_id > orders.id
+Ref: product_review.product_id > product.id
+Ref: product_variant.product_id > product.id
+Ref: referral_click.collaboration_id > collaboration.id
+Ref: referral_link.collaboration_id > collaboration.id
+Ref: refresh_token.member_id > member.id
+Ref: refund.payment_id > payment.id
+Ref: refund_item.order_item_id > order_item.id
+Ref: refund_item.refund_id > refund.id
+Ref: seller_profile.member_id > member.id
+Ref: settlement.preorder_id > preorder.id
+Ref: settlement_participant.participant_member_id > member.id
+Ref: settlement_participant.settlement_id > settlement.id
+Ref: shipment.order_id > orders.id
+Ref: shipment_item.order_item_id > order_item.id
+Ref: shipment_item.shipment_id > shipment.id

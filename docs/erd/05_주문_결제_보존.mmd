@@ -1,0 +1,144 @@
+%% 주문·결제·정산(레거시 보존) — scripts/generate-erd.py로 생성
+erDiagram
+  orders {
+    bigint id PK
+    varchar order_number
+    varchar request_key
+    bigint member_id FK
+    bigint preorder_id FK
+    bigint attribution_id FK
+    varchar acquisition_source
+    varchar status
+    numeric total_product_amount
+    numeric discount_amount
+    numeric shipping_amount
+    numeric total_payment_amount
+    character currency
+    varchar receiver_name
+    varchar receiver_phone
+    varchar postal_code
+    varchar address1
+    varchar address2
+    timestamp paid_at
+    timestamp cancelled_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  order_item {
+    bigint id PK
+    bigint order_id FK
+    bigint product_id FK
+    bigint product_variant_id
+    bigint preorder_variant_id FK
+    varchar product_name
+    varchar option_name
+    numeric unit_price
+    bigint quantity
+    numeric total_price
+    timestamp created_at
+  }
+  payment {
+    bigint id PK
+    bigint order_id FK
+    varchar payment_key
+    varchar pg_provider
+    varchar method
+    varchar status
+    numeric requested_amount
+    numeric approved_amount
+    character currency
+    varchar idempotency_key
+    timestamp requested_at
+    timestamp approved_at
+    timestamp failed_at
+    varchar failure_code
+    varchar failure_message
+    timestamp created_at
+    timestamp updated_at
+  }
+  refund {
+    bigint id PK
+    bigint payment_id FK
+    varchar refund_number
+    numeric amount
+    varchar status
+    varchar reason
+    varchar idempotency_key
+    timestamp requested_at
+    timestamp completed_at
+    timestamp failed_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  refund_item {
+    bigint id PK
+    bigint refund_id FK
+    bigint order_item_id FK
+    bigint quantity
+    numeric amount
+    timestamp created_at
+  }
+  shipment {
+    bigint id PK
+    bigint order_id FK
+    varchar courier_code
+    varchar tracking_number
+    varchar status
+    timestamp shipped_at
+    timestamp delivered_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  shipment_item {
+    bigint id PK
+    bigint shipment_id FK
+    bigint order_item_id FK
+    bigint quantity
+    timestamp created_at
+  }
+  settlement {
+    bigint id PK
+    bigint preorder_id FK
+    varchar settlement_number
+    varchar status
+    numeric gross_amount
+    numeric refund_amount
+    numeric platform_fee_amount
+    numeric net_amount
+    character currency
+    timestamp calculated_at
+    timestamp confirmed_at
+    timestamp paid_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  settlement_participant {
+    bigint id PK
+    bigint settlement_id FK
+    varchar participant_type
+    bigint participant_member_id FK
+    numeric gross_amount
+    numeric fee_amount
+    numeric settlement_amount
+    varchar status
+    timestamp created_at
+    timestamp updated_at
+  }
+  orders ||--o{ attribution : "order_id"
+  orders ||--o{ order_item : "order_id"
+  preorder_variant ||--o{ order_item : "preorder_variant_id"
+  product ||--o{ order_item : "product_id"
+  attribution ||--o{ orders : "attribution_id"
+  member ||--o{ orders : "member_id"
+  preorder ||--o{ orders : "preorder_id"
+  orders ||--o{ payment : "order_id"
+  orders ||--o{ product_review : "order_id"
+  payment ||--o{ refund : "payment_id"
+  order_item ||--o{ refund_item : "order_item_id"
+  refund ||--o{ refund_item : "refund_id"
+  preorder ||--o{ settlement : "preorder_id"
+  member ||--o{ settlement_participant : "participant_member_id"
+  settlement ||--o{ settlement_participant : "settlement_id"
+  orders ||--o{ shipment : "order_id"
+  order_item ||--o{ shipment_item : "order_item_id"
+  shipment ||--o{ shipment_item : "shipment_id"

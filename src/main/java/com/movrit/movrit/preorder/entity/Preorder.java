@@ -84,7 +84,7 @@ public class Preorder extends BaseEntity {
   @Column(nullable = false)
   private PreorderStatus status;
 
-  @Column(name = "cancellation_reason")
+  @Column(name = "cancellation_reason", length = 500)
   private String cancellationReason;
 
   @Version

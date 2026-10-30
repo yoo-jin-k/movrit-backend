@@ -1,0 +1,188 @@
+%% 캠페인·신청·콘텐츠 — scripts/generate-erd.py로 생성
+erDiagram
+  collaboration_campaign {
+    bigint id PK
+    bigint preorder_id FK
+    varchar title
+    text description
+    varchar category
+    bigint min_follower_count
+    integer recruitment_count
+    text reward_description
+    timestamp start_at
+    timestamp end_at
+    boolean open
+    timestamp created_at
+    timestamp updated_at
+    text mission
+    text channel_guide
+    text schedule_guide
+    text delivery_guide
+    text visit_guide
+    text caution
+    text submission_requirement
+    timestamp selection_announced_at
+    timestamp experience_start_at
+    timestamp experience_end_at
+    timestamp content_submission_start_at
+    timestamp content_submission_end_at
+    timestamp results_announced_at
+    bigint schedule_version
+    varchar representative_image_url
+    varchar detail_image_url
+    varchar visit_place_name
+    varchar visit_address
+    varchar contact_name
+    varchar contact_phone
+    varchar selection_mode
+  }
+  campaign_application_form {
+    bigint id PK
+    bigint campaign_id FK
+    text allowed_fulfillment_types_json
+    text questions_json
+    text agreements_json
+    bigint version
+    timestamp created_at
+    timestamp updated_at
+  }
+  campaign_application {
+    bigint id PK
+    bigint campaign_id FK
+    bigint creator_id FK
+    varchar fulfillment_type
+    varchar status
+    text message
+    varchar recipient_name
+    varchar recipient_phone
+    varchar postal_code
+    varchar address1
+    varchar address2
+    text answers_json
+    text agreement_acceptances_json
+    bigint form_version
+    boolean identity_verification_configured
+    boolean identity_verified
+    boolean channel_ready
+    timestamp submitted_at
+    timestamp responded_at
+    timestamp cancelled_at
+    varchar cancellation_reason
+    timestamp created_at
+    timestamp updated_at
+    timestamp experience_confirmed_at
+    boolean email_verified
+    text eligibility_requirement_snapshot_json
+    bigint eligibility_requirement_version
+  }
+  campaign_eligibility_requirement {
+    bigint id PK
+    bigint campaign_id FK
+    varchar channel_type
+    varchar metric_type
+    bigint minimum_value
+    varchar measurement_period
+    timestamp created_at
+    timestamp updated_at
+    bigint version
+  }
+  campaign_content_submission {
+    bigint id PK
+    bigint application_id FK
+    varchar content_url
+    text note
+    varchar status
+    integer revision_count
+    text review_comment
+    timestamp submitted_at
+    timestamp reviewed_at
+    timestamp created_at
+    timestamp updated_at
+    bigint version
+  }
+  campaign_content_link {
+    bigint id PK
+    bigint submission_id FK
+    varchar channel_type
+    varchar content_url
+    timestamp created_at
+    timestamp updated_at
+  }
+  collaboration {
+    bigint id PK
+    bigint preorder_id FK
+    bigint influencer_id FK
+    varchar type
+    varchar status
+    varchar reward_type
+    numeric reward_rate
+    numeric reward_amount
+    timestamp applied_at
+    timestamp offered_at
+    timestamp accepted_at
+    timestamp activated_at
+    timestamp withdrawn_at
+    timestamp terminated_at
+    timestamp completed_at
+    varchar termination_reason
+    varchar terminated_by
+    timestamp created_at
+    timestamp updated_at
+    text message
+    varchar referral_code
+    timestamp responded_at
+    bigint creator_id FK
+  }
+  referral_link {
+    bigint id PK
+    bigint collaboration_id FK
+    varchar referral_code
+    varchar landing_url
+    boolean is_active
+    timestamp activated_at
+    timestamp deactivated_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  referral_click {
+    bigint id PK
+    bigint collaboration_id FK
+    varchar visitor_key
+    varchar user_agent
+    timestamp created_at
+    timestamp updated_at
+  }
+  attribution {
+    bigint id PK
+    bigint referral_link_id FK
+    bigint member_id FK
+    varchar session_key
+    varchar attribution_type
+    bigint order_id FK
+    varchar ip_hash
+    varchar user_agent
+    timestamp occurred_at
+    timestamp created_at
+  }
+  member ||--o{ attribution : "member_id"
+  orders ||--o{ attribution : "order_id"
+  referral_link ||--o{ attribution : "referral_link_id"
+  collaboration_campaign ||--o{ campaign_application : "campaign_id"
+  influencer_profile ||--o{ campaign_application : "creator_id"
+  collaboration_campaign ||--o{ campaign_application_form : "campaign_id"
+  campaign_content_submission ||--o{ campaign_content_link : "submission_id"
+  campaign_application ||--o{ campaign_content_submission : "application_id"
+  collaboration_campaign ||--o{ campaign_detail_image : "campaign_id"
+  collaboration_campaign ||--o{ campaign_eligibility_requirement : "campaign_id"
+  collaboration_campaign ||--o{ campaign_image_asset : "campaign_id"
+  collaboration_campaign ||--o{ campaign_media_state : "campaign_id"
+  collaboration_campaign ||--o{ campaign_visit_history : "campaign_id"
+  campaign_application ||--o{ campaign_visit_snapshot : "application_id"
+  collaboration_campaign ||--o{ campaign_visit_snapshot : "campaign_id"
+  influencer_profile ||--o{ collaboration : "creator_id"
+  influencer_profile ||--o{ collaboration : "influencer_id"
+  preorder ||--o{ collaboration : "preorder_id"
+  preorder ||--o{ collaboration_campaign : "preorder_id"
+  attribution ||--o{ orders : "attribution_id"
+  collaboration ||--o{ referral_click : "collaboration_id"
+  collaboration ||--o{ referral_link : "collaboration_id"
