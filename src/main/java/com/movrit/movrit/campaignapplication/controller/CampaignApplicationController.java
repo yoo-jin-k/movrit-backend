@@ -2,6 +2,7 @@ package com.movrit.movrit.campaignapplication.controller;
 
 import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos;
 import com.movrit.movrit.campaignapplication.dto.CampaignParticipantDtos;
+import com.movrit.movrit.campaignapplication.service.CampaignApplicationFormService;
 import com.movrit.movrit.campaignapplication.service.CampaignApplicationService;
 import com.movrit.movrit.campaignapplication.service.CampaignParticipantPortfolioService;
 import com.movrit.movrit.common.security.JwtMemberId;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/campaigns")
 public class CampaignApplicationController {
   private final CampaignApplicationService service;
+  private final CampaignApplicationFormService forms;
   private final CampaignParticipantPortfolioService participantPortfolioService;
 
   /** 캠페인 신청서의 질문·동의·참여 방식을 저장합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
@@ -35,13 +37,13 @@ public class CampaignApplicationController {
       @AuthenticationPrincipal Jwt jwt,
       @PathVariable Long campaignId,
       @Valid @RequestBody CampaignApplicationDtos.FormSaveRequest request) {
-    return service.saveForm(memberId(jwt), campaignId, request);
+    return forms.saveForm(memberId(jwt), campaignId, request);
   }
 
   /** 캠페인 신청서 구성을 조회합니다. */
   @GetMapping("/{campaignId}/application-form")
   public CampaignApplicationDtos.FormResponse getForm(@PathVariable Long campaignId) {
-    return service.getForm(campaignId);
+    return forms.getForm(campaignId);
   }
 
   /** 현재 회원의 이메일 인증·모집 상태·중복 신청·캠페인 조건을 종합한 신청 가능 여부를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */

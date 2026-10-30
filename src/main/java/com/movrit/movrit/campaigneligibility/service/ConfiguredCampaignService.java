@@ -1,7 +1,7 @@
 package com.movrit.movrit.campaigneligibility.service;
 
 import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos;
-import com.movrit.movrit.campaignapplication.service.CampaignApplicationService;
+import com.movrit.movrit.campaignapplication.service.CampaignApplicationFormService;
 import com.movrit.movrit.campaigneligibility.dto.CampaignEligibilityDtos;
 import com.movrit.movrit.campaigneligibility.dto.ConfiguredCampaignDtos;
 import com.movrit.movrit.campaignmedia.service.CampaignMediaService;
@@ -21,7 +21,7 @@ public class ConfiguredCampaignService {
   private final CollaborationService collaborationService;
   private final CampaignManagementService campaignManagementService;
   private final CampaignEligibilityPolicyService eligibilityPolicyService;
-  private final CampaignApplicationService campaignApplicationService;
+  private final CampaignApplicationFormService applicationForms;
   private final CampaignMediaService campaignMediaService;
 
   /**
@@ -36,7 +36,7 @@ public class ConfiguredCampaignService {
     CollaborationDtos.CampaignResponse campaign =
         collaborationService.createCampaign(memberId, request.campaign());
     CampaignApplicationDtos.FormResponse applicationForm =
-        campaignApplicationService.saveForm(memberId, campaign.id(), request.applicationForm());
+        applicationForms.saveForm(memberId, campaign.id(), request.applicationForm());
     CampaignEligibilityDtos.RequirementResponse requirement =
         request.requirementMode() == ConfiguredCampaignDtos.RequirementMode.SINGLE
             ? eligibilityPolicyService.save(memberId, campaign.id(), request.requirement())
@@ -67,8 +67,8 @@ public class ConfiguredCampaignService {
     var campaign = campaignManagementService.update(memberId, campaignId, request.campaign());
     CampaignApplicationDtos.FormResponse applicationForm =
         request.applicationForm() == null
-            ? campaignApplicationService.getForm(campaignId)
-            : campaignApplicationService.saveFormWithExpectedVersion(
+            ? applicationForms.getForm(campaignId)
+            : applicationForms.saveFormWithExpectedVersion(
                 memberId,
                 campaignId,
                 request.applicationForm(),

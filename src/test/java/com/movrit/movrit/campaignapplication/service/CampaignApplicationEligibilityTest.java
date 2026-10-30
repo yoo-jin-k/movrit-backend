@@ -112,7 +112,8 @@ class CampaignApplicationEligibilityTest {
     CampaignApplicationService service =
         new CampaignApplicationService(
             campaignRepository,
-            formRepository,
+            forms(campaignRepository, formRepository),
+            new CampaignApplicationValidator(forms(campaignRepository, formRepository)),
             applicationRepository,
             creatorService,
             memberService,
@@ -120,7 +121,8 @@ class CampaignApplicationEligibilityTest {
             metricService,
             mock(SellerProfileService.class),
             mock(CampaignOwnershipService.class),
-            new ObjectMapper(),
+            new CampaignApplicationJson(new ObjectMapper()),
+            new CampaignApplicationResponses(new CampaignApplicationJson(new ObjectMapper())),
             mock(NotificationService.class),
             mock(AuditLogService.class),
             mock(com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService.class),
@@ -202,7 +204,8 @@ class CampaignApplicationEligibilityTest {
         .thenReturn(alreadyApplied);
     return new CampaignApplicationService(
         campaignRepository,
-        formRepository,
+        forms(campaignRepository, formRepository),
+        new CampaignApplicationValidator(forms(campaignRepository, formRepository)),
         applicationRepository,
         creatorService,
         memberService,
@@ -210,7 +213,8 @@ class CampaignApplicationEligibilityTest {
         metricService,
         mock(SellerProfileService.class),
         mock(CampaignOwnershipService.class),
-        new ObjectMapper(),
+        new CampaignApplicationJson(new ObjectMapper()),
+        new CampaignApplicationResponses(new CampaignApplicationJson(new ObjectMapper())),
         mock(NotificationService.class),
         mock(AuditLogService.class),
         mock(com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService.class),
@@ -236,5 +240,15 @@ class CampaignApplicationEligibilityTest {
         .endAt(LocalDateTime.now().plusDays(1))
         .minFollowerCount(100L)
         .build();
+  }
+
+  /** 실제 양식 서비스(소유 확인은 생략)를 만들어 신청 서비스와 같은 저장소를 쓰게 합니다. */
+  private static CampaignApplicationFormService forms(
+      CampaignRepository campaignRepository, CampaignApplicationFormRepository formRepository) {
+    return new CampaignApplicationFormService(
+        campaignRepository,
+        formRepository,
+        mock(CampaignOwnershipService.class),
+        new CampaignApplicationJson(new ObjectMapper()));
   }
 }

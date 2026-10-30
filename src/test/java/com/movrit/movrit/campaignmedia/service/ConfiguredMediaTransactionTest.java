@@ -3,7 +3,7 @@ package com.movrit.movrit.campaignmedia.service;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import com.movrit.movrit.campaignapplication.service.CampaignApplicationService;
+import com.movrit.movrit.campaignapplication.service.CampaignApplicationFormService;
 import com.movrit.movrit.campaigneligibility.dto.ConfiguredCampaignDtos;
 import com.movrit.movrit.campaigneligibility.service.CampaignEligibilityPolicyService;
 import com.movrit.movrit.campaigneligibility.service.ConfiguredCampaignService;
@@ -25,7 +25,7 @@ class ConfiguredMediaTransactionTest {
   private final CampaignManagementService management = mock(CampaignManagementService.class);
   private final CampaignEligibilityPolicyService policies =
       mock(CampaignEligibilityPolicyService.class);
-  private final CampaignApplicationService forms = mock(CampaignApplicationService.class);
+  private final CampaignApplicationFormService forms = mock(CampaignApplicationFormService.class);
   private final CampaignMediaService media = mock(CampaignMediaService.class);
   private final ConfiguredCampaignService target =
       new ConfiguredCampaignService(collaboration, management, policies, forms, media);

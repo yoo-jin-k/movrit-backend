@@ -8,7 +8,7 @@ import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos.FormRes
 import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos.FormSaveRequest;
 import com.movrit.movrit.campaignapplication.entity.FulfillmentType;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
-import com.movrit.movrit.campaignapplication.service.CampaignApplicationService;
+import com.movrit.movrit.campaignapplication.service.CampaignApplicationFormService;
 import com.movrit.movrit.campaignmedia.dto.CampaignMediaDtos.DetailInput;
 import com.movrit.movrit.campaignmedia.dto.CampaignMediaDtos.Location;
 import com.movrit.movrit.campaignmedia.dto.CampaignMediaDtos.PresentationInput;
@@ -41,7 +41,7 @@ class CampaignMediaServiceTest {
   private final CampaignRepository campaigns = mock(CampaignRepository.class);
   private final CampaignOwnershipService products = mock(CampaignOwnershipService.class);
   private final SellerProfileService sellers = mock(SellerProfileService.class);
-  private final CampaignApplicationService forms = mock(CampaignApplicationService.class);
+  private final CampaignApplicationFormService forms = mock(CampaignApplicationFormService.class);
   private final CampaignApplicationRepository applications =
       mock(CampaignApplicationRepository.class);
   private final CampaignPrivateImageStorage storage = mock(CampaignPrivateImageStorage.class);

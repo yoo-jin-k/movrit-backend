@@ -3,7 +3,7 @@ package com.movrit.movrit.campaignmedia.service;
 import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos.FormSaveRequest;
 import com.movrit.movrit.campaignapplication.entity.FulfillmentType;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
-import com.movrit.movrit.campaignapplication.service.CampaignApplicationService;
+import com.movrit.movrit.campaignapplication.service.CampaignApplicationFormService;
 import com.movrit.movrit.campaignmedia.dto.CampaignMediaDtos.AssetResponse;
 import com.movrit.movrit.campaignmedia.dto.CampaignMediaDtos.DetailInput;
 import com.movrit.movrit.campaignmedia.dto.CampaignMediaDtos.Location;
@@ -52,7 +52,7 @@ public class CampaignMediaService {
   private final CampaignRepository campaigns;
   private final CampaignOwnershipService campaignOwnership;
   private final SellerProfileService sellers;
-  private final CampaignApplicationService forms;
+  private final CampaignApplicationFormService forms;
   private final CampaignApplicationRepository applications;
   private final CampaignPrivateImageStorage storage;
   private final ObjectMapper json;
