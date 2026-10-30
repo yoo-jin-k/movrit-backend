@@ -1,6 +1,7 @@
 package com.movrit.movrit.collaboration.entity;
 
 import com.movrit.movrit.brand.entity.Brand;
+import com.movrit.movrit.campaigncontent.entity.ContentChannel;
 import com.movrit.movrit.common.entity.BaseEntity;
 import com.movrit.movrit.preorder.entity.Preorder;
 import jakarta.persistence.Column;
@@ -55,6 +56,26 @@ public class Campaign extends BaseEntity {
 
   @Column(length = 100)
   private String category;
+
+  /** 캠페인 유형(제품·지역·기자단)입니다. 탐색 메뉴 분류에 사용합니다. */
+  @Builder.Default
+  @Enumerated(EnumType.STRING)
+  @Column(name = "campaign_type", nullable = false, length = 20)
+  private CampaignType campaignType = CampaignType.PRODUCT;
+
+  /** 지역 캠페인의 방문 광역 지역(서울·경기 등)입니다. 제품·기자단 캠페인은 비워 둡니다. */
+  @Column(length = 20)
+  private String region;
+
+  /** 주로 콘텐츠를 올릴 채널입니다(탐색 화면의 미디어 필터). 정하지 않으면 비워 둡니다. */
+  @Enumerated(EnumType.STRING)
+  @Column(name = "content_channel", length = 20)
+  private ContentChannel contentChannel;
+
+  /** 운영자가 지정하는 프리미어 캠페인 여부입니다. 업체 화면에서는 바꿀 수 없습니다. */
+  @Builder.Default
+  @Column(nullable = false)
+  private boolean premier = false;
 
   /** 기존 단일 팔로워 조건 값입니다. 현재 신청 조건은 CampaignEligibilityRequirement에서 관리합니다. */
   @Column(name = "min_follower_count", nullable = false)
@@ -324,6 +345,37 @@ public class Campaign extends BaseEntity {
     }
     if (resultsAt != null && submissionEnd != null && resultsAt.isBefore(submissionEnd)) {
       throw new IllegalArgumentException("결과 발표일은 콘텐츠 등록 종료일보다 빠를 수 없습니다.");
+    }
+  }
+
+  /** 탐색 메뉴에서 고를 수 있는 광역 지역 목록입니다. 프론트 지역 필터(REGIONS)와 같은 값을 씁니다. */
+  public static final java.util.Set<String> REGIONS =
+      java.util.Set.of(
+          "서울", "경기", "인천", "부산", "대구", "대전", "광주", "울산", "강원", "충청", "전라", "경상", "제주");
+
+  /**
+   * 캠페인 유형·지역·주요 채널을 정합니다. 값이 null이면 기존 값을 유지합니다.
+   *
+   * <p>지역은 지역(LOCAL) 캠페인에서만 의미가 있어, 다른 유형으로 바꾸면 지역을 비웁니다. 지역 이름은 REGIONS 목록 안의 값만 받습니다.
+   *
+   * @throws IllegalArgumentException 목록에 없는 지역 이름이면 거절합니다
+   */
+  public void classify(CampaignType type, String regionName, ContentChannel channel) {
+    if (type != null) this.campaignType = type;
+    if (channel != null) this.contentChannel = channel;
+    if (this.campaignType != CampaignType.LOCAL) {
+      this.region = null;
+      return;
+    }
+    if (regionName != null) {
+      String trimmed = regionName.trim();
+      if (trimmed.isEmpty()) {
+        this.region = null;
+      } else if (!REGIONS.contains(trimmed)) {
+        throw new IllegalArgumentException("지원하지 않는 지역입니다: " + trimmed);
+      } else {
+        this.region = trimmed;
+      }
     }
   }
 }

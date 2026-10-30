@@ -62,7 +62,10 @@ class CollaborationCreateCampaignTest {
         null,
         "체험 제품 1개",
         LocalDateTime.now().minusHours(1),
-        LocalDateTime.now().plusDays(7));
+        LocalDateTime.now().plusDays(7),
+        null,
+        null,
+        null);
   }
 
   @Test
@@ -94,5 +97,56 @@ class CollaborationCreateCampaignTest {
             ResponseStatusException.class,
             e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
     verify(campaigns, never()).save(any());
+  }
+
+  @Test
+  void localCampaignKeepsRegionAndRejectsUnknownRegion() {
+    when(ownership.resolveBrandForNewCampaign(1L, null)).thenReturn(brand);
+    when(campaigns.save(any(Campaign.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    CollaborationDtos.CampaignRequest base = request(null, null);
+    CollaborationDtos.CampaignRequest local =
+        new CollaborationDtos.CampaignRequest(
+            null,
+            null,
+            base.title(),
+            base.description(),
+            "맛집",
+            0L,
+            5,
+            null,
+            base.rewardDescription(),
+            base.startAt(),
+            base.endAt(),
+            com.movrit.movrit.collaboration.entity.CampaignType.LOCAL,
+            "서울",
+            com.movrit.movrit.campaigncontent.entity.ContentChannel.BLOG);
+
+    CollaborationDtos.CampaignResponse response = service.createCampaign(1L, local);
+
+    assertThat(response.campaignType())
+        .isEqualTo(com.movrit.movrit.collaboration.entity.CampaignType.LOCAL);
+    assertThat(response.region()).isEqualTo("서울");
+    assertThat(response.premier()).isFalse();
+    // 목록에 없는 지역 이름은 400으로 거절합니다.
+    CollaborationDtos.CampaignRequest unknown =
+        new CollaborationDtos.CampaignRequest(
+            null,
+            null,
+            base.title(),
+            null,
+            null,
+            0L,
+            5,
+            null,
+            null,
+            base.startAt(),
+            base.endAt(),
+            com.movrit.movrit.collaboration.entity.CampaignType.LOCAL,
+            "뉴욕",
+            null);
+    assertThatThrownBy(() -> service.createCampaign(1L, unknown))
+        .isInstanceOfSatisfying(
+            ResponseStatusException.class,
+            e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
   }
 }

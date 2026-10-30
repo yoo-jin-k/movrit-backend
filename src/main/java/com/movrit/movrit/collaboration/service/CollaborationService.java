@@ -88,6 +88,12 @@ public class CollaborationService {
             .endAt(r.endAt())
             .open(true)
             .build();
+    // 유형·지역·주요 채널 분류를 적용합니다. 목록에 없는 지역이면 400으로 안내합니다.
+    try {
+      c.classify(r.campaignType(), r.region(), r.contentChannel());
+    } catch (IllegalArgumentException exception) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
     return CollaborationDtos.CampaignResponse.from(campaigns.save(c));
   }
 

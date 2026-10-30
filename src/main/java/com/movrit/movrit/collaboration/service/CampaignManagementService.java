@@ -82,6 +82,8 @@ public class CampaignManagementService {
           request.contentSubmissionStartAt(),
           request.contentSubmissionEndAt(),
           request.resultsAnnouncedAt());
+      // 유형·지역·주요 채널은 보낸 값만 바꾸고, 비운 값은 기존 분류를 유지합니다.
+      campaign.classify(request.campaignType(), request.region(), request.contentChannel());
     } catch (IllegalArgumentException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
     }

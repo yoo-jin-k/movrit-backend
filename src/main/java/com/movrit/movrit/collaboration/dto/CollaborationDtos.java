@@ -1,5 +1,6 @@
 package com.movrit.movrit.collaboration.dto;
 
+import com.movrit.movrit.campaigncontent.entity.ContentChannel;
 import com.movrit.movrit.collaboration.entity.*;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
@@ -21,6 +22,9 @@ public final class CollaborationDtos {
    * @param rewardDescription 제공 혜택 설명입니다.
    * @param startAt 모집 시작 시각입니다.
    * @param endAt 모집 종료 시각입니다.
+   * @param campaignType 캠페인 유형(제품·지역·기자단)입니다. 비우면 제품으로 저장합니다.
+   * @param region 지역 캠페인의 광역 지역(서울·경기 등)입니다. 지역 캠페인이 아니면 무시합니다.
+   * @param contentChannel 주로 콘텐츠를 올릴 채널입니다(선택).
    */
   public record CampaignRequest(
       Long preorderId,
@@ -33,7 +37,10 @@ public final class CollaborationDtos {
       CampaignSelectionMode selectionMode,
       String rewardDescription,
       @NotNull LocalDateTime startAt,
-      @NotNull LocalDateTime endAt) {}
+      @NotNull LocalDateTime endAt,
+      CampaignType campaignType,
+      String region,
+      ContentChannel contentChannel) {}
 
   /**
    * 캠페인 및 협업의 기존 캠페인 목록 응답을 전달합니다.
@@ -69,7 +76,11 @@ public final class CollaborationDtos {
       LocalDateTime startAt,
       LocalDateTime endAt,
       boolean open,
-      Long applicationCount) {
+      Long applicationCount,
+      CampaignType campaignType,
+      String region,
+      ContentChannel contentChannel,
+      boolean premier) {
     /**
      * 엔티티를 화면에 내려줄 응답 형식으로 바꿉니다. 권한 확인은 이 메서드를 호출하는 서비스가 맡습니다.
      *
@@ -101,7 +112,11 @@ public final class CollaborationDtos {
           c.getStartAt(),
           c.getEndAt(),
           c.isOpen(),
-          applicationCount);
+          applicationCount,
+          c.getCampaignType(),
+          c.getRegion(),
+          c.getContentChannel(),
+          c.isPremier());
     }
   }
 

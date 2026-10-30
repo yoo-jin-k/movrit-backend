@@ -1,7 +1,9 @@
 package com.movrit.movrit.collaboration.dto;
 
+import com.movrit.movrit.campaigncontent.entity.ContentChannel;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.entity.CampaignSelectionMode;
+import com.movrit.movrit.collaboration.entity.CampaignType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -37,6 +39,9 @@ public final class CampaignManagementDtos {
    * @param contentSubmissionStartAt 콘텐츠 등록 시작 시각입니다.
    * @param contentSubmissionEndAt 콘텐츠 등록 종료 시각입니다.
    * @param resultsAnnouncedAt 결과 발표 시각입니다.
+   * @param campaignType 캠페인 유형입니다. 비우면 기존 값을 유지합니다.
+   * @param region 지역 캠페인의 광역 지역입니다. 비우면 기존 값을 유지합니다.
+   * @param contentChannel 주요 콘텐츠 채널입니다. 비우면 기존 값을 유지합니다.
    */
   public record UpdateRequest(
       @NotBlank @Size(max = 255) String title,
@@ -61,7 +66,10 @@ public final class CampaignManagementDtos {
       LocalDateTime experienceEndAt,
       LocalDateTime contentSubmissionStartAt,
       LocalDateTime contentSubmissionEndAt,
-      LocalDateTime resultsAnnouncedAt) {}
+      LocalDateTime resultsAnnouncedAt,
+      CampaignType campaignType,
+      String region,
+      ContentChannel contentChannel) {}
 
   /**
    * 캠페인 및 협업의 캠페인 상세 응답을 전달합니다.
@@ -99,6 +107,10 @@ public final class CampaignManagementDtos {
    * @param resultsAnnouncedAt 결과 발표 시각입니다.
    * @param scheduleVersion 현재 캠페인 일정 버전입니다.
    * @param open 현재 모집 또는 진행 가능 상태입니다.
+   * @param campaignType 캠페인 유형(제품·지역·기자단)입니다.
+   * @param region 지역 캠페인의 광역 지역입니다.
+   * @param contentChannel 주요 콘텐츠 채널입니다.
+   * @param premier 운영자 지정 프리미어 여부입니다.
    */
   public record DetailResponse(
       Long id,
@@ -134,7 +146,11 @@ public final class CampaignManagementDtos {
       LocalDateTime contentSubmissionEndAt,
       LocalDateTime resultsAnnouncedAt,
       Long scheduleVersion,
-      boolean open) {
+      boolean open,
+      CampaignType campaignType,
+      String region,
+      ContentChannel contentChannel,
+      boolean premier) {
     /**
      * 엔티티를 화면에 내려줄 응답 형식으로 바꿉니다. 권한 확인은 이 메서드를 호출하는 서비스가 맡습니다. 방문 정보의 포함 여부는 호출한 오버로드와 includeVisit
      * 인자로 구분합니다.
@@ -183,7 +199,11 @@ public final class CampaignManagementDtos {
           campaign.getContentSubmissionEndAt(),
           campaign.getResultsAnnouncedAt(),
           campaign.getScheduleVersion(),
-          campaign.isOpen());
+          campaign.isOpen(),
+          campaign.getCampaignType(),
+          campaign.getRegion(),
+          campaign.getContentChannel(),
+          campaign.isPremier());
     }
   }
 

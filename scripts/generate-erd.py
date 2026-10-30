@@ -50,6 +50,9 @@ def parse(sql):
     tables, fks, pks, uniques = {}, [], {}, {}
     for m in re.finditer(r"CREATE TABLE public\.(\w+) \((.*?)\n\);", sql, re.S):
         name, body = m.group(1), m.group(2)
+        # 마이그레이션 이력 테이블은 서비스 데이터가 아니므로 ERD에서 제외합니다.
+        if name.endswith("schema_history"):
+            continue
         cols = []
         for line in body.split("\n"):
             line = line.strip().rstrip(",")
@@ -57,6 +60,8 @@ def parse(sql):
                 continue
             parts = line.split()
             col_type = " ".join(parts[1:])
+            # PostgreSQL 18은 NOT NULL 제약에 이름을 붙여 출력하므로(CONSTRAINT 이름 NOT NULL) 이름 부분을 지웁니다.
+            col_type = re.sub(r"\s*CONSTRAINT \w+", "", col_type)
             col_type = re.sub(r"\s+DEFAULT .*", "", col_type)
             not_null = "NOT NULL" in col_type
             col_type = col_type.replace("NOT NULL", "").strip()

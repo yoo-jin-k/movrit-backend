@@ -53,7 +53,7 @@ Table campaign_application {
   address2 "varchar(300)"
   answers_json "text" [not null]
   agreement_acceptances_json "text" [not null]
-  form_version "bigint CONSTRAINT campaign_application_form_version_not_null1" [not null]
+  form_version "bigint" [not null]
   identity_verification_configured "boolean" [not null]
   identity_verified "boolean" [not null]
   channel_ready "boolean" [not null]
@@ -75,7 +75,7 @@ Table campaign_application {
 Table campaign_application_form {
   id "bigint" [pk]
   campaign_id "bigint" [unique, not null]
-  allowed_fulfillment_types_json "text CONSTRAINT campaign_application_form_allowed_fulfillment_types_js_not_null" [not null]
+  allowed_fulfillment_types_json "text" [not null]
   questions_json "text" [not null]
   agreements_json "text" [not null]
   version "bigint" [not null]
@@ -249,6 +249,10 @@ Table collaboration_campaign {
   contact_phone "varchar(30)"
   selection_mode "varchar(20)"
   brand_id "bigint" [not null]
+  campaign_type "varchar(20)"
+  region "varchar(20)"
+  content_channel "varchar(20)"
+  premier "boolean"
 }
 
 Table email_verification_challenge {
