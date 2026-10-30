@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
 import com.movrit.movrit.collaboration.dto.CollaborationDtos;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
@@ -57,7 +58,8 @@ class CollaborationLegacyApplicationTest {
             mock(OrderItemRepository.class),
             creatorService,
             mock(PreorderService.class),
-            mock(ProductService.class));
+            mock(ProductService.class),
+            mock(CampaignApplicationRepository.class));
 
     assertThatThrownBy(() -> service.apply(12L, 10L, new CollaborationDtos.ApplyRequest("신청")))
         .isInstanceOfSatisfying(

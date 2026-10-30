@@ -66,9 +66,23 @@ public final class CollaborationDtos {
       String representativeImageUrl,
       LocalDateTime startAt,
       LocalDateTime endAt,
-      boolean open) {
-    /** 엔티티에서 공개할 응답 필드만 복사합니다. 이 변환 메서드 자체는 조회 권한을 판정하지 않습니다. */
+      boolean open,
+      Long applicationCount) {
+    /**
+     * 엔티티에서 공개할 응답 필드만 복사합니다. 이 변환 메서드 자체는 조회 권한을 판정하지 않습니다.
+     *
+     * <p>신청 수를 집계하지 않는 응답(등록·업체 목록)은 applicationCount를 null로 둡니다.
+     */
     public static CampaignResponse from(Campaign c) {
+      return from(c, null);
+    }
+
+    /**
+     * 공개 목록처럼 신청 수를 함께 보여줄 때 사용합니다.
+     *
+     * @param applicationCount 취소를 제외한 신청 수입니다. 집계하지 않았으면 null입니다.
+     */
+    public static CampaignResponse from(Campaign c, Long applicationCount) {
       return new CampaignResponse(
           c.getId(),
           c.getPreorder().getId(),
@@ -84,7 +98,8 @@ public final class CollaborationDtos {
           c.getRepresentativeImageUrl(),
           c.getStartAt(),
           c.getEndAt(),
-          c.isOpen());
+          c.isOpen(),
+          applicationCount);
     }
   }
 

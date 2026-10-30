@@ -34,6 +34,28 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
     String getVerificationStatus();
   }
 
+  /** 캠페인별 유효 신청 수 집계 결과입니다. 공개 목록 카드의 "신청 N / 모집 M명" 표시에 사용합니다. */
+  interface CampaignApplicationCount {
+    Long getCampaignId();
+
+    Long getApplicationCount();
+  }
+
+  /**
+   * 여러 캠페인의 신청 수를 한 번의 쿼리로 집계합니다.
+   *
+   * <p>취소(CANCELLED)된 신청은 경쟁률에 포함하지 않습니다. 목록 조회 시 캠페인마다 count 쿼리를 반복하지 않도록 캠페인 ID 묶음으로 그룹 집계합니다.
+   */
+  @Query(
+      "select application.campaign.id as campaignId, count(application) as applicationCount"
+          + " from CampaignApplication application"
+          + " where application.campaign.id in :campaignIds"
+          + " and application.status <> com.movrit.movrit.campaignapplication.entity"
+          + ".CampaignApplicationStatus.CANCELLED"
+          + " group by application.campaign.id")
+  List<CampaignApplicationCount> countActiveApplicationsByCampaignIds(
+      @Param("campaignIds") Collection<Long> campaignIds);
+
   boolean existsByCampaignIdAndCreatorId(Long campaignId, Long creatorId);
 
   @EntityGraph(

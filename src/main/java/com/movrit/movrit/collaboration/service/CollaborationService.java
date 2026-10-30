@@ -1,5 +1,6 @@
 package com.movrit.movrit.collaboration.service;
 
+import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
 import com.movrit.movrit.collaboration.dto.CollaborationDtos;
 import com.movrit.movrit.collaboration.entity.*;
 import com.movrit.movrit.collaboration.entity.ReferralClick;
@@ -33,6 +34,7 @@ public class CollaborationService {
   private final CreatorService creators;
   private final PreorderService preorders;
   private final ProductService products;
+  private final CampaignApplicationRepository campaignApplications;
 
   @Transactional
   public CollaborationDtos.CampaignResponse createCampaign(
@@ -60,11 +62,25 @@ public class CollaborationService {
     return CollaborationDtos.CampaignResponse.from(campaigns.save(c));
   }
 
+  /**
+   * 현재 모집 기간 안에 있는 공개 캠페인 목록을 반환합니다.
+   *
+   * <p>카드에 "신청 N / 모집 M명"을 보여줄 수 있도록 취소를 제외한 신청 수를 캠페인 ID 묶음으로 한 번에 집계해 붙입니다. 신청이 없는 캠페인은 0으로
+   * 응답합니다.
+   */
   public List<CollaborationDtos.CampaignResponse> openCampaigns() {
     LocalDateTime now = LocalDateTime.now();
-    return campaigns.findAllByOpenTrueOrderByIdDesc().stream()
-        .filter(c -> !now.isBefore(c.getStartAt()) && now.isBefore(c.getEndAt()))
-        .map(CollaborationDtos.CampaignResponse::from)
+    List<Campaign> visible =
+        campaigns.findAllByOpenTrueOrderByIdDesc().stream()
+            .filter(c -> !now.isBefore(c.getStartAt()) && now.isBefore(c.getEndAt()))
+            .toList();
+    if (visible.isEmpty()) return List.of();
+    Map<Long, Long> counts = new HashMap<>();
+    campaignApplications
+        .countActiveApplicationsByCampaignIds(visible.stream().map(Campaign::getId).toList())
+        .forEach(row -> counts.put(row.getCampaignId(), row.getApplicationCount()));
+    return visible.stream()
+        .map(c -> CollaborationDtos.CampaignResponse.from(c, counts.getOrDefault(c.getId(), 0L)))
         .toList();
   }
 
