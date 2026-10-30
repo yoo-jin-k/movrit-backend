@@ -5,6 +5,11 @@ import com.movrit.movrit.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+/**
+ * 캠페인마다 하나씩 두는 신청서 양식입니다.
+ *
+ * <p>허용 체험 방식, 신청 질문, 동의 문서를 JSON으로 보관하고, 양식이 바뀔 때마다 버전을 올려 신청자가 어떤 양식에 동의했는지 구분합니다.
+ */
 @Entity
 @Table(name = "campaign_application_form")
 @Getter
@@ -32,7 +37,11 @@ public class CampaignApplicationForm extends BaseEntity {
   @Column(nullable = false)
   private Long version;
 
-  /** 신청서 정의를 바꾸면 버전을 올려 기존 신청이 동의한 조건을 추적합니다. */
+  /**
+   * 신청서 양식 전체를 새 내용으로 바꾸고 버전을 1 올립니다.
+   *
+   * <p>이미 제출된 신청은 이전 버전 번호를 그대로 가지고 있으므로, 어떤 양식에 동의했는지 나중에도 확인할 수 있습니다.
+   */
   public void replace(String fulfillmentTypesJson, String questionsJson, String agreementsJson) {
     allowedFulfillmentTypesJson = fulfillmentTypesJson;
     this.questionsJson = questionsJson;

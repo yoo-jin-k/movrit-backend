@@ -18,20 +18,20 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentController {
   private final PaymentService paymentService;
 
-  /** 결제 기록 관련 생성을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 생성을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping
   public ResponseEntity<PaymentDtos.Response> create(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody PaymentDtos.CreateRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(paymentService.create(id(jwt), request));
   }
 
-  /** 결제 기록 관련 로그인 회원에게 연결된 정보를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원에게 연결된 정보를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/mine")
   public List<PaymentDtos.Response> mine(@AuthenticationPrincipal Jwt jwt) {
     return paymentService.findMine(id(jwt));
   }
 
-  /** 결제 기록 관련 승인 처리를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 승인 처리를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PatchMapping("/{paymentId}/approve")
   public PaymentDtos.Response approve(
       @AuthenticationPrincipal Jwt jwt,
@@ -40,7 +40,7 @@ public class PaymentController {
     return paymentService.approve(id(jwt), paymentId, request);
   }
 
-  /** 결제 기록 관련 결제 실패 결과 기록을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 결제 실패 결과 기록을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PatchMapping("/{paymentId}/fail")
   public PaymentDtos.Response fail(
       @AuthenticationPrincipal Jwt jwt,
@@ -49,7 +49,7 @@ public class PaymentController {
     return paymentService.fail(id(jwt), paymentId, request);
   }
 
-  /** 결제 기록 관련 환불 상태 처리를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 환불 상태 처리를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{paymentId}/refund")
   public PaymentDtos.Response refund(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long paymentId) {

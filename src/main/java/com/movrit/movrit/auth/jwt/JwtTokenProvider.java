@@ -13,12 +13,14 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.stereotype.Component;
 
+/** MOVRIT 로그인 접근 토큰(JWT)을 만듭니다. 서버 비밀키(jwt.secret)로 HS256 서명합니다. */
 @Component
 public class JwtTokenProvider {
 
   private final JwtEncoder jwtEncoder;
   private final long accessTokenExpiration;
 
+  /** 서명 비밀키와 토큰 유효 시간(밀리초)을 설정에서 받아 토큰 생성기를 준비합니다. 비밀키는 256비트 이상이어야 합니다. */
   public JwtTokenProvider(
       @Value("${jwt.secret}") String secret,
       @Value("${jwt.access-token-expiration}") long accessTokenExpiration) {
@@ -28,6 +30,7 @@ public class JwtTokenProvider {
     this.accessTokenExpiration = accessTokenExpiration;
   }
 
+  /** 회원 ID를 subject로 담은 접근 토큰을 만듭니다. 이메일이 있으면 email 항목도 함께 넣습니다. */
   public String createAccessToken(Long memberId, String email) {
 
     Instant now = Instant.now();

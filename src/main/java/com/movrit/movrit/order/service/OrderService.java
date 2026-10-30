@@ -51,7 +51,7 @@ public class OrderService {
     if (!variant.getProduct().getId().equals(preorder.getProduct().getId())
         || !preorder.canSellVariant(variant.getId())
         || !variant.isActive()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "프리오더에서 판매 중인 SKU가 아니야.");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "프리오더에서 판매 중인 SKU가 아닙니다.");
     }
     long alreadyOrdered =
         orderRepository.findAllByMemberIdOrderByIdDesc(memberId).stream()
@@ -194,7 +194,7 @@ public class OrderService {
   private Order getMemberOrder(Long memberId, Long id) {
     Order order = getOrder(id);
     if (!order.getMember().getId().equals(memberId))
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "내 주문만 관리할 수 있어.");
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "내 주문만 관리할 수 있습니다.");
     return order;
   }
 

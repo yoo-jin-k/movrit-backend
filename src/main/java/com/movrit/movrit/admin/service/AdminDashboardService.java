@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** 운영자 대시보드의 전체 거래액·주문·협업·정산 현황을 집계합니다. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -31,6 +32,7 @@ public class AdminDashboardService {
   private final CollaborationRepository collaborations;
   private final SettlementRepository settlements;
 
+  /** 운영자 대시보드 수치를 계산해 반환합니다. 관리자만 조회할 수 있으며 관리자가 아니면 거절됩니다. 거래액은 결제 완료(PAID) 금액만 합산합니다. */
   public AdminDtos.Dashboard get(Long adminId) {
     auth.getAdmin(adminId);
     var ps = preorders.findAll();

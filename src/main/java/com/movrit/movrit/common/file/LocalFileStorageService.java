@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+/** 이미지를 서버 로컬 폴더(app.upload-dir)에 저장하는 공통 서비스입니다. JPG·PNG·WEBP 5MB 이하만 허용합니다. */
 @Service
 public class LocalFileStorageService {
 
@@ -24,11 +25,15 @@ public class LocalFileStorageService {
 
   private final Path rootPath;
 
+  /** 업로드 폴더 경로를 절대 경로로 정리해 저장 기준 위치로 삼습니다. */
   public LocalFileStorageService(@Value("${app.upload-dir:uploads}") String uploadDir) {
     this.rootPath = Path.of(uploadDir).toAbsolutePath().normalize();
   }
 
-  /** 원본 파일명은 저장 파일명으로 사용하지 않습니다. MIME 타입에서 허용 확장자를 직접 결정하면 악의적인 파일명이 그대로 노출되는 것도 막을 수 있습니다. */
+  /**
+   * 이미지를 검사한 뒤 임의 이름(UUID)으로 저장하고 /uploads/... 공개 주소를 반환합니다. 원본 파일명은 쓰지 않고 파일 형식으로 확장자를 정해 악성 파일명을
+   * 막습니다. 업로드 폴더 밖으로 나가는 경로는 거절합니다.
+   */
   public String storeImage(MultipartFile file, String directory) {
     String extension = validateAndResolveExtension(file);
     String storedName = UUID.randomUUID() + extension;

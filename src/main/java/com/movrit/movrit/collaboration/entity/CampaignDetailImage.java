@@ -8,6 +8,7 @@ import lombok.*;
 @Table(
     name = "campaign_detail_image",
     uniqueConstraints = @UniqueConstraint(columnNames = {"campaign_id", "display_order"}))
+/** 캠페인 상세 화면에 순서대로 보여줄 상세 이미지 한 장입니다. 같은 캠페인 안에서 표시 순서(display_order)는 겹칠 수 없습니다. */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -30,10 +31,12 @@ public class CampaignDetailImage extends BaseEntity {
   @Column(name = "alt_text", length = 200)
   private String altText;
 
+  /** 상세 이미지의 표시 순서를 바꿉니다. 순서 중복 검사는 호출하는 서비스가 맡습니다. */
   public void reorder(int order) {
     this.displayOrder = order;
   }
 
+  /** 이미지를 볼 수 없는 사용자를 위한 대체 설명 문구를 바꿉니다. */
   public void updateAltText(String value) {
     this.altText = value;
   }

@@ -24,15 +24,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class CampaignEligibilityRequirementController {
   private final CampaignEligibilityPolicyService service;
 
-  /** 캠페인 참여 조건 관련 표시 정보를 조회합니다. */
+  /** 표시 정보를 조회합니다. */
   @GetMapping
   public CampaignEligibilityDtos.RequirementResponse find(@PathVariable Long campaignId) {
     return service.find(campaignId);
   }
 
   /**
-   * 업체가 해당 캠페인의 채널·지표·최소값을 지정합니다. 모든 캠페인에 고정 수치를 적용하지 않습니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된
-   * 입력 제약을 검증한 뒤 처리합니다.
+   * 업체가 해당 캠페인의 채널·지표·최소값을 지정합니다. 모든 캠페인에 고정 수치를 적용하지 않습니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력
+   * 형식을 먼저 검사한 뒤 처리합니다.
    */
   @PutMapping
   public CampaignEligibilityDtos.RequirementResponse save(
@@ -42,7 +42,7 @@ public class CampaignEligibilityRequirementController {
     return service.save(memberId(jwt), campaignId, request);
   }
 
-  /** 기존 조건의 버전을 확인하여 해당 캠페인의 지표 조건을 해제하도록 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 기존 조건의 버전을 확인하여 해당 캠페인의 지표 조건을 해제하도록 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @DeleteMapping
   public ResponseEntity<Void> delete(
       @AuthenticationPrincipal Jwt jwt,

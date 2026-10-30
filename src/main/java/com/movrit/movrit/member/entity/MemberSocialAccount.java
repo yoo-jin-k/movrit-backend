@@ -4,6 +4,7 @@ import com.movrit.movrit.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+/** 회원과 소셜 로그인 계정(Google·카카오)의 연결 정보입니다. 같은 소셜 계정은 하나의 MOVRIT 회원에만 연결할 수 있습니다(제공자+제공자 ID 유일). */
 @Entity
 @Table(
     name = "member_social_account",

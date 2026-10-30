@@ -13,6 +13,10 @@ import lombok.*;
         @UniqueConstraint(
             name = "uk_member_channel_metric",
             columnNames = {"member_id", "channel_type", "metric_type"}))
+/**
+ * 회원이 직접 입력한 채널 지표 한 개(예: 인스타그램 팔로워 1,200명)입니다. 회원·채널·지표 조합마다 하나만 저장되며, 실제 SNS 연동 값이 아니라 입력값과 확인
+ * 상태를 함께 관리합니다.
+ */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -38,6 +42,7 @@ public class MemberChannelMetric extends BaseEntity {
   @Column(name = "measurement_period", length = 40)
   private String measurementPeriod;
 
+  /** 회원이 수치를 확인한 시각입니다. */
   @Column(name = "measured_at")
   private LocalDateTime measuredAt;
 
@@ -45,6 +50,7 @@ public class MemberChannelMetric extends BaseEntity {
   @Column(name = "verification_status", nullable = false, length = 20)
   private MetricVerificationStatus verificationStatus;
 
+  /** 회원이 지표 수치를 고칩니다. 수치가 바뀌면 예전 확인 결과를 믿을 수 없으므로 확인 상태를 '미확인(UNVERIFIED)'으로 되돌립니다. */
   /** 사용자가 수치를 바꾸면 이전 확인 결과는 다시 사용할 수 없습니다. */
   public void updateByMember(Long value, String measurementPeriod, LocalDateTime measuredAt) {
     this.value = value;

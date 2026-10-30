@@ -11,13 +11,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+/** 캠페인 신청을 저장·조회하고, 목록 화면에 필요한 집계(신청 수, 완료 횟수, 채널 지표)를 제공합니다. */
 public interface CampaignApplicationRepository extends JpaRepository<CampaignApplication, Long> {
+  /** 참여자별 완료 캠페인 수 집계 결과입니다. */
   interface CompletedCampaignCount {
     Long getCreatorId();
 
     Long getCompletedCount();
   }
 
+  /** 참여자 검토 화면에 보여줄 회원 채널 지표 한 줄입니다. */
   interface CreatorMetricSummary {
     Long getMemberId();
 
@@ -69,15 +72,19 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
         "campaign.preorder.product.brand.seller",
         "campaign.preorder.product.brand.seller.member"
       })
+  /** 참여자 포트폴리오 화면용으로 신청 한 건과 캠페인·브랜드·업체 소유자 정보를 한 번에 읽습니다. 소유 업체 권한 확인에 필요한 연관을 함께 가져옵니다. */
   @Query("select application from CampaignApplication application where application.id = :id")
   Optional<CampaignApplication> findPortfolioById(@Param("id") Long id);
 
+  /** 같은 회원이 이미 이 캠페인에 신청했는지 확인합니다(중복 신청 방지). */
   boolean existsByCampaignIdAndCreatorMemberId(Long campaignId, Long memberId);
 
+  /** 캠페인에 신청 이력이 하나라도 있는지 확인합니다. 신청 이력이 생긴 뒤에는 선정 방식을 바꿀 수 없습니다. */
   boolean existsByCampaignId(Long campaignId);
 
   List<CampaignApplication> findAllByCampaignId(Long campaignId);
 
+  /** 신청 ID와 회원 ID가 모두 일치할 때만 찾습니다. 본인 신청만 다루도록 권한 확인을 겸합니다. */
   Optional<CampaignApplication> findByIdAndCreatorMemberId(Long id, Long memberId);
 
   List<CampaignApplication> findAllByCreatorMemberIdOrderByIdDesc(Long memberId);
@@ -91,13 +98,16 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
         "campaign.preorder.product",
         "campaign.preorder.product.brand"
       })
+  /** 업체 회원이 소유한 브랜드의 캠페인에 들어온 신청을 최신순으로 조회합니다(업체 참여자 관리 화면). */
   List<CampaignApplication> findAllByCampaignPreorderProductBrandSellerMemberIdOrderByIdDesc(
       Long memberId);
 
+  /** 선정 방식별 신청 목록입니다. 운영자 선정(OPERATOR) 캠페인의 신청을 운영자 화면에 보여줄 때 사용합니다. */
   @EntityGraph(attributePaths = {"creator", "campaign", "campaign.preorder"})
   List<CampaignApplication> findAllByCampaignSelectionModeOrderByIdDesc(
       CampaignSelectionMode selectionMode);
 
+  /** 캠페인에서 특정 상태들에 해당하는 신청 수를 셉니다. 선정 시 모집 인원을 넘지 않는지 확인할 때 사용합니다. */
   long countByCampaignIdAndStatusIn(Long campaignId, List<CampaignApplicationStatus> statuses);
 
   @Query(
@@ -113,6 +123,7 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
           GROUP BY application.creator_id
           """,
       nativeQuery = true)
+  /** 참여자별 완료 캠페인 수를 셉니다. 신청이 완료(COMPLETED)이면서 콘텐츠가 최종 승인(APPROVED)된 건만 1건으로 셉니다. */
   List<CompletedCampaignCount> countCompletedCampaignsByCreatorIds(
       @Param("creatorIds") Collection<Long> creatorIds);
 
@@ -131,6 +142,7 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
           ORDER BY metric.member_id, metric.id
           """,
       nativeQuery = true)
+  /** 여러 회원의 채널 지표를 한 번에 읽습니다. 참여자 목록에서 회원마다 따로 조회하지 않기 위해 사용합니다. */
   List<CreatorMetricSummary> findMetricSummariesByMemberIds(
       @Param("memberIds") Collection<Long> memberIds);
 }

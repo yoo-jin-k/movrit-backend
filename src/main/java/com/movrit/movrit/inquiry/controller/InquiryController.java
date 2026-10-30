@@ -19,26 +19,26 @@ import org.springframework.web.bind.annotation.*;
 public class InquiryController {
   private final InquiryService service;
 
-  /** 문의 관련 생성을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 생성을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping
   public ResponseEntity<InquiryDtos.Response> create(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody InquiryDtos.CreateRequest request) {
     return ResponseEntity.status(HttpStatus.CREATED).body(service.create(memberId(jwt), request));
   }
 
-  /** 문의 관련 로그인 회원에게 연결된 정보를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원에게 연결된 정보를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/mine")
   public List<InquiryDtos.Response> mine(@AuthenticationPrincipal Jwt jwt) {
     return service.findMine(memberId(jwt));
   }
 
-  /** 문의 관련 관리 대상 목록을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 관리 대상 목록을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/admin")
   public List<InquiryDtos.Response> all(@AuthenticationPrincipal Jwt jwt) {
     return service.findAll(memberId(jwt));
   }
 
-  /** 문의 관련 문의 답변 등록을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 문의 답변 등록을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PatchMapping("/{inquiryId}/answer")
   public InquiryDtos.Response answer(
       @AuthenticationPrincipal Jwt jwt,
@@ -47,7 +47,7 @@ public class InquiryController {
     return service.answer(memberId(jwt), inquiryId, request);
   }
 
-  /** 문의 관련 종료 처리를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 종료 처리를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{inquiryId}/close")
   public InquiryDtos.Response close(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long inquiryId) {

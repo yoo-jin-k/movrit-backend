@@ -18,34 +18,34 @@ import org.springframework.web.multipart.MultipartFile;
 public class CampaignMediaController {
   private final CampaignMediaService service;
 
-  /** 캠페인 이미지와 방문 주소 관련 이미지 자산 파일을 업로드합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 이미지 자산 파일을 업로드합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PostMapping("/api/campaign-image-assets")
   public ResponseEntity<AssetResponse> upload(
       @AuthenticationPrincipal Jwt jwt, @RequestParam("file") MultipartFile file) {
     return ResponseEntity.status(HttpStatus.CREATED).body(service.upload(member(jwt), file));
   }
 
-  /** 캠페인 이미지와 방문 주소 관련 로그인 회원의 접근 권한을 서비스에서 확인한 이미지 미리보기를 반환합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원의 접근 권한을 서비스에서 확인한 이미지 미리보기를 반환합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/api/campaign-image-assets/{assetId}/preview")
   public ResponseEntity<Resource> preview(
       @AuthenticationPrincipal Jwt jwt, @PathVariable String assetId) {
     return image(service.preview(member(jwt), assetId));
   }
 
-  /** 캠페인 이미지와 방문 주소 관련 공개 가능한 이미지 본문을 반환합니다. */
+  /** 공개 가능한 이미지 본문을 반환합니다. */
   @GetMapping("/api/campaign-image-assets/{assetId}/content")
   public ResponseEntity<Resource> content(@PathVariable String assetId) {
     return image(service.content(assetId));
   }
 
-  /** 캠페인 이미지와 방문 주소 관련 업체 관리용 이미지·주소와 버전을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 업체 관리용 이미지·주소와 버전을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/api/campaigns/{campaignId}/presentation/manage")
   public ManagedPresentation manage(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {
     return service.manage(member(jwt), campaignId);
   }
 
-  /** 캠페인 이미지와 방문 주소 관련 사용자 화면에 공개할 이미지·주소를 조회합니다. */
+  /** 사용자 화면에 공개할 이미지·주소를 조회합니다. */
   @GetMapping("/api/campaigns/{campaignId}/presentation/public")
   public PublicPresentation publicPresentation(@PathVariable Long campaignId) {
     return service.publicPresentation(campaignId);

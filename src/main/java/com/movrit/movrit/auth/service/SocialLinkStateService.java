@@ -24,10 +24,12 @@ public class SocialLinkStateService {
 
   private final byte[] secret;
 
+  /** JWT 비밀키를 서명 키로 사용합니다. */
   public SocialLinkStateService(@Value("${jwt.secret}") String secret) {
     this.secret = secret.getBytes(StandardCharsets.UTF_8);
   }
 
+  /** 소셜 계정 연결을 시작한 회원 ID를 담은 일회성 state 값을 만듭니다. 10분 뒤 만료되며 서버 서명이 붙어 다른 값으로 바꿀 수 없습니다. */
   public String create(Long memberId) {
     long expiresAt = Instant.now().getEpochSecond() + STATE_EXPIRATION_SECONDS;
     String payload = memberId + ":" + expiresAt + ":" + UUID.randomUUID();
@@ -39,6 +41,7 @@ public class SocialLinkStateService {
     return encodedPayload + "." + sign(encodedPayload);
   }
 
+  /** 콜백으로 돌아온 state의 서명과 만료를 확인하고 연결을 시작한 회원 ID를 꺼냅니다. 서명이 다르거나 형식이 틀리거나 만료되면 401로 거절합니다. */
   public Long getMemberId(String state) {
     if (state == null || state.isBlank()) {
       throw invalidState();
@@ -50,6 +53,7 @@ public class SocialLinkStateService {
     }
 
     String expectedSignature = sign(parts[0]);
+    // 서명 비교는 길이·내용에 따라 걸리는 시간이 달라지지 않는 방식으로 해 추측 공격을 막습니다.
     if (!MessageDigest.isEqual(
         expectedSignature.getBytes(StandardCharsets.UTF_8),
         parts[1].getBytes(StandardCharsets.UTF_8))) {
@@ -64,7 +68,7 @@ public class SocialLinkStateService {
       long expiresAt = Long.parseLong(values[1]);
 
       if (Instant.now().getEpochSecond() > expiresAt) {
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "소셜 계정 연결 시간이 만료됐어.");
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "소셜 계정 연결 시간이 만료되었습니다.");
       }
 
       return memberId;

@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** 업체 대시보드(기존 프리오더 판매 현황)의 매출·환불·수수료·주문 수를 집계합니다. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -28,6 +29,10 @@ public class SellerDashboardService {
   @Value("${movrit.settlement.default-fee-rate:10}")
   private BigDecimal defaultFeeRate;
 
+  /**
+   * 로그인한 업체 본인의 프리오더별 판매 현황과 합계를 계산해 반환합니다. 업체 프로필이 없으면 거절됩니다. 수수료는 유효 매출(결제−환불)에 기본 수수료율을 곱해
+   * 계산합니다.
+   */
   public SellerDashboardDtos.Response get(Long memberId) {
     sellerProfileService.findMine(memberId);
     List<Preorder> preorders =

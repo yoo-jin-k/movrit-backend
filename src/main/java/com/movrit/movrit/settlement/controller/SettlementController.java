@@ -18,40 +18,40 @@ import org.springframework.web.bind.annotation.*;
 public class SettlementController {
   private final SettlementService service;
 
-  /** 정산 기록 관련 생성을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 생성을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping
   public ResponseEntity<SettlementDtos.Response> create(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody SettlementDtos.CreateRequest r) {
     return ResponseEntity.status(HttpStatus.CREATED).body(service.create(id(jwt), r));
   }
 
-  /** 정산 기록 관련 로그인 회원에게 연결된 정보를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원에게 연결된 정보를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/mine")
   public List<SettlementDtos.Response> mine(@AuthenticationPrincipal Jwt jwt) {
     return service.findMine(id(jwt));
   }
 
-  /** 정산 기록 관련 관리 대상 목록을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 관리 대상 목록을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping
   public List<SettlementDtos.Response> all(@AuthenticationPrincipal Jwt jwt) {
     return service.findAll(id(jwt));
   }
 
-  /** 정산 기록 관련 확정 처리를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 확정 처리를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{settlementId}/confirm")
   public SettlementDtos.Response confirm(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long settlementId) {
     return service.confirm(id(jwt), settlementId);
   }
 
-  /** 정산 기록 관련 지급 상태 처리를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 지급 상태 처리를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{settlementId}/pay")
   public SettlementDtos.Response pay(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long settlementId) {
     return service.pay(id(jwt), settlementId);
   }
 
-  /** 정산 기록 관련 취소 처리를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 취소 처리를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{settlementId}/cancel")
   public SettlementDtos.Response cancel(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long settlementId) {

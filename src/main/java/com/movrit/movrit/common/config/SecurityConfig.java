@@ -22,14 +22,17 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+/** API 보안 설정입니다. 로그인 없이 열어 둘 공개 주소와, JWT 로그인이 필요한 주소를 나누고 CORS·비밀번호 암호화·토큰 검증 방식을 정합니다. */
 @Configuration
 public class SecurityConfig {
 
+  /** 비밀번호를 BCrypt로 암호화해 저장·비교하는 데 사용합니다. */
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
   }
 
+  /** 공개 API 목록과 인증 필요 API를 정하고, 세션 없이 JWT 토큰으로만 로그인 상태를 확인하도록 설정합니다. */
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http.cors(Customizer.withDefaults())
@@ -90,6 +93,7 @@ public class SecurityConfig {
     return http.build();
   }
 
+  /** 로컬 프론트 주소(5173·5174)에서 오는 /api 요청만 허용합니다. */
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
@@ -108,6 +112,7 @@ public class SecurityConfig {
     return source;
   }
 
+  /** 요청에 담긴 JWT를 서버 비밀키(HS256)로 검증합니다. 서명이 다르거나 만료된 토큰은 거절됩니다. */
   @Bean
   public JwtDecoder jwtDecoder(@Value("${jwt.secret}") String secret) {
     SecretKey secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");

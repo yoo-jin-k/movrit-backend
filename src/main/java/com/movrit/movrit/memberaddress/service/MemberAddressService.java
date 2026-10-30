@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/** 회원 배송지 주소록을 관리합니다. 회원당 최대 10개까지 저장하고 기본 배송지는 항상 하나만 유지합니다. 모든 작업은 본인 주소에만 가능합니다. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -21,6 +22,7 @@ public class MemberAddressService {
   private final MemberAddressRepository repository;
   private final MemberService memberService;
 
+  /** 로그인한 회원의 주소록을 기본 배송지 먼저, 이후 최신순으로 반환합니다. */
   public List<MemberAddressDtos.Response> findMine(Long memberId) {
     memberService.getMember(memberId);
     return repository.findAllByMemberIdOrderByDefaultAddressDescIdDesc(memberId).stream()

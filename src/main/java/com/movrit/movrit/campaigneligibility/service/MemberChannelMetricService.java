@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** 회원이 자기 채널 지표(팔로워 수 등)를 조회·입력하는 기능을 맡습니다. 본인 데이터만 다룹니다. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -19,6 +20,7 @@ public class MemberChannelMetricService {
   private final MemberService memberService;
   private final CreatorRepository creatorRepository;
 
+  /** 내 채널 지표 목록을 조회합니다. 활동 프로필이 있거나 지표를 하나라도 입력했으면 '채널 프로필 있음'으로 표시합니다. */
   public CampaignEligibilityDtos.ChannelProfileResponse findMine(Long memberId) {
     List<CampaignEligibilityDtos.MetricResponse> metrics =
         repository.findAllByMemberIdOrderById(memberId).stream().map(this::response).toList();
@@ -26,6 +28,9 @@ public class MemberChannelMetricService {
         creatorRepository.existsByMemberId(memberId) || !metrics.isEmpty(), metrics);
   }
 
+  /**
+   * 내 채널 지표를 새로 입력하거나 고칩니다. 채널·지표 이름은 대문자로 맞춰 저장합니다. 새로 넣든 고치든 확인 상태는 '미확인'이 되며, 저장 후 최신 목록을 돌려줍니다.
+   */
   @Transactional
   public CampaignEligibilityDtos.ChannelProfileResponse saveMine(
       Long memberId, CampaignEligibilityDtos.MetricSaveRequest request) {

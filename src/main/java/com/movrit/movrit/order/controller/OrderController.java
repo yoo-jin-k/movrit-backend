@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class OrderController {
   private final OrderService orderService;
 
-  /** 주문 관련 생성을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 생성을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping
   public ResponseEntity<OrderDtos.Response> create(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody OrderDtos.CreateRequest request) {
@@ -27,25 +27,25 @@ public class OrderController {
         .body(orderService.create(memberId(jwt), request));
   }
 
-  /** 주문 관련 로그인 회원에게 연결된 목록을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원에게 연결된 목록을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/mine")
   public List<OrderDtos.Response> findMine(@AuthenticationPrincipal Jwt jwt) {
     return orderService.findMine(memberId(jwt));
   }
 
-  /** 주문 관련 업체에 연결된 주문을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 업체에 연결된 주문을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/seller")
   public List<OrderDtos.Response> findSellerOrders(@AuthenticationPrincipal Jwt jwt) {
     return orderService.findSellerOrders(memberId(jwt));
   }
 
-  /** 주문 관련 식별자로 상세 정보를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 식별자로 상세 정보를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/{id}")
   public OrderDtos.Response findById(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
     return orderService.findById(memberId(jwt), id);
   }
 
-  /** 주문 관련 주문 수령인과 배송지를 수정합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 주문 수령인과 배송지를 수정합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PutMapping("/{id}/receiver")
   public OrderDtos.Response updateReceiver(
       @AuthenticationPrincipal Jwt jwt,
@@ -54,7 +54,7 @@ public class OrderController {
     return orderService.updateReceiver(memberId(jwt), id, request);
   }
 
-  /** 주문 관련 취소 처리를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 취소 처리를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{id}/cancel")
   public OrderDtos.Response cancel(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
     return orderService.cancel(memberId(jwt), id);

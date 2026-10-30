@@ -53,13 +53,13 @@ public class Shipping extends BaseEntity {
 
   public void prepare() {
     if (status != ShippingStatus.READY)
-      throw new IllegalStateException("배송 대기 상태에서만 준비를 시작할 수 있어.");
+      throw new IllegalStateException("배송 대기 상태에서만 준비를 시작할 수 있습니다.");
     this.status = ShippingStatus.PREPARING;
   }
 
   public void ship(String courierCode, String trackingNumber) {
     if (status != ShippingStatus.PREPARING)
-      throw new IllegalStateException("배송 준비 상태에서만 발송할 수 있어.");
+      throw new IllegalStateException("배송 준비 상태에서만 발송할 수 있습니다.");
     if (courierCode == null
         || courierCode.isBlank()
         || trackingNumber == null
@@ -71,7 +71,7 @@ public class Shipping extends BaseEntity {
   }
 
   public void deliver() {
-    if (status != ShippingStatus.SHIPPED) throw new IllegalStateException("발송된 배송만 완료할 수 있어.");
+    if (status != ShippingStatus.SHIPPED) throw new IllegalStateException("발송된 배송만 완료할 수 있습니다.");
     this.status = ShippingStatus.DELIVERED;
     this.deliveredAt = LocalDateTime.now();
   }

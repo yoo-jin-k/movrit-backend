@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+/** 운영자·업체가 운영 상태를 바꾼 기록(누가, 무엇을, 어떤 대상을, 변경 전후)을 남기는 감사 로그입니다. */
 @Entity
 @Table(name = "audit_log")
 @Getter

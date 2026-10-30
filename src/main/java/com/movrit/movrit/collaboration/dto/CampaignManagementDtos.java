@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
-/** 캠페인 및 협업의 요청 및 응답 계약을 모읍니다. 입력 제약과 응답 필드의 변경은 호출 화면 및 API 계약과 함께 검토합니다. */
+/** 캠페인 및 협업 API에서 주고받는 요청·응답 형식을 모아 둔 클래스입니다. */
 public final class CampaignManagementDtos {
   private CampaignManagementDtos() {}
 
@@ -136,7 +136,7 @@ public final class CampaignManagementDtos {
       Long scheduleVersion,
       boolean open) {
     /**
-     * 엔티티에서 공개할 응답 필드만 복사합니다. 이 변환 메서드 자체는 조회 권한을 판정하지 않습니다. 방문 정보의 포함 여부는 호출한 오버로드와 includeVisit
+     * 엔티티를 화면에 내려줄 응답 형식으로 바꿉니다. 권한 확인은 이 메서드를 호출하는 서비스가 맡습니다. 방문 정보의 포함 여부는 호출한 오버로드와 includeVisit
      * 인자로 구분합니다.
      */
     public static DetailResponse from(Campaign campaign) {
@@ -144,7 +144,7 @@ public final class CampaignManagementDtos {
     }
 
     /**
-     * 공개 조회에서는 배송 전용 캠페인의 방문 주소·안내를 제외합니다. 엔티티에서 공개할 응답 필드만 복사합니다. 이 변환 메서드 자체는 조회 권한을 판정하지 않습니다.
+     * 공개 조회에서는 배송 전용 캠페인의 방문 주소·안내를 제외합니다. 엔티티를 화면에 내려줄 응답 형식으로 바꿉니다. 권한 확인은 이 메서드를 호출하는 서비스가 맡습니다.
      * 방문 정보의 포함 여부는 호출한 오버로드와 includeVisit 인자로 구분합니다.
      */
     public static DetailResponse from(Campaign campaign, boolean includeVisit) {

@@ -40,7 +40,7 @@ public class PaymentService {
               throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 결제가 생성된 주문입니다.");
             });
     if (order.getStatus() != OrderStatus.PENDING_PAYMENT)
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "결제 대기 주문만 결제할 수 있어.");
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "결제 대기 주문만 결제할 수 있습니다.");
     Payment payment =
         paymentRepository.save(
             Payment.builder()
@@ -154,7 +154,7 @@ public class PaymentService {
   private Order ownedOrder(Long memberId, Long orderId) {
     Order order = orderService.getOrder(orderId);
     if (!order.getMember().getId().equals(memberId))
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "내 주문의 결제만 처리할 수 있어.");
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "내 주문의 결제만 처리할 수 있습니다.");
     return order;
   }
 }

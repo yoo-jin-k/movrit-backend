@@ -20,20 +20,20 @@ public class BrandController {
 
   private final BrandService brandService;
 
-  /** 브랜드 관련 생성을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 생성을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping
   public BrandDtos.Response create(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody BrandDtos.CreateRequest request) {
     return brandService.create(memberId(jwt), request);
   }
 
-  /** 브랜드 관련 로그인 회원에게 연결된 목록을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원에게 연결된 목록을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/mine")
   public List<BrandDtos.Response> findMine(@AuthenticationPrincipal Jwt jwt) {
     return brandService.findMine(memberId(jwt));
   }
 
-  /** 브랜드 관련 수정을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 수정을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PutMapping("/{brandId}")
   public BrandDtos.Response update(
       @AuthenticationPrincipal Jwt jwt,
@@ -42,7 +42,7 @@ public class BrandController {
     return brandService.update(memberId(jwt), brandId, request);
   }
 
-  /** 브랜드 관련 브랜드 로고 파일을 업로드합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 브랜드 로고 파일을 업로드합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PostMapping("/{brandId}/logo")
   public BrandDtos.Response uploadLogo(
       @AuthenticationPrincipal Jwt jwt,
@@ -51,7 +51,7 @@ public class BrandController {
     return brandService.uploadLogo(memberId(jwt), brandId, file);
   }
 
-  /** 브랜드 관련 브랜드 커버 파일을 업로드합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 브랜드 커버 파일을 업로드합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PostMapping("/{brandId}/cover")
   public BrandDtos.Response uploadCover(
       @AuthenticationPrincipal Jwt jwt,
@@ -60,7 +60,7 @@ public class BrandController {
     return brandService.uploadCover(memberId(jwt), brandId, file);
   }
 
-  /** 브랜드 관련 브랜드 상태 변경을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 브랜드 상태 변경을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{brandId}/status")
   public BrandDtos.Response changeStatus(
       @AuthenticationPrincipal Jwt jwt,
@@ -69,7 +69,7 @@ public class BrandController {
     return brandService.changeStatus(memberId(jwt), brandId, status);
   }
 
-  /** 브랜드 관련 삭제를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 삭제를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @DeleteMapping("/{brandId}")
   public void delete(@AuthenticationPrincipal Jwt jwt, @PathVariable Long brandId) {
     brandService.delete(memberId(jwt), brandId);

@@ -25,6 +25,10 @@ import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
+/**
+ * 캠페인 이미지(대표 1장·상세 최대 5장)와 방문 장소를 관리하는 새 방식 서비스입니다. 업체가 이미지를 먼저 올려 두고, 캠페인 저장 시 선택한 이미지만 캠페인에
+ * 연결합니다. 이미지 파일은 비공개 폴더에 두고, 공개된 캠페인에 실제로 연결된 이미지만 누구나 볼 수 있습니다.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -40,6 +44,10 @@ public class CampaignMediaService {
   private final ObjectMapper json;
   private final CampaignVisitEvidenceService visitEvidence;
 
+  /**
+   * 승인된 업체가 캠페인에 쓸 이미지를 미리 올립니다. 아직 어느 캠페인에도 연결되지 않은 상태로 저장됩니다. DB 저장이 실패하거나 트랜잭션이 취소되면 방금 저장한 파일도
+   * 함께 지웁니다.
+   */
   @Transactional
   public AssetResponse upload(Long memberId, MultipartFile file) {
     sellers.getApprovedSeller(memberId);
@@ -81,8 +89,10 @@ public class CampaignMediaService {
     }
   }
 
+  /** 내려줄 이미지 파일 경로와 형식입니다. */
   public record ImageFile(Path path, String contentType) {}
 
+  /** 업체가 자기가 올린 이미지를 미리보기로 봅니다. 다른 업체의 이미지는 존재를 드러내지 않도록 404로 응답합니다. */
   public ImageFile preview(Long memberId, String assetId) {
     sellers.getApprovedSeller(memberId);
     var asset = asset(assetId);
@@ -90,6 +100,7 @@ public class CampaignMediaService {
     return file(asset);
   }
 
+  /** 누구나 볼 수 있는 공개 이미지 주소입니다. 공개된 캠페인에 현재 연결된 이미지만 내려주고, 연결이 끊겼거나 비공개인 경우는 404로 응답합니다. */
   public ImageFile content(String assetId) {
     var asset = asset(assetId);
     if (asset.getCampaignId() == null) throw missing();
@@ -107,6 +118,12 @@ public class CampaignMediaService {
     return new ImageFile(path, asset.getContentType());
   }
 
+  /**
+   * 캠페인 '한 번에 저장' 수정에서 본문·신청서를 바꾸기 전에 이미지·방문 정보 변경이 가능한지 미리 확인합니다.
+   *
+   * <p>캠페인을 잠근 뒤 확인하며, 거절되는 경우는 다음과 같습니다. 신청 이력이 있는데 참여 유형(배송/방문)을 바꿈, 방문형을 추가하면서 장소를 안 넣음, 유형을
+   * 바꾸면서 이미지 정보를 함께 보내지 않음, 다른 화면에서 이미지가 먼저 바뀜.
+   */
   /** configured의 본문/폼 변경보다 먼저 잠금·기대 버전·유형 변경을 검사합니다. */
   @Transactional
   public void preflightUpdate(
@@ -139,6 +156,12 @@ public class CampaignMediaService {
     }
   }
 
+  /**
+   * 선택한 이미지와 방문 장소를 캠페인에 실제로 저장합니다. '한 번에 저장' 트랜잭션 안에서만 호출합니다.
+   *
+   * <p>요청에 포함된 이미지는 캠페인에 연결하고 빠진 이미지는 연결을 끊습니다. 다른 업체의 이미지나 다른 캠페인에 이미 연결된 이미지는 쓸 수 없습니다. 수정이면 방문
+   * 장소 변경 기록을 남기고, 예전 화면을 위해 대표·상세 이미지 주소도 함께 맞춥니다.
+   */
   /** 같은 configured 트랜잭션 안에서만 호출하여 본문·폼·조건과 자산참조를 함께 저장합니다. */
   @Transactional
   public ManagedPresentation apply(
@@ -207,6 +230,7 @@ public class CampaignMediaService {
     return managed(campaign, state, visit);
   }
 
+  /** 업체 편집 화면에 보여줄 현재 이미지·방문 장소 구성과 버전을 조회합니다. 소유 업체만 볼 수 있습니다. */
   public ManagedPresentation manage(Long memberId, Long campaignId) {
     Campaign campaign = owned(memberId, campaignId, false);
     boolean visit =
@@ -214,6 +238,9 @@ public class CampaignMediaService {
     return managed(campaign, states.findById(campaignId).orElse(null), visit);
   }
 
+  /**
+   * 사용자 캠페인 상세에 보여줄 이미지와 방문 장소를 조회합니다. 새 방식으로 전환 전인 캠페인은 예전 이미지 주소를 그대로 보여주고, 방문형이 아니면 장소를 숨깁니다.
+   */
   public PublicPresentation publicPresentation(Long campaignId) {
     Campaign campaign = campaigns.findById(campaignId).orElseThrow(CampaignMediaService::missing);
     if (!CampaignPublicPolicy.visible(campaign)) throw missing();
@@ -237,6 +264,7 @@ public class CampaignMediaService {
         visit ? location(state.getVisitLocationJson()) : null);
   }
 
+  /** 업체 편집 화면용 응답을 만듭니다. 캠페인이 공개 상태일 때만 공개 이미지 주소를 함께 넣습니다. */
   private ManagedPresentation managed(Campaign campaign, CampaignMediaState state, boolean visit) {
     if (state == null)
       return new ManagedPresentation(
@@ -271,6 +299,12 @@ public class CampaignMediaService {
     return new ManagedImage(id, previewPath(id), open ? publicPath(id) : null, alt);
   }
 
+  /**
+   * 화면에서 보낸 이미지·방문 장소 입력을 검사하고 저장할 형태로 정리합니다.
+   *
+   * <p>상세 이미지는 최대 5장, 같은 이미지는 한 번만 쓸 수 있습니다. 처음 만들 때나 이미 대표 이미지가 있을 때는 대표 이미지를 비울 수 없습니다. 배송 전용
+   * 캠페인은 방문 주소를 받지 않고, 방문형은 장소명·기본 주소가 필수이며 우편번호는 숫자 5자리입니다. 방문 장소를 보내지 않았으면 기존 장소를 그대로 유지합니다.
+   */
   static PresentationInput normalize(
       PresentationInput input, CampaignMediaState current, boolean creating, boolean visit) {
     if (input == null || input.detailImages() == null || input.detailImages().size() > 5) {
@@ -321,6 +355,7 @@ public class CampaignMediaService {
     return new PresentationInput(representative, List.copyOf(details), location);
   }
 
+  /** 이미지 ID가 올바른 UUID 형식인지 확인합니다. 비어 있으면 '선택 안 함'으로 봅니다. */
   private static String normalizedId(String value) {
     if (value == null || value.isBlank()) return null;
     try {
@@ -332,6 +367,7 @@ public class CampaignMediaService {
     }
   }
 
+  /** 앞뒤 공백을 지우고 글자 수 제한을 확인합니다. 빈 값은 null로 바꿉니다. */
   private static String text(String value, int maximum) {
     String trimmed = value == null ? null : value.trim();
     if (trimmed == null || trimmed.isEmpty()) return null;
@@ -362,6 +398,7 @@ public class CampaignMediaService {
     return assets.findById(id).orElseThrow(CampaignMediaService::missing);
   }
 
+  /** 승인된 업체이면서 캠페인 상품의 소유자인지 확인합니다. 저장 작업이면 캠페인을 잠가 동시 수정을 막습니다. */
   private Campaign owned(Long memberId, Long campaignId, boolean lock) {
     sellers.getApprovedSeller(memberId);
     Campaign campaign =
@@ -371,16 +408,19 @@ public class CampaignMediaService {
     return campaign;
   }
 
+  /** 화면이 알고 있는 이미지 구성 버전이 현재와 같은지 확인합니다. 다르면 다른 화면에서 먼저 바뀐 것이므로 409로 거절합니다. */
   static void checkVersion(CampaignMediaState state, Long expected) {
     long current = state == null ? 0 : state.getVersion();
     if (expected == null || expected != current)
       throw conflict("이미지 또는 방문 정보가 변경되었습니다. 최신 내용을 확인해 주세요.");
   }
 
+  /** 업체 전용 미리보기 주소입니다. */
   private static String previewPath(String id) {
     return "/api/campaign-image-assets/" + id + "/preview";
   }
 
+  /** 공개 이미지 주소입니다. 요청할 때마다 공개 조건을 다시 검사합니다. */
   private static String publicPath(String id) {
     return "/api/campaign-image-assets/" + id + "/content";
   }

@@ -21,6 +21,10 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Google 로그인을 처리합니다. Google 인증 화면 주소를 만들고, 돌아온 인가 코드로 토큰·사용자 정보를 받아 MOVRIT 회원으로 로그인·가입시키거나 기존 계정에
+ * 연결합니다.
+ */
 @Service
 @RequiredArgsConstructor
 public class GoogleAuthService {
@@ -37,10 +41,12 @@ public class GoogleAuthService {
   @Value("${google.redirect-uri}")
   private String redirectUri;
 
+  /** 계정 연결이 아닌 일반 Google 로그인 동의 화면 주소를 만듭니다. */
   public String getLoginUrl() {
     return getLoginUrl(null);
   }
 
+  /** Google 로그인 동의 화면 주소를 만듭니다(이메일·프로필 권한 요청). state가 있으면(계정 연결) 함께 붙입니다. 설정이 비어 있으면 503입니다. */
   public String getLoginUrl(String state) {
     requireConfigured();
     String url =
@@ -55,6 +61,7 @@ public class GoogleAuthService {
     return state == null ? url : url + "&state=" + state;
   }
 
+  /** Google이 돌려준 인가 코드를 Google 접근 토큰으로 바꿉니다. */
   public String getAccessToken(String code) {
     requireConfigured();
     RestTemplate restTemplate = new RestTemplate();
@@ -90,6 +97,7 @@ public class GoogleAuthService {
     }
   }
 
+  /** Google 접근 토큰으로 사용자 고유 ID·이메일·이름을 가져옵니다. */
   public GoogleUserInfo getUserInfo(String accessToken) {
     RestTemplate restTemplate = new RestTemplate();
 

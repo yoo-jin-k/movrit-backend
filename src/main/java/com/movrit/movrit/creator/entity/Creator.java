@@ -5,6 +5,10 @@ import com.movrit.movrit.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
+/**
+ * 캠페인 참여자의 활동 프로필입니다(테이블 influencer_profile). 신청할 때 자동으로 만들어지며, 회원 한 명당 하나만 가집니다. 별도 인플루언서 가입은
+ * 없습니다.
+ */
 @Entity
 @Table(name = "influencer_profile")
 @Getter
@@ -39,6 +43,7 @@ public class Creator extends BaseEntity {
   @Column(name = "status", nullable = false)
   private String status;
 
+  /** 활동 프로필의 표시 이름·소개·주요 분야·SNS 주소·팔로워 수를 한 번에 수정합니다. */
   public void update(
       String nickname, String bio, String primaryCategory, String snsUrl, Long followerCount) {
     this.nickname = nickname;

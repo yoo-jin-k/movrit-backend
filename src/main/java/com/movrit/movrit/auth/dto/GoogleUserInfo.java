@@ -3,7 +3,7 @@ package com.movrit.movrit.auth.dto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-/** 로그인 및 소셜 인증의 요청 및 응답 계약을 모읍니다. 입력 제약과 응답 필드의 변경은 호출 화면 및 API 계약과 함께 검토합니다. */
+/** 로그인 및 소셜 인증 API에서 주고받는 요청·응답 형식을 모아 둔 클래스입니다. */
 @Getter
 @AllArgsConstructor
 public class GoogleUserInfo {

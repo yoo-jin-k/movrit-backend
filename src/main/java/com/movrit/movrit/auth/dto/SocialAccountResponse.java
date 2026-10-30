@@ -9,7 +9,7 @@ import com.movrit.movrit.member.entity.MemberSocialAccount;
  * @param email 이메일 주소입니다.
  */
 public record SocialAccountResponse(String provider, String email) {
-  /** 엔티티에서 공개할 응답 필드만 복사합니다. 이 변환 메서드 자체는 조회 권한을 판정하지 않습니다. */
+  /** 엔티티를 화면에 내려줄 응답 형식으로 바꿉니다. 권한 확인은 이 메서드를 호출하는 서비스가 맡습니다. */
   public static SocialAccountResponse from(MemberSocialAccount account) {
     return new SocialAccountResponse(account.getProvider().name(), account.getEmail());
   }

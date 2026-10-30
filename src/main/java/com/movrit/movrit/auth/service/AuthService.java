@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/** 이메일·비밀번호 로그인과 로그인 유지(리프레시 토큰 재발급), 로그아웃을 처리합니다. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -31,6 +32,10 @@ public class AuthService {
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenRepository refreshTokens;
 
+  /**
+   * 이메일과 비밀번호로 로그인합니다. 성공하면 접근 토큰과 리프레시 토큰을 발급합니다. 이메일이 없거나 비밀번호가 틀리면 같은 401 문구로 응답해 계정 존재 여부를 알 수
+   * 없게 하고, 이용 정지 등 ACTIVE가 아닌 계정은 403으로 거절합니다.
+   */
   @Transactional
   public LoginResponse login(LoginRequest request) {
 
@@ -42,6 +47,7 @@ public class AuthService {
 
     // 2. 입력한 비밀번호와 DB의 암호화된 비밀번호 비교
     if (member.getPasswordHash() == null
+        // BCrypt는 72바이트까지만 비교하므로 더 긴 비밀번호는 바로 거절해 앞부분만 같은 비밀번호가 통과하지 않게 합니다.
         || request.getPassword().getBytes(StandardCharsets.UTF_8).length > 72
         || !passwordEncoder.matches(request.getPassword(), member.getPasswordHash())) {
       throw invalidCredentials();
@@ -63,6 +69,7 @@ public class AuthService {
         MemberAvatarUrl.from(member));
   }
 
+  /** 리프레시 토큰으로 새 접근 토큰을 발급합니다. 사용한 리프레시 토큰은 새 값으로 교체(회전)됩니다. 없거나 만료·폐기된 토큰이면 401입니다. */
   @Transactional
   public LoginResponse refresh(String raw) {
     RefreshToken saved =
@@ -87,6 +94,7 @@ public class AuthService {
         MemberAvatarUrl.from(m));
   }
 
+  /** 리프레시 토큰을 폐기해 더 이상 로그인 유지에 쓸 수 없게 합니다. 이미 없는 토큰이면 아무 일도 하지 않습니다. */
   @Transactional
   public void logout(String raw) {
     refreshTokens.findByTokenHash(hash(raw)).ifPresent(RefreshToken::revoke);

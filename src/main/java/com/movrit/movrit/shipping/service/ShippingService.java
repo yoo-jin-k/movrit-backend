@@ -25,7 +25,7 @@ public class ShippingService {
   public ShippingDtos.Response create(Long memberId, Long orderId) {
     Order order = sellerOrder(memberId, orderId);
     if (order.getStatus() != OrderStatus.PAID)
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "결제 완료 주문만 배송을 준비할 수 있어.");
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "결제 완료 주문만 배송을 준비할 수 있습니다.");
     Shipping existing = shippingRepository.findByOrderId(orderId).orElse(null);
     if (existing != null) return ShippingDtos.Response.from(existing);
     order.markPreparing();
@@ -90,7 +90,7 @@ public class ShippingService {
   private Order sellerOrder(Long memberId, Long id) {
     Order o = orderService.getOrder(id);
     if (!o.getPreorder().getProduct().getBrand().getSeller().getMember().getId().equals(memberId))
-      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "내 브랜드 주문의 배송만 관리할 수 있어.");
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "내 브랜드 주문의 배송만 관리할 수 있습니다.");
     return o;
   }
 

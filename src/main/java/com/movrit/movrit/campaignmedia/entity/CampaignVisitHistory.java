@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
 
+/** 캠페인 방문 장소가 바뀐 기록 한 건입니다. 누가 언제 무엇을 무엇으로 바꿨는지 남깁니다. 기록은 추가만 하고 수정·삭제하지 않아 분쟁 시 증빙으로 쓸 수 있습니다. */
 /** 주소 변경 증빙은 추가만 하며 기존 이력을 수정하지 않습니다. */
 @Entity
 @Table(name = "campaign_visit_history")
@@ -31,6 +32,7 @@ public class CampaignVisitHistory {
   @Column(columnDefinition = "TEXT")
   private String afterLocationJson;
 
+  /** 예전 방식(장소 이름·주소 칸)으로 바뀐 경우의 변경 전 값입니다. */
   @Column(columnDefinition = "TEXT")
   private String legacyPlaceName;
 

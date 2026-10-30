@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
-/** 캠페인 이미지와 방문 주소의 요청 및 응답 계약을 모읍니다. 입력 제약과 응답 필드의 변경은 호출 화면 및 API 계약과 함께 검토합니다. */
+/** 캠페인 이미지와 방문 주소 API에서 주고받는 요청·응답 형식을 모아 둔 클래스입니다. */
 public final class CampaignMediaDtos {
   private CampaignMediaDtos() {}
 

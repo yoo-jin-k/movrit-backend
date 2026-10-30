@@ -89,7 +89,7 @@ public class Payment extends BaseEntity {
   }
 
   public void approve(String paymentKey, String pgProvider, String method) {
-    if (status != PaymentStatus.READY) throw new IllegalStateException("결제 대기 상태에서만 승인할 수 있어.");
+    if (status != PaymentStatus.READY) throw new IllegalStateException("결제 대기 상태에서만 승인할 수 있습니다.");
     this.paymentKey = paymentKey;
     this.pgProvider = pgProvider;
     this.method = method;
@@ -99,7 +99,8 @@ public class Payment extends BaseEntity {
   }
 
   public void fail(String code, String message) {
-    if (status != PaymentStatus.READY) throw new IllegalStateException("결제 대기 상태에서만 실패 처리할 수 있어.");
+    if (status != PaymentStatus.READY)
+      throw new IllegalStateException("결제 대기 상태에서만 실패 처리할 수 있습니다.");
     this.status = PaymentStatus.FAILED;
     this.failedAt = LocalDateTime.now();
     this.failureCode = code;
@@ -107,7 +108,7 @@ public class Payment extends BaseEntity {
   }
 
   public void refund() {
-    if (status != PaymentStatus.PAID) throw new IllegalStateException("승인된 결제만 환불할 수 있어.");
+    if (status != PaymentStatus.PAID) throw new IllegalStateException("승인된 결제만 환불할 수 있습니다.");
     this.status = PaymentStatus.REFUNDED;
   }
 }

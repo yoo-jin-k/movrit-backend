@@ -22,10 +22,7 @@ public class CampaignApplicationController {
   private final CampaignApplicationService service;
   private final CampaignParticipantPortfolioService participantPortfolioService;
 
-  /**
-   * 캠페인 신청 관련 캠페인 신청서의 질문·동의·참여 방식을 저장합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤
-   * 처리합니다.
-   */
+  /** 캠페인 신청서의 질문·동의·참여 방식을 저장합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PutMapping("/{campaignId}/application-form")
   public CampaignApplicationDtos.FormResponse saveForm(
       @AuthenticationPrincipal Jwt jwt,
@@ -34,13 +31,13 @@ public class CampaignApplicationController {
     return service.saveForm(memberId(jwt), campaignId, request);
   }
 
-  /** 캠페인 신청 관련 캠페인 신청서 구성을 조회합니다. */
+  /** 캠페인 신청서 구성을 조회합니다. */
   @GetMapping("/{campaignId}/application-form")
   public CampaignApplicationDtos.FormResponse getForm(@PathVariable Long campaignId) {
     return service.getForm(campaignId);
   }
 
-  /** 캠페인 신청 관련 현재 회원의 이메일 인증·모집 상태·중복 신청·캠페인 조건을 종합한 신청 가능 여부를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 현재 회원의 이메일 인증·모집 상태·중복 신청·캠페인 조건을 종합한 신청 가능 여부를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/{campaignId}/eligibility")
   public CampaignApplicationDtos.EligibilityResponse eligibility(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {
@@ -48,8 +45,8 @@ public class CampaignApplicationController {
   }
 
   /**
-   * 신청서 및 조건 버전과 답변을 전달합니다. 서비스가 모집·이메일·중복·조건을 재검증하고 신청 당시 정보를 보존합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청
-   * 본문의 선언된 입력 제약을 검증한 뒤 처리합니다.
+   * 신청서 및 조건 버전과 답변을 전달합니다. 서비스가 모집·이메일·중복·조건을 재검증하고 신청 당시 정보를 보존합니다. 요청한 회원은 로그인 토큰으로 확인합니다.
+   * 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다.
    */
   @PostMapping("/{campaignId}/applications")
   public ResponseEntity<CampaignApplicationDtos.Response> apply(
@@ -60,7 +57,7 @@ public class CampaignApplicationController {
         .body(service.apply(memberId(jwt), campaignId, request));
   }
 
-  /** 캠페인 신청 관련 로그인 회원에게 연결된 정보를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원에게 연결된 정보를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/applications/mine")
   public List<CampaignApplicationDtos.Response> mine(@AuthenticationPrincipal Jwt jwt) {
     return service.findMine(memberId(jwt));
@@ -73,7 +70,7 @@ public class CampaignApplicationController {
     return service.findMyWorkspaces(memberId(jwt));
   }
 
-  /** 캠페인 신청 관련 업체의 관리 대상 목록을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 업체의 관리 대상 목록을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/applications/seller")
   public List<CampaignApplicationDtos.Response> seller(@AuthenticationPrincipal Jwt jwt) {
     return service.findSellerApplications(memberId(jwt));
@@ -87,8 +84,8 @@ public class CampaignApplicationController {
   }
 
   /**
-   * 업체가 소유한 캠페인의 참여자 선정을 요청합니다. 서비스가 캠페인 행을 잠그고 선정·참여·콘텐츠 처리 중인 인원을 합산하여 모집 정원 초과를 방지합니다. 요청자의 회원
-   * ID는 인증 토큰에서 가져옵니다.
+   * 업체가 소유한 캠페인의 참여자 선정을 요청합니다. 서비스가 캠페인 행을 잠그고 선정·참여·콘텐츠 처리 중인 인원을 합산하여 모집 정원 초과를 방지합니다. 요청한 회원은
+   * 로그인 토큰으로 확인합니다.
    */
   @PatchMapping("/applications/{applicationId}/select")
   public CampaignApplicationDtos.Response select(
@@ -96,7 +93,7 @@ public class CampaignApplicationController {
     return service.select(memberId(jwt), applicationId);
   }
 
-  /** 캠페인 신청 관련 반려 처리를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 반려 처리를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/applications/{applicationId}/reject")
   public CampaignApplicationDtos.Response reject(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long applicationId) {
@@ -104,8 +101,8 @@ public class CampaignApplicationController {
   }
 
   /**
-   * 선정된 신청의 당사자가 참여를 확정합니다. 서비스가 본인 신청을 확인하고 SELECTED에서 ACTIVE로 전환한 뒤 업체 알림과 감사 이력을 기록합니다. 요청자의 회원
-   * ID는 인증 토큰에서 가져옵니다.
+   * 선정된 신청의 당사자가 참여를 확정합니다. 서비스가 본인 신청을 확인하고 SELECTED에서 ACTIVE로 전환한 뒤 업체 알림과 감사 이력을 기록합니다. 요청한 회원은
+   * 로그인 토큰으로 확인합니다.
    */
   @PatchMapping("/applications/{applicationId}/activate")
   public CampaignApplicationDtos.Response activate(
@@ -114,8 +111,8 @@ public class CampaignApplicationController {
   }
 
   /**
-   * 신청 당사자의 취소 사유를 전달합니다. 서비스가 본인 신청과 취소 가능한 상태를 확인하고 알림 및 감사 이력을 기록합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다.
-   * 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다.
+   * 신청 당사자의 취소 사유를 전달합니다. 서비스가 본인 신청과 취소 가능한 상태를 확인하고 알림 및 감사 이력을 기록합니다. 요청한 회원은 로그인 토큰으로 확인합니다.
+   * 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다.
    */
   @PatchMapping("/applications/{applicationId}/cancel")
   public CampaignApplicationDtos.Response cancel(
@@ -125,7 +122,7 @@ public class CampaignApplicationController {
     return service.cancel(memberId(jwt), applicationId, request);
   }
 
-  /** 캠페인 신청 관련 참여자의 체험 완료 확인을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 참여자의 체험 완료 확인을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/applications/{applicationId}/experience-confirm")
   public CampaignApplicationDtos.Response confirmExperience(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long applicationId) {

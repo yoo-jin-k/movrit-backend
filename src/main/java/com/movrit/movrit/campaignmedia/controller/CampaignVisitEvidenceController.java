@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.*;
 public class CampaignVisitEvidenceController {
   private final CampaignVisitEvidenceService service;
 
-  /** 캠페인 이미지와 방문 주소 관련 신청 당시 보존한 방문 주소 사본을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 신청 당시 보존한 방문 주소 사본을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/api/campaign-applications/{applicationId}/visit-snapshot")
   public SnapshotView snapshot(@AuthenticationPrincipal Jwt jwt, @PathVariable Long applicationId) {
     return service.snapshot(JwtMemberId.from(jwt), applicationId);
   }
 
-  /** 캠페인 이미지와 방문 주소 관련 캠페인 방문 주소 변경 이력을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 캠페인 방문 주소 변경 이력을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/api/campaigns/{campaignId}/visit-history")
   public List<HistoryView> history(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {

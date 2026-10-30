@@ -145,33 +145,34 @@ public class Preorder extends BaseEntity {
   }
 
   public void schedule() {
-    if (status != PreorderStatus.DRAFT) throw new IllegalStateException("초안 상태에서만 판매 예약할 수 있어.");
+    if (status != PreorderStatus.DRAFT) throw new IllegalStateException("초안 상태에서만 판매 예약할 수 있습니다.");
     if (saleVariants.isEmpty()) throw new IllegalStateException("판매할 SKU를 하나 이상 연결해 주세요.");
     this.status = PreorderStatus.SCHEDULED;
   }
 
   public void open(LocalDateTime now) {
     if (status != PreorderStatus.SCHEDULED && status != PreorderStatus.DRAFT) {
-      throw new IllegalStateException("예약 또는 초안 상태에서만 판매를 시작할 수 있어.");
+      throw new IllegalStateException("예약 또는 초안 상태에서만 판매를 시작할 수 있습니다.");
     }
     if (saleVariants.isEmpty()) throw new IllegalStateException("판매할 SKU를 하나 이상 연결해 주세요.");
     if (saleVariants.stream()
         .noneMatch(variant -> variant.isActive() && variant.getAvailableQuantity() > 0)) {
       throw new IllegalStateException("판매 가능한 재고가 있는 SKU가 없습니다.");
     }
-    if (now.isBefore(startAt)) throw new IllegalStateException("프리오더 시작 시간이 아직 안 됐어.");
+    if (now.isBefore(startAt)) throw new IllegalStateException("프리오더 시작 시간이 아직 되지 않았습니다.");
     if (!now.isBefore(endAt)) throw new IllegalStateException("이미 종료 시간이 지난 프리오더야.");
     this.status = PreorderStatus.OPEN;
   }
 
   public void close() {
-    if (status != PreorderStatus.OPEN) throw new IllegalStateException("판매 중인 프리오더만 마감할 수 있어.");
+    if (status != PreorderStatus.OPEN) throw new IllegalStateException("판매 중인 프리오더만 마감할 수 있습니다.");
     this.status = PreorderStatus.CLOSED;
   }
 
   /** 마감 후 목표 수량 달성 여부를 확정합니다. */
   public void finalizeResult() {
-    if (status != PreorderStatus.CLOSED) throw new IllegalStateException("마감된 프리오더만 결과를 확정할 수 있어.");
+    if (status != PreorderStatus.CLOSED)
+      throw new IllegalStateException("마감된 프리오더만 결과를 확정할 수 있습니다.");
     this.status =
         orderedQuantity >= targetQuantity ? PreorderStatus.SUCCESS : PreorderStatus.FAILED;
   }
@@ -186,23 +187,24 @@ public class Preorder extends BaseEntity {
 
   public void startProduction() {
     if (status != PreorderStatus.SUCCESS)
-      throw new IllegalStateException("성공 확정 프리오더만 생산을 시작할 수 있어.");
+      throw new IllegalStateException("성공 확정 프리오더만 생산을 시작할 수 있습니다.");
     status = PreorderStatus.PRODUCTION;
   }
 
   public void startShipping() {
     if (status != PreorderStatus.PRODUCTION)
-      throw new IllegalStateException("생산 중 프리오더만 배송 단계로 변경할 수 있어.");
+      throw new IllegalStateException("생산 중 프리오더만 배송 단계로 변경할 수 있습니다.");
     status = PreorderStatus.SHIPPING;
   }
 
   public void complete() {
-    if (status != PreorderStatus.SHIPPING) throw new IllegalStateException("배송 단계 프리오더만 완료할 수 있어.");
+    if (status != PreorderStatus.SHIPPING)
+      throw new IllegalStateException("배송 단계 프리오더만 완료할 수 있습니다.");
     status = PreorderStatus.COMPLETED;
   }
 
   public void increaseOrderedQuantity(long quantity) {
-    if (status != PreorderStatus.OPEN) throw new IllegalStateException("판매 중인 프리오더가 아니야.");
+    if (status != PreorderStatus.OPEN) throw new IllegalStateException("판매 중인 프리오더가 아닙니다.");
     if (quantity < minOrderQuantity) throw new IllegalStateException("최소 주문 수량보다 적습니다.");
     if (maxQuantity != null && orderedQuantity + quantity > maxQuantity) {
       throw new IllegalStateException("프리오더 최대 판매 수량을 초과합니다.");
@@ -212,7 +214,7 @@ public class Preorder extends BaseEntity {
 
   public void decreaseOrderedQuantity(long quantity) {
     if (quantity <= 0 || orderedQuantity < quantity)
-      throw new IllegalArgumentException("취소 수량이 올바르지 않아.");
+      throw new IllegalArgumentException("취소 수량이 올바르지 않습니다.");
     this.orderedQuantity -= quantity;
   }
 

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuditLogController {
   private final AuditLogService service;
 
-  /** 감사 이력 관련 최근 감사 이력을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 최근 감사 이력을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping
   public List<AuditDtos.Response> recent(@AuthenticationPrincipal Jwt jwt) {
     return service.findRecent(JwtMemberId.from(jwt));

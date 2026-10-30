@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/** 1:1 문의 등록·조회와 운영자 답변을 처리합니다. 답변이 등록되면 작성자에게 알림을 보내고 감사 기록을 남깁니다. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -27,6 +28,7 @@ public class InquiryService {
   private final NotificationService notificationService;
   private final AuditLogService auditLogService;
 
+  /** 로그인한 회원이 문의를 등록합니다. 프리오더 ID가 있으면 해당 프리오더와 연결합니다. */
   @Transactional
   public InquiryDtos.Response create(Long memberId, InquiryDtos.CreateRequest request) {
     Member member = memberService.getMember(memberId);
@@ -53,17 +55,20 @@ public class InquiryService {
     return InquiryDtos.Response.from(inquiry);
   }
 
+  /** 로그인한 회원 본인의 문의를 최신순으로 반환합니다. */
   public List<InquiryDtos.Response> findMine(Long memberId) {
     return repository.findAllByMemberIdOrderByIdDesc(memberId).stream()
         .map(InquiryDtos.Response::from)
         .toList();
   }
 
+  /** 운영자가 전체 문의를 최신순으로 조회합니다. 관리자가 아니면 거절됩니다. */
   public List<InquiryDtos.Response> findAll(Long adminId) {
     memberService.getAdmin(adminId);
     return repository.findAllByOrderByIdDesc().stream().map(InquiryDtos.Response::from).toList();
   }
 
+  /** 운영자가 문의에 답변합니다. 종료된 문의면 409로 거절하고, 성공하면 작성자에게 알림을 보냅니다. */
   @Transactional
   public InquiryDtos.Response answer(
       Long adminId, Long inquiryId, InquiryDtos.AnswerRequest request) {
@@ -92,6 +97,7 @@ public class InquiryService {
     return InquiryDtos.Response.from(inquiry);
   }
 
+  /** 작성자 본인이 문의를 종료합니다. 본인 문의가 아니면 찾을 수 없음으로 처리합니다. */
   @Transactional
   public InquiryDtos.Response close(Long memberId, Long inquiryId) {
     Inquiry inquiry =

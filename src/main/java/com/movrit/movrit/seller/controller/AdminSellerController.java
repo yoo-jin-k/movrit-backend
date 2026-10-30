@@ -17,26 +17,26 @@ public class AdminSellerController {
 
   private final SellerProfileService sellerProfileService;
 
-  /** 승인 및 반려 결과를 포함한 전체 업체 신청 목록을 조회합니다. 업체 관련 관리 대상 전체 목록을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 승인 및 반려 결과를 포함한 전체 업체 신청 목록을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping
   public List<SellerDtos.Response> findAll(@AuthenticationPrincipal Jwt jwt) {
     return sellerProfileService.findAllForAdmin(memberId(jwt));
   }
 
-  /** 관리자용 업체 등록 심사 대기 목록을 조회합니다. 업체 관련 업체 등록 심사 대기 목록을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 관리자용 업체 등록 심사 대기 목록을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/pending")
   public List<SellerDtos.Response> findPending(@AuthenticationPrincipal Jwt jwt) {
     return sellerProfileService.findPendingForAdmin(memberId(jwt));
   }
 
-  /** 관리자가 업체 신청을 승인합니다. 업체 관련 승인 처리를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 관리자가 업체 신청을 승인합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{sellerId}/approve")
   public SellerDtos.Response approve(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long sellerId) {
     return sellerProfileService.approve(memberId(jwt), sellerId);
   }
 
-  /** 관리자가 업체 신청을 반려합니다. 업체 관련 반려 처리를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 관리자가 업체 신청을 반려합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{sellerId}/reject")
   public SellerDtos.Response reject(@AuthenticationPrincipal Jwt jwt, @PathVariable Long sellerId) {
     return sellerProfileService.reject(memberId(jwt), sellerId);

@@ -90,14 +90,14 @@ public class ProductVariant extends BaseEntity {
   }
 
   public void adjustSafetyStock(long quantity) {
-    if (quantity < 0) throw new IllegalArgumentException("안전재고는 0 이상이어야 해.");
+    if (quantity < 0) throw new IllegalArgumentException("안전재고는 0 이상이어야 합니다.");
     this.safetyStockQuantity = quantity;
   }
 
   public void reserve(long quantity) {
     requirePositive(quantity);
     if (getAvailableQuantity() < quantity) {
-      throw new IllegalStateException("판매 가능한 재고가 부족해.");
+      throw new IllegalStateException("판매 가능한 재고가 부족합니다.");
     }
     this.reservedQuantity += quantity;
   }
@@ -114,7 +114,7 @@ public class ProductVariant extends BaseEntity {
   public void confirmSale(long quantity) {
     requirePositive(quantity);
     if (reservedQuantity < quantity || onHandQuantity < quantity) {
-      throw new IllegalStateException("확정할 재고 수량이 맞지 않아.");
+      throw new IllegalStateException("확정할 재고 수량이 맞지 않습니다.");
     }
     this.reservedQuantity -= quantity;
     this.onHandQuantity -= quantity;
@@ -123,12 +123,12 @@ public class ProductVariant extends BaseEntity {
 
   public void refundSale(long quantity) {
     requirePositive(quantity);
-    if (soldQuantity < quantity) throw new IllegalStateException("환불할 판매 수량이 부족해.");
+    if (soldQuantity < quantity) throw new IllegalStateException("환불할 판매 수량이 부족합니다.");
     this.onHandQuantity += quantity;
     this.soldQuantity -= quantity;
   }
 
   private void requirePositive(long quantity) {
-    if (quantity <= 0) throw new IllegalArgumentException("수량은 1 이상이어야 해.");
+    if (quantity <= 0) throw new IllegalArgumentException("수량은 1 이상이어야 합니다.");
   }
 }

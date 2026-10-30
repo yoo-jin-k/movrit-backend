@@ -4,6 +4,7 @@ import com.movrit.movrit.campaignmedia.entity.CampaignVisitHistory;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+/** 방문 장소 변경 기록을 저장하고 최신순으로 조회합니다. */
 public interface CampaignVisitHistoryRepository extends JpaRepository<CampaignVisitHistory, Long> {
   List<CampaignVisitHistory> findAllByCampaignIdOrderByIdDesc(Long campaignId);
 }

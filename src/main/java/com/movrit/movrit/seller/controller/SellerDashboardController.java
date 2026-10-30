@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class SellerDashboardController {
   private final SellerDashboardService service;
 
-  /** 업체 관련 대시보드 집계를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 대시보드 집계를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping
   public SellerDashboardDtos.Response get(@AuthenticationPrincipal Jwt jwt) {
     return service.get(JwtMemberId.from(jwt));

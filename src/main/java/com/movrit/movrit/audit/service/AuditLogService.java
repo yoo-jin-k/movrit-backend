@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** 운영 감사 기록을 저장하고 운영자에게 최근 기록을 보여줍니다. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -42,6 +43,7 @@ public class AuditLogService {
             .build());
   }
 
+  /** 최근 감사 기록 200건을 반환합니다. 관리자만 조회할 수 있으며 관리자가 아니면 거절됩니다. */
   public List<AuditDtos.Response> findRecent(Long adminId) {
     memberService.getAdmin(adminId);
     return repository.findTop200ByOrderByIdDesc().stream().map(AuditDtos.Response::from).toList();

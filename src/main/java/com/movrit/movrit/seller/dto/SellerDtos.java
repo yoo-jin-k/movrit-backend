@@ -4,7 +4,7 @@ import com.movrit.movrit.seller.entity.SellerProfile;
 import com.movrit.movrit.seller.entity.SellerStatus;
 import jakarta.validation.constraints.NotBlank;
 
-/** 업체의 요청 및 응답 계약을 모읍니다. 입력 제약과 응답 필드의 변경은 호출 화면 및 API 계약과 함께 검토합니다. */
+/** 업체 API에서 주고받는 요청·응답 형식을 모아 둔 클래스입니다. */
 public final class SellerDtos {
   private SellerDtos() {}
 
@@ -52,7 +52,7 @@ public final class SellerDtos {
       SellerStatus status,
       String settlementBankCode,
       String settlementAccountMasked) {
-    /** 엔티티에서 공개할 응답 필드만 복사합니다. 이 변환 메서드 자체는 조회 권한을 판정하지 않습니다. */
+    /** 엔티티를 화면에 내려줄 응답 형식으로 바꿉니다. 권한 확인은 이 메서드를 호출하는 서비스가 맡습니다. */
     public static Response from(SellerProfile seller) {
       return new Response(
           seller.getId(),

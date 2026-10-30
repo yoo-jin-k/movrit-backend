@@ -18,19 +18,19 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
   private final MemberService service;
 
-  /** 회원 관련 일반 회원가입을 요청합니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 일반 회원가입을 요청합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping("/signup")
   public ResponseEntity<MemberSignupResponse> signup(@Valid @RequestBody MemberSignupRequest r) {
     return ResponseEntity.status(HttpStatus.CREATED).body(service.signup(r));
   }
 
-  /** 회원 관련 로그인 회원 정보를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원 정보를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/me")
   public MemberSignupResponse me(@AuthenticationPrincipal Jwt j) {
     return service.findById(id(j));
   }
 
-  /** 회원 관련 수정을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 수정을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PutMapping("/me")
   public MemberSignupResponse update(
       @AuthenticationPrincipal Jwt j, @Valid @RequestBody MemberUpdateRequest r) {
@@ -51,20 +51,20 @@ public class MemberController {
     return service.passwordCapability(id(jwt));
   }
 
-  /** 회원 관련 로그인 회원 탈퇴를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원 탈퇴를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @DeleteMapping("/me")
   public ResponseEntity<Void> withdraw(@AuthenticationPrincipal Jwt j) {
     service.delete(id(j));
     return ResponseEntity.noContent().build();
   }
 
-  /** 회원 관련 관리 대상 목록을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 관리 대상 목록을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/admin")
   public List<MemberSignupResponse> all(@AuthenticationPrincipal Jwt j) {
     return service.findAllForAdmin(id(j));
   }
 
-  /** 관리자가 지정한 회원의 상태 변경을 서비스에 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 관리자가 지정한 회원의 상태 변경을 서비스에 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/admin/{memberId}/status")
   public MemberSignupResponse status(
       @AuthenticationPrincipal Jwt j,

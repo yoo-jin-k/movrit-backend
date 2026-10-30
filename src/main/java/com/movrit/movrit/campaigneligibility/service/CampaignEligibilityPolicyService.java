@@ -16,6 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 캠페인 신청 조건을 저장·해제하고, 신청하려는 회원이 조건을 충족하는지 판정합니다. 조건 설정은 캠페인 소유 업체만 할 수 있고, 판정은 서버가 회원의 확인된 지표로만
+ * 합니다.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -25,11 +29,18 @@ public class CampaignEligibilityPolicyService {
   private final CampaignRepository campaignRepository;
   private final ProductService productService;
 
+  /** 조건 판정 결과입니다. blockingReason이 null이면 신청할 수 있고, 값이 있으면 신청을 막는 이유 코드입니다. */
   public record Evaluation(
       CampaignEligibilityDtos.RequirementResponse requirement,
       CampaignEligibilityDtos.MetricEvaluation metricEvaluation,
       String blockingReason) {}
 
+  /**
+   * 회원이 캠페인 신청 조건을 충족하는지 판정합니다.
+   *
+   * <p>조건이 없으면 바로 통과입니다. 조건이 있으면 아래 순서로 확인합니다. 지표 미입력(CHANNEL_METRIC_REQUIRED) → 미확인
+   * 지표(CHANNEL_METRIC_UNVERIFIED) → 최소값 미달(CHANNEL_METRIC_BELOW_MINIMUM).
+   */
   public Evaluation evaluate(Long memberId, Long campaignId) {
     Optional<CampaignEligibilityRequirement> requirement =
         requirementRepository.findByCampaignId(campaignId);
@@ -55,6 +66,12 @@ public class CampaignEligibilityPolicyService {
     return result(value, actual.getValue(), actual.getVerificationStatus(), null);
   }
 
+  /**
+   * 업체가 캠페인 신청 조건을 새로 만들거나 고칩니다. 현재는 인스타그램 팔로워 수 조건만 지원합니다.
+   *
+   * <p>처음 만들 때는 expectedVersion을 비워 보내야 하고, 고칠 때는 현재 버전과 같아야 합니다. 다른 화면에서 먼저 바뀌었으면 409로 거절해 최신 조건을
+   * 덮어쓰지 않습니다.
+   */
   @Transactional
   public CampaignEligibilityDtos.RequirementResponse save(
       Long sellerMemberId,
@@ -81,6 +98,7 @@ public class CampaignEligibilityPolicyService {
     return response(requirementRepository.saveAndFlush(requirement));
   }
 
+  /** 업체가 캠페인 신청 조건을 해제합니다. 현재 버전과 다르면 409로 거절합니다. */
   @Transactional
   public void delete(Long sellerMemberId, Long campaignId, Long expectedVersion) {
     ownedCampaign(sellerMemberId, campaignId);
@@ -94,6 +112,7 @@ public class CampaignEligibilityPolicyService {
     requirementRepository.delete(requirement);
   }
 
+  /** 캠페인의 현재 신청 조건을 조회합니다. 조건이 없으면 null입니다. */
   public CampaignEligibilityDtos.RequirementResponse find(Long campaignId) {
     return requirementRepository.findByCampaignId(campaignId).map(this::response).orElse(null);
   }
@@ -128,6 +147,7 @@ public class CampaignEligibilityPolicyService {
         requirement.getVersion());
   }
 
+  /** 지원하는 조건(인스타그램 팔로워 수)인지 확인합니다. 팔로워 수는 기간이 없는 지표라 집계 기간 입력을 막습니다. */
   private void validateSupportedMetric(
       String channelType, String metricType, String measurementPeriod) {
     if (!"INSTAGRAM".equals(channelType) || !"FOLLOWER_COUNT".equals(metricType)) {
@@ -138,6 +158,7 @@ public class CampaignEligibilityPolicyService {
     }
   }
 
+  /** 캠페인을 찾고 요청한 회원이 소유 업체인지 확인합니다. */
   private Campaign ownedCampaign(Long memberId, Long campaignId) {
     Campaign campaign =
         campaignRepository

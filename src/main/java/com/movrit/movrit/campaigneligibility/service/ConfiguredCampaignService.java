@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/** 업체 캠페인 작성 화면의 '한 번에 저장'을 처리합니다. 캠페인 본문·신청서·신청 조건·이미지를 하나의 트랜잭션으로 묶어, 일부만 저장된 캠페인이 생기지 않게 합니다. */
 @Service
 @RequiredArgsConstructor
 public class ConfiguredCampaignService {
@@ -23,6 +24,10 @@ public class ConfiguredCampaignService {
   private final CampaignApplicationService campaignApplicationService;
   private final CampaignMediaService campaignMediaService;
 
+  /**
+   * 새 캠페인을 본문 → 신청서 → 신청 조건(선택 시) → 이미지 순서로 한 번에 등록합니다. 중간에 하나라도 실패하면 전부 취소되어 조건만 빠진 공개 캠페인이 생기지
+   * 않습니다.
+   */
   /** 캠페인과 조건을 한 트랜잭션에서 저장해 조건만 누락된 공개 캠페인이 생기지 않게 합니다. */
   @Transactional
   public ConfiguredCampaignDtos.CreateResponse create(
@@ -42,6 +47,12 @@ public class ConfiguredCampaignService {
         campaign, applicationForm, requirement, presentation);
   }
 
+  /**
+   * 기존 캠페인의 본문·신청서·신청 조건·이미지를 한 번에 수정합니다.
+   *
+   * <p>저장 전에 이미지 변경이 가능한지 먼저 확인하고, 각 항목은 화면이 보낸 기대 버전과 비교해 다른 화면의 수정을 덮어쓰지 않습니다. 조건을 '없음'으로 바꾸면 기존
+   * 조건을 해제하며, 하나라도 실패하면 모든 변경을 되돌립니다.
+   */
   /** 캠페인 본문과 조건 변경 중 하나라도 실패하면 둘 다 이전 상태로 되돌립니다. */
   @Transactional
   public ConfiguredCampaignDtos.UpdateResponse update(
@@ -67,11 +78,13 @@ public class ConfiguredCampaignService {
       CampaignEligibilityDtos.RequirementResponse current =
           eligibilityPolicyService.find(campaignId);
       if (current != null) {
+        // 화면이 조건이 없다고 알고 있는데 서버에는 조건이 있으면, 다른 화면에서 추가된 것이므로 거절합니다.
         if (request.expectedRequirementVersion() == null) conflict();
         eligibilityPolicyService.delete(memberId, campaignId, request.expectedRequirementVersion());
       }
       requirement = null;
     } else {
+      // 새 조건으로 저장하려는데 이미 조건이 생겨 있다면 다른 화면의 변경을 덮어쓰지 않도록 거절합니다.
       if (request.requirement().expectedVersion() == null
           && eligibilityPolicyService.find(campaignId) != null) conflict();
       requirement = eligibilityPolicyService.save(memberId, campaignId, request.requirement());
@@ -90,6 +103,7 @@ public class ConfiguredCampaignService {
         campaign, applicationForm, requirement, presentation);
   }
 
+  /** '단일 조건'을 고른 경우에만 조건 내용이 있어야 하고, '조건 없음'이면 조건 내용이 없어야 합니다. */
   private void validateMode(
       ConfiguredCampaignDtos.RequirementMode mode,
       CampaignEligibilityDtos.RequirementSaveRequest requirement) {

@@ -18,10 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class EmailVerificationController {
   private final EmailVerificationService service;
 
-  /**
-   * 이메일 소유 확인 관련 이메일 인증 요청을 접수합니다. 실제 메일 전달 여부는 발송 환경과 서비스를 별도로 확인해야 합니다. 요청자의 회원 ID는 인증 토큰에서
-   * 가져옵니다.
-   */
+  /** 이메일 인증 요청을 접수합니다. 실제 메일 전달 여부는 발송 환경과 서비스를 별도로 확인해야 합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PostMapping("/requests")
   public ResponseEntity<EmailVerificationDtos.RequestResponse> request(
       @AuthenticationPrincipal Jwt jwt) {
@@ -29,8 +26,8 @@ public class EmailVerificationController {
   }
 
   /**
-   * 인증 요청 ID와 6자리 코드를 서비스에서 확인하여 이메일 소유 확인 상태를 갱신합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을
-   * 검증한 뒤 처리합니다.
+   * 인증 요청 ID와 6자리 코드를 서비스에서 확인하여 이메일 소유 확인 상태를 갱신합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저
+   * 검사한 뒤 처리합니다.
    */
   @PostMapping("/confirm")
   public EmailVerificationDtos.StatusResponse confirm(
@@ -39,7 +36,7 @@ public class EmailVerificationController {
     return service.confirm(memberId(jwt), request);
   }
 
-  /** 이메일 소유 확인 관련 현재 상태를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 현재 상태를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/status")
   public EmailVerificationDtos.StatusResponse status(@AuthenticationPrincipal Jwt jwt) {
     return service.status(memberId(jwt));

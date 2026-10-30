@@ -37,6 +37,7 @@ public class MemberAvatarStorage {
 
   private final Path root;
 
+  /** 업로드 폴더 아래 프로필 사진 전용 위치를 저장 기준으로 정합니다. */
   public MemberAvatarStorage(@Value("${app.upload-dir:uploads}") String uploadDir) {
     root = Path.of(uploadDir).toAbsolutePath().normalize().resolve(DIRECTORY).normalize();
   }
@@ -62,6 +63,7 @@ public class MemberAvatarStorage {
     }
   }
 
+  /** 저장 키로 프로필 사진 파일 경로를 찾습니다. 파일이 없으면 404입니다. */
   public Path load(String key) {
     Path path = resolve(key);
     if (!Files.isRegularFile(path)) {
@@ -70,6 +72,7 @@ public class MemberAvatarStorage {
     return path;
   }
 
+  /** 저장 키에 해당하는 사진 파일을 지웁니다. 지우지 못해도 오류를 내지 않습니다(남은 파일은 운영 정리로 처리). */
   public void delete(String key) {
     if (key == null || key.isBlank()) return;
     try {
@@ -125,6 +128,7 @@ public class MemberAvatarStorage {
     }
   }
 
+  /** 사진 크기를 검사합니다. 가로·세로 1~8,192px, 전체 2,500만 화소를 넘으면 거절해 지나치게 큰 이미지로 서버가 느려지는 것을 막습니다. */
   static void validateDimensions(int width, int height) {
     if (width < 1
         || height < 1
@@ -234,5 +238,6 @@ public class MemberAvatarStorage {
     return new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
   }
 
+  /** 저장된 사진의 키와 파일 형식입니다. */
   public record StoredAvatar(String key, String contentType) {}
 }

@@ -34,7 +34,7 @@ public class ProductService {
   public ProductDtos.Response create(Long memberId, ProductDtos.CreateRequest request) {
     Brand brand = brandService.getOwnedBrand(memberId, request.brandId());
     if (brand.getStatus() != BrandStatus.ACTIVE) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "활성화된 브랜드에만 상품을 등록할 수 있어.");
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "활성화된 브랜드에만 상품을 등록할 수 있습니다.");
     }
 
     Product product =
@@ -134,10 +134,10 @@ public class ProductService {
     Set<Long> uniqueIds = new LinkedHashSet<>(variantIds);
     List<ProductVariant> variants = productVariantRepository.findAllById(uniqueIds);
     if (variants.size() != uniqueIds.size()) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "존재하지 않는 SKU가 포함되어 있어.");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "존재하지 않는 SKU가 포함되어 있습니다.");
     }
     if (variants.stream().anyMatch(variant -> !variant.getProduct().getId().equals(productId))) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "선택한 상품에 속하지 않는 SKU가 포함되어 있어.");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "선택한 상품에 속하지 않는 SKU가 포함되어 있습니다.");
     }
     if (variants.stream().anyMatch(variant -> !variant.isActive())) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "비활성화된 SKU는 프리오더에 연결할 수 없습니다.");

@@ -12,6 +12,7 @@ public final class MemberNicknamePolicy {
 
   private MemberNicknamePolicy() {}
 
+  /** 닉네임 앞뒤 공백을 지우고 연속 공백을 하나로 줄인 뒤 규칙을 검사합니다. 2~20자의 한글·영문·숫자·밑줄·공백만 허용하며, 어기면 400 오류를 냅니다. */
   public static String normalize(String value) {
     if (value == null) throw invalid();
     String normalized = value.trim().replaceAll("\\s+", " ");

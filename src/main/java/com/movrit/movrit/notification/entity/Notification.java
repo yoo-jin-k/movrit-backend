@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
 
+/** 회원에게 보내는 서비스 내부 알림입니다(선정 결과, 콘텐츠 검토 결과 등). 어떤 화면으로 이동할지 대상 종류·ID를 함께 저장합니다. */
 @Entity
 @Table(name = "notification")
 @Getter
@@ -44,6 +45,7 @@ public class Notification {
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 
+  /** 알림을 읽음으로 바꾸고 처음 읽은 시각을 기록합니다. 이미 읽은 알림은 그대로 둡니다. */
   public void markRead() {
     if (!read) {
       read = true;

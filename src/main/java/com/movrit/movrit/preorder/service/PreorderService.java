@@ -258,7 +258,7 @@ public class PreorderService {
 
   private void validatePeriod(LocalDateTime startAt, LocalDateTime endAt) {
     if (!startAt.isBefore(endAt)) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "종료 시간은 시작 시간보다 뒤여야 해.");
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "종료 시간은 시작 시간보다 뒤여야 합니다.");
     }
   }
 

@@ -17,26 +17,26 @@ import org.springframework.web.bind.annotation.*;
 public class NotificationController {
   private final NotificationService service;
 
-  /** 내부 알림 관련 로그인 회원에게 연결된 정보를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원에게 연결된 정보를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping
   public List<NotificationDtos.Response> mine(@AuthenticationPrincipal Jwt jwt) {
     return service.findMine(memberId(jwt));
   }
 
-  /** 내부 알림 관련 읽지 않은 내부 알림 건수를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 읽지 않은 내부 알림 건수를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/unread-count")
   public NotificationDtos.UnreadCount unreadCount(@AuthenticationPrincipal Jwt jwt) {
     return service.unreadCount(memberId(jwt));
   }
 
-  /** 내부 알림 관련 지정한 내부 알림을 읽음 처리합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 지정한 내부 알림을 읽음 처리합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{notificationId}/read")
   public NotificationDtos.Response read(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long notificationId) {
     return service.markRead(memberId(jwt), notificationId);
   }
 
-  /** 내부 알림 관련 로그인 회원의 내부 알림을 모두 읽음 처리합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원의 내부 알림을 모두 읽음 처리합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/read-all")
   public ResponseEntity<Void> readAll(@AuthenticationPrincipal Jwt jwt) {
     service.markAllRead(memberId(jwt));

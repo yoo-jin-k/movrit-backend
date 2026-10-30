@@ -20,9 +20,8 @@ public class CampaignContentController {
   private final CampaignContentService service;
 
   /**
-   * 신청 당사자가 콘텐츠 URL을 제출합니다. 최초 제출은 신규 기록을 만들고, 재제출은 기존 제출의 버전과 상태를 검사합니다. 요청자의 회원 ID는 인증 토큰에서
-   * 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. 수정·재제출 시 expectedVersion은 서비스의 충돌 검사에 사용되므로 최신 조회값을 전달해야
-   * 합니다.
+   * 신청 당사자가 콘텐츠 URL을 제출합니다. 최초 제출은 신규 기록을 만들고, 재제출은 기존 제출의 버전과 상태를 검사합니다. 요청한 회원은 로그인 토큰으로 확인합니다.
+   * 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. 수정·재제출 시 expectedVersion은 서비스의 충돌 검사에 사용되므로 최신 조회값을 전달해야 합니다.
    */
   @PostMapping("/applications/{applicationId}")
   public ResponseEntity<CampaignContentDtos.Response> submit(
@@ -43,21 +42,21 @@ public class CampaignContentController {
         .body(service.submitLinks(memberId(jwt), applicationId, request));
   }
 
-  /** 제출 콘텐츠 관련 로그인 회원에게 연결된 정보를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원에게 연결된 정보를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/mine")
   public List<CampaignContentDtos.Response> mine(@AuthenticationPrincipal Jwt jwt) {
     return service.findMine(memberId(jwt));
   }
 
-  /** 제출 콘텐츠 관련 업체의 관리 대상 목록을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 업체의 관리 대상 목록을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/seller")
   public List<CampaignContentDtos.Response> seller(@AuthenticationPrincipal Jwt jwt) {
     return service.findSellerContents(memberId(jwt));
   }
 
   /**
-   * 소유 업체가 콘텐츠 수정 의견을 전달합니다. 서비스가 제출과 신청 상태를 함께 수정 요청 상태로 전환하고 참여자에게 내부 알림을 보냅니다. 요청자의 회원 ID는 인증
-   * 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. 수정·재제출 시 expectedVersion은 서비스의 충돌 검사에 사용되므로 최신 조회값을
+   * 소유 업체가 콘텐츠 수정 의견을 전달합니다. 서비스가 제출과 신청 상태를 함께 수정 요청 상태로 전환하고 참여자에게 내부 알림을 보냅니다. 요청한 회원은 로그인 토큰으로
+   * 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. 수정·재제출 시 expectedVersion은 서비스의 충돌 검사에 사용되므로 최신 조회값을
    * 전달해야 합니다.
    */
   @PatchMapping("/{submissionId}/request-revision")
@@ -69,8 +68,8 @@ public class CampaignContentController {
   }
 
   /**
-   * 소유 업체의 콘텐츠 검토 완료를 요청합니다. 이 경로는 BRAND_APPROVED 처리이며 운영자 최종 승인과 구분합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다.
-   * 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. 수정·재제출 시 expectedVersion은 서비스의 충돌 검사에 사용되므로 최신 조회값을 전달해야 합니다.
+   * 소유 업체의 콘텐츠 검토 완료를 요청합니다. 이 경로는 BRAND_APPROVED 처리이며 운영자 최종 승인과 구분합니다. 요청한 회원은 로그인 토큰으로 확인합니다.
+   * 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. 수정·재제출 시 expectedVersion은 서비스의 충돌 검사에 사용되므로 최신 조회값을 전달해야 합니다.
    */
   @PatchMapping("/{submissionId}/approve")
   public CampaignContentDtos.Response approve(

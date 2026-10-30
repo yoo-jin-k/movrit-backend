@@ -7,6 +7,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
 
+/** movrit.email.delivery=smtp일 때 사용하는 실제 메일 발송 구현입니다. 스프링 메일 설정(SMTP 서버)으로 인증 번호 메일을 보냅니다. */
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "movrit.email.delivery", havingValue = "smtp")
@@ -16,6 +17,7 @@ public class SmtpVerificationCodeDelivery implements VerificationCodeDelivery {
   @Value("${movrit.email.from}")
   private String from;
 
+  /** 발신 주소(movrit.email.from)로 인증 번호와 유효 시간을 담은 메일을 보냅니다. */
   @Override
   public void send(String email, String code, int expiresInMinutes) {
     SimpleMailMessage message = new SimpleMailMessage();

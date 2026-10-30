@@ -122,14 +122,14 @@ public class Order extends BaseEntity {
 
   public void cancel() {
     if (status != OrderStatus.PENDING_PAYMENT)
-      throw new IllegalStateException("결제 대기 주문만 바로 취소할 수 있어.");
+      throw new IllegalStateException("결제 대기 주문만 바로 취소할 수 있습니다.");
     this.status = OrderStatus.CANCELLED;
     this.cancelledAt = LocalDateTime.now();
   }
 
   public void refund() {
     if (status != OrderStatus.PAID && status != OrderStatus.PREPARING) {
-      throw new IllegalStateException("결제 완료 또는 배송 준비 주문만 환불할 수 있어.");
+      throw new IllegalStateException("결제 완료 또는 배송 준비 주문만 환불할 수 있습니다.");
     }
     this.status = OrderStatus.REFUNDED;
     this.cancelledAt = LocalDateTime.now();

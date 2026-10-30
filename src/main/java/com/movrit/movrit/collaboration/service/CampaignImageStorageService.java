@@ -22,6 +22,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 캠페인 대표·상세 이미지를 검사한 뒤 안전한 표시용 파일로 다시 만들어 저장합니다. JPG·PNG·WebP만 받고, 크기·해상도·움직이는 이미지·손상 파일을 걸러내며 위치
+ * 정보 같은 원본 메타데이터는 남기지 않습니다. 상품 이미지 업로드 정책과는 별개입니다.
+ */
 /** 캠페인 표시본만 검증·재인코딩하며 공통 상품 업로드 정책은 변경하지 않습니다. */
 @Service
 public class CampaignImageStorageService {
@@ -34,6 +38,11 @@ public class CampaignImageStorageService {
     root = Path.of(uploadDir).toAbsolutePath().normalize();
   }
 
+  /**
+   * 이미지를 검사하고 새 파일로 저장한 뒤 화면에서 쓸 주소(/uploads/...)를 반환합니다.
+   *
+   * <p>파일 없음·5MiB 초과·형식 불일치·손상·움직이는 이미지·너무 큰 해상도는 400으로 거절합니다. 저장 중 실패하면 만들다 만 파일을 지우고 500으로 응답합니다.
+   */
   public String storeImage(MultipartFile file, String directory) {
     if (file == null || file.isEmpty()) throw invalid("이미지 파일을 선택해 주세요.");
     if (file.getSize() > MAX_BYTES) throw invalid("이미지는 5MiB 이하만 업로드할 수 있습니다.");
@@ -67,6 +76,10 @@ public class CampaignImageStorageService {
     return "/uploads/" + directory + "/" + filename;
   }
 
+  /**
+   * 실제 파일 내용으로 형식을 확인해 이미지를 읽고, EXIF 방향대로 바로 세운 이미지를 돌려줍니다. 확장자·Content-Type만 믿지 않고 파일 내용과 일치하는지
+   * 검사합니다.
+   */
   private BufferedImage decode(byte[] bytes, String contentType) throws Exception {
     try (var stream = new MemoryCacheImageInputStream(new ByteArrayInputStream(bytes))) {
       var candidates = ImageIO.getImageReaders(stream);
@@ -99,6 +112,7 @@ public class CampaignImageStorageService {
     }
   }
 
+  /** 가로·세로 각 8,192px, 전체 2,500만 픽셀을 넘는 이미지를 거절해 서버 메모리 과다 사용을 막습니다. */
   static void validateDimensions(int width, int height) {
     if (width < 1
         || height < 1
@@ -109,6 +123,7 @@ public class CampaignImageStorageService {
     }
   }
 
+  /** 휴대폰 사진의 EXIF 방향 값(1~8)에 맞춰 이미지를 실제로 회전·반전합니다. 저장본에는 방향 태그가 없어도 어느 브라우저에서나 똑바로 보입니다. */
   /** EXIF 1~8의 회전·반전을 실제 픽셀에 적용하므로 표시본에 방향 태그가 필요하지 않습니다. */
   static BufferedImage orient(BufferedImage source, int orientation) {
     int width = source.getWidth(), height = source.getHeight();
@@ -154,6 +169,7 @@ public class CampaignImageStorageService {
     return target;
   }
 
+  /** 움직이는 PNG(APNG)·WebP를 거절합니다. 이미지 라이브러리는 첫 장면만 읽기 때문에 파일 안의 애니메이션 표시 조각을 직접 찾아 확인합니다. */
   /** 기본 ImageIO가 첫 프레임만 읽을 수 있으므로 컨테이너의 애니메이션 청크도 검사합니다. */
   private static void rejectAnimation(byte[] bytes, String format) {
     if (!format.equals("png") && !format.equals("webp")) return;

@@ -25,13 +25,13 @@ import org.springframework.web.multipart.MultipartFile;
 public class CampaignPresentationController {
   private final CampaignPresentationService service;
 
-  /** 캠페인 및 협업 관련 표시 정보를 조회합니다. */
+  /** 표시 정보를 조회합니다. */
   @GetMapping
   public CampaignPresentationDtos.Response find(@PathVariable Long campaignId) {
     return service.find(campaignId);
   }
 
-  /** 캠페인 및 협업 관련 방문 장소명과 주소를 저장합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 방문 장소명과 주소를 저장합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PutMapping("/location")
   public CampaignPresentationDtos.Response saveLocation(
       @AuthenticationPrincipal Jwt jwt,
@@ -40,7 +40,7 @@ public class CampaignPresentationController {
     return service.saveLocation(memberId(jwt), campaignId, request);
   }
 
-  /** 캠페인 및 협업 관련 캠페인 대표 이미지를 업로드합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 캠페인 대표 이미지를 업로드합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PostMapping("/representative-image")
   public CampaignPresentationDtos.Response uploadRepresentative(
       @AuthenticationPrincipal Jwt jwt,
@@ -49,7 +49,7 @@ public class CampaignPresentationController {
     return service.uploadRepresentative(memberId(jwt), campaignId, file);
   }
 
-  /** 캠페인 및 협업 관련 캠페인 상세 이미지와 대체 설명을 업로드합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 캠페인 상세 이미지와 대체 설명을 업로드합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PostMapping("/detail-image")
   public CampaignPresentationDtos.Response uploadDetail(
       @AuthenticationPrincipal Jwt jwt,
@@ -59,7 +59,7 @@ public class CampaignPresentationController {
     return service.uploadDetail(memberId(jwt), campaignId, file, altText);
   }
 
-  /** 캠페인 및 협업 관련 상세 이미지 표시 순서를 저장합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 상세 이미지 표시 순서를 저장합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PutMapping("/detail-images/order")
   public CampaignPresentationDtos.Response reorderDetails(
       @AuthenticationPrincipal Jwt jwt,
@@ -68,14 +68,14 @@ public class CampaignPresentationController {
     return service.reorderDetails(memberId(jwt), campaignId, request);
   }
 
-  /** 캠페인 및 협업 관련 대표 이미지 연결 제거를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 대표 이미지 연결 제거를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @DeleteMapping("/representative-image")
   public CampaignPresentationDtos.Response clearRepresentative(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {
     return service.clearRepresentative(memberId(jwt), campaignId);
   }
 
-  /** 캠페인 및 협업 관련 상세 이미지 연결 제거를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 상세 이미지 연결 제거를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @DeleteMapping("/detail-image")
   public CampaignPresentationDtos.Response clearDetail(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {

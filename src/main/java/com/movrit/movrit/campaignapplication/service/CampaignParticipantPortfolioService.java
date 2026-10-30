@@ -32,6 +32,12 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
+/**
+ * 업체가 신청자를 검토할 때 보는 참여자 포트폴리오를 만듭니다.
+ *
+ * <p>신청자의 활동 프로필, 채널 지표, 신청 답변, 신청 당시 참여 조건과 현재 지표 비교, 완료한 캠페인과 공개 콘텐츠 링크를 한 화면 분량으로 묶습니다. 해당 캠페인을
+ * 소유한 업체만 볼 수 있고, 다른 업체의 비공개 정보는 포함하지 않습니다.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -44,7 +50,13 @@ public class CampaignParticipantPortfolioService {
   private final ProductService productService;
   private final ObjectMapper objectMapper;
 
-  /** 승인된 업체가 소유한 캠페인의 신청자 포트폴리오만 조회합니다. */
+  /**
+   * 신청 한 건의 참여자 포트폴리오를 조회합니다.
+   *
+   * <p>완료 캠페인은 신청이 완료(COMPLETED)이고 콘텐츠가 최종 승인(APPROVED)된 건만 보여줍니다.
+   *
+   * @throws ResponseStatusException 신청이 없으면 404, 요청한 업체가 캠페인 소유자가 아니면 거절합니다
+   */
   public CampaignParticipantDtos.DetailResponse find(Long sellerMemberId, Long applicationId) {
     CampaignApplication application =
         applicationRepository
@@ -102,6 +114,12 @@ public class CampaignParticipantPortfolioService {
         "UNKNOWN");
   }
 
+  /**
+   * 신청 당시 저장해 둔 참여 조건과 참여자의 현재 지표를 비교합니다.
+   *
+   * <p>조건 사본이 없으면 '신청 당시 조건 없음'과 '사본을 읽을 수 없음'을 구분해 알려줍니다. 비교 순서는 지표 등록 여부 → 확인 상태 → 집계 기간 →
+   * 최소값입니다.
+   */
   private CampaignParticipantDtos.RequirementEvaluation evaluate(
       CampaignApplication application, List<MemberChannelMetric> metrics) {
     CampaignEligibilityDtos.RequirementResponse requirement = readRequirement(application);
@@ -147,6 +165,9 @@ public class CampaignParticipantPortfolioService {
         "CURRENT_METRIC_AGAINST_APPLICATION_SNAPSHOT");
   }
 
+  /**
+   * 완료한 캠페인 한 건과 공개 콘텐츠 링크를 만듭니다. 채널별 링크가 없던 예전 제출은 대표 링크 하나를 'LEGACY'로 보여주고, 공개 주소가 아닌 링크는 뺍니다.
+   */
   private CampaignParticipantDtos.CompletedCampaign completedCampaign(
       CampaignContentSubmission submission,
       Map<Long, List<CampaignContentLink>> linksBySubmission) {
@@ -175,6 +196,7 @@ public class CampaignParticipantPortfolioService {
         List.copyOf(publicLinks));
   }
 
+  /** 여러 제출 건의 링크를 한 번에 읽어 제출 ID별로 묶습니다. */
   private Map<Long, List<CampaignContentLink>> linksBySubmission(
       List<CampaignContentSubmission> submissions) {
     if (submissions.isEmpty()) return Map.of();
@@ -190,6 +212,10 @@ public class CampaignParticipantPortfolioService {
     return result;
   }
 
+  /**
+   * 신청 답변에 질문 제목을 붙입니다. 신청 당시 양식 버전과 현재 양식 버전이 같을 때만 제목을 붙이고, 다르면 제목 없이 답변만 보여줍니다(잘못된 질문 제목이 붙지 않게
+   * 하기 위함).
+   */
   private List<CampaignParticipantDtos.ApplicationAnswer> answers(CampaignApplication application) {
     List<CampaignApplicationDtos.Answer> answers =
         read(application.getAnswersJson(), new TypeReference<>() {});
@@ -215,6 +241,7 @@ public class CampaignParticipantPortfolioService {
         .toList();
   }
 
+  /** 신청에 저장된 참여 조건 사본(JSON)을 읽습니다. 사본이 없으면 null입니다. */
   private CampaignEligibilityDtos.RequirementResponse readRequirement(
       CampaignApplication application) {
     if (application.getEligibilityRequirementSnapshotJson() == null) return null;

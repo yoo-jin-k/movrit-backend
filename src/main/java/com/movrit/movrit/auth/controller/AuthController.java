@@ -53,7 +53,7 @@ public class AuthController {
     }
   }
 
-  /** 로그인 및 소셜 인증 관련 이메일과 비밀번호를 검증하는 로그인 서비스에 요청을 전달합니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 이메일과 비밀번호를 검증하는 로그인 서비스에 요청을 전달합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping("/login")
   public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
     return ResponseEntity.ok(authService.login(request));
@@ -66,42 +66,39 @@ public class AuthController {
    */
   public record RefreshRequest(String refreshToken) {}
 
-  /** 로그인 및 소셜 인증 관련 재발급 토큰으로 로그인 토큰 재발급을 요청합니다. */
+  /** 재발급 토큰으로 로그인 토큰 재발급을 요청합니다. */
   @PostMapping("/refresh")
   public LoginResponse refresh(@RequestBody RefreshRequest r) {
     return authService.refresh(r.refreshToken());
   }
 
-  /** 로그인 및 소셜 인증 관련 재발급 토큰의 로그아웃 처리를 요청하고 본문 없는 응답을 반환합니다. */
+  /** 재발급 토큰의 로그아웃 처리를 요청하고 본문 없는 응답을 반환합니다. */
   @PostMapping("/logout")
   public ResponseEntity<Void> logout(@RequestBody RefreshRequest r) {
     authService.logout(r.refreshToken());
     return ResponseEntity.noContent().build();
   }
 
-  /** 로그인 및 소셜 인증 관련 Google 로그인 화면으로 이동할 인증 URL을 반환합니다. */
+  /** Google 로그인 화면으로 이동할 인증 URL을 반환합니다. */
   @GetMapping("/google/login-url")
   public ResponseEntity<String> googleLoginUrl() {
     return ResponseEntity.ok(googleAuthService.getLoginUrl());
   }
 
-  /** 로그인 및 소셜 인증 관련 Kakao 로그인 화면으로 이동할 인증 URL을 반환합니다. */
+  /** Kakao 로그인 화면으로 이동할 인증 URL을 반환합니다. */
   @GetMapping("/kakao")
   public ResponseEntity<String> kakaoLogin() {
     return ResponseEntity.ok(kakaoAuthService.getLoginUrl(null));
   }
 
-  /** 로그인 및 소셜 인증 관련 로그인 회원 정보를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원 정보를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/me")
   public ResponseEntity<AuthMeResponse> me(@AuthenticationPrincipal Jwt jwt) {
     Long memberId = JwtMemberId.from(jwt);
     return ResponseEntity.ok(AuthMeResponse.from(memberService.getMember(memberId)));
   }
 
-  /**
-   * 현재 MOVRIT 계정에 연결된 소셜 로그인 수단을 조회합니다. 로그인 및 소셜 인증 관련 현재 회원에게 연결된 소셜 로그인 수단을 조회합니다. 요청자의 회원 ID는 인증
-   * 토큰에서 가져옵니다.
-   */
+  /** 현재 MOVRIT 계정에 연결된 소셜 로그인 수단을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/social/accounts")
   public List<SocialAccountResponse> socialAccounts(@AuthenticationPrincipal Jwt jwt) {
     return socialAccountService.findByMemberId(JwtMemberId.from(jwt));
@@ -110,8 +107,7 @@ public class AuthController {
   /**
    * 로그인된 회원이 카카오 계정을 추가 연결할 때 사용하는 인증 URL입니다. state에는 회원 ID를 그대로 노출하지 않고 서버 서명을 포함한 일회성 값을 넣습니다.
    *
-   * <p>로그인 및 소셜 인증 관련 기존 회원 계정 연결을 위한 서명된 state를 포함한 Kakao 인증 URL을 반환합니다. 요청자의 회원 ID는 인증 토큰에서
-   * 가져옵니다.
+   * <p>기존 회원 계정 연결을 위한 서명된 state를 포함한 Kakao 인증 URL을 반환합니다. 요청한 회원은 로그인 토큰으로 확인합니다.
    */
   @GetMapping("/social/kakao/link-url")
   public ResponseEntity<String> kakaoLinkUrl(@AuthenticationPrincipal Jwt jwt) {
@@ -119,16 +115,14 @@ public class AuthController {
     return ResponseEntity.ok(kakaoAuthService.getLoginUrl(state));
   }
 
-  /**
-   * 로그인 및 소셜 인증 관련 기존 회원 계정 연결을 위한 서명된 state를 포함한 Google 인증 URL을 반환합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다.
-   */
+  /** 기존 회원 계정 연결을 위한 서명된 state를 포함한 Google 인증 URL을 반환합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/social/google/link-url")
   public ResponseEntity<String> googleLinkUrl(@AuthenticationPrincipal Jwt jwt) {
     String state = socialLinkStateService.create(JwtMemberId.from(jwt));
     return ResponseEntity.ok(googleAuthService.getLoginUrl(state));
   }
 
-  /** 로그인 및 소셜 인증 관련 Kakao 인증 코드를 교환합니다. state가 있으면 계정 연결을 처리하고, 없으면 로그인 후 프론트로 이동합니다. */
+  /** Kakao 인증 코드를 교환합니다. state가 있으면 계정 연결을 처리하고, 없으면 로그인 후 프론트로 이동합니다. */
   @GetMapping("/kakao/callback")
   public void kakaoCallback(
       @RequestParam("code") String code,
@@ -163,7 +157,7 @@ public class AuthController {
     redirectLogin(response, member);
   }
 
-  /** 로그인 및 소셜 인증 관련 Google 인증 코드를 교환합니다. state가 있으면 계정 연결을 처리하고, 없으면 로그인 후 프론트로 이동합니다. */
+  /** Google 인증 코드를 교환합니다. state가 있으면 계정 연결을 처리하고, 없으면 로그인 후 프론트로 이동합니다. */
   @GetMapping("/google/callback")
   public void googleCallback(
       @RequestParam("code") String code,

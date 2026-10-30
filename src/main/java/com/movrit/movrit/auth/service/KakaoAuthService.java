@@ -21,6 +21,9 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 카카오 로그인을 처리합니다. 카카오 인증 화면 주소를 만들고, 돌아온 인가 코드로 토큰·사용자 정보를 받아 MOVRIT 회원으로 로그인·가입시키거나 기존 계정에 연결합니다.
+ */
 @Service
 @RequiredArgsConstructor
 public class KakaoAuthService {
@@ -37,6 +40,7 @@ public class KakaoAuthService {
   @Value("${kakao.redirect-uri}")
   private String redirectUri;
 
+  /** 카카오 로그인 동의 화면 주소를 만듭니다. state가 있으면(계정 연결) 함께 붙입니다. */
   public String getLoginUrl(String state) {
     String url =
         "https://kauth.kakao.com/oauth/authorize"
@@ -67,6 +71,7 @@ public class KakaoAuthService {
     return body;
   }
 
+  /** 카카오가 돌려준 인가 코드를 카카오 접근 토큰으로 바꿉니다. 키·Secret·Redirect URI가 맞지 않으면 카카오가 오류(401 등)를 돌려줍니다. */
   public String getAccessToken(String code) {
     RestTemplate restTemplate = new RestTemplate();
 
@@ -82,6 +87,7 @@ public class KakaoAuthService {
     return (String) response.getBody().get("access_token");
   }
 
+  /** 카카오 접근 토큰으로 사용자 고유 ID와 닉네임을 가져옵니다. 이메일은 받지 않습니다. */
   public KakaoUserInfo getUserInfo(String accessToken) {
     RestTemplate restTemplate = new RestTemplate();
 
@@ -106,6 +112,7 @@ public class KakaoAuthService {
     return new KakaoUserInfo(providerId, nickname);
   }
 
+  /** 카카오 계정이 이미 연결된 회원이면 로그인시키고, 처음이면 새 회원(임시 닉네임)으로 가입시킵니다. */
   @Transactional
   public Member loginOrSignup(KakaoUserInfo userInfo) {
     String providerId = String.valueOf(userInfo.getProviderId());

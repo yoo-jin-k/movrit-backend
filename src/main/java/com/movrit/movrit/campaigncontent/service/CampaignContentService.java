@@ -26,6 +26,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 캠페인 콘텐츠 제출과 검토를 처리합니다.
+ *
+ * <p>참여자는 게시물 링크를 제출·재제출하고, 브랜드는 확인 또는 수정 요청을, 운영자는 최종 승인 또는 수정 요청을 합니다. 상태가 바뀔 때마다 상대방에게 알림을 보내고
+ * 감사 로그를 남깁니다. 동시에 검토해 결과가 덮어써지지 않도록 모든 변경은 화면이 가진 버전(expectedVersion)을 확인합니다.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -39,6 +45,14 @@ public class CampaignContentService {
   private final MemberService memberService;
   private final SellerProfileService sellerProfileService;
 
+  /**
+   * 참여자가 대표 링크 하나로 콘텐츠를 제출하거나 다시 제출합니다.
+   *
+   * <p>본인 신청만 가능하며, 처음 제출은 캠페인의 콘텐츠 제출 기간 안에서만 받습니다. 수정 요청을 받은 재제출은 기간이 지나도 허용합니다. 처음 제출이면 신청을 '콘텐츠
+   * 제출' 단계로 바꾸고, 재제출이면 버전을 확인한 뒤 내용을 교체합니다. 제출 후 브랜드 담당자에게 알림을 보냅니다.
+   *
+   * @throws ResponseStatusException 본인 신청이 아니면 404, 링크 형식이 잘못되면 400, 제출 기간이 아니거나 상태·버전이 맞지 않으면 409
+   */
   @Transactional
   public CampaignContentDtos.Response submit(
       Long memberId, Long applicationId, CampaignContentDtos.SubmitRequest request) {
@@ -92,6 +106,14 @@ public class CampaignContentService {
     return flushedResponse(submission);
   }
 
+  /**
+   * 참여자가 채널별 링크 여러 개(최대 5개)를 한 번에 제출합니다.
+   *
+   * <p>링크마다 형식을 검사하고 같은 주소의 중복을 거절합니다. 첫 번째 링크로 {@link #submit}을 수행해 상태를 바꾼 뒤, 이전 채널 링크를 모두 지우고 새
+   * 목록으로 교체합니다.
+   *
+   * @throws ResponseStatusException 중복 주소나 형식 오류는 400, 그 밖의 거절 사유는 {@link #submit}과 같습니다
+   */
   @Transactional
   public CampaignContentDtos.Response submitLinks(
       Long memberId, Long applicationId, CampaignContentDtos.PackageSubmitRequest request) {
@@ -124,6 +146,7 @@ public class CampaignContentService {
     return flushedResponse(submission);
   }
 
+  /** 로그인한 참여자가 제출한 콘텐츠 목록을 최신순으로 조회합니다. */
   public List<CampaignContentDtos.Response> findMine(Long memberId) {
     return submissionRepository.findAllByApplicationCreatorMemberIdOrderByIdDesc(memberId).stream()
         .map(this::response)
@@ -141,6 +164,11 @@ public class CampaignContentService {
     return response(submission);
   }
 
+  /**
+   * 승인된 업체 회원이 자기 브랜드 캠페인에 제출된 콘텐츠를 최신순으로 조회합니다.
+   *
+   * @throws ResponseStatusException 승인된 업체가 아니면 거절합니다
+   */
   public List<CampaignContentDtos.Response> findSellerContents(Long memberId) {
     sellerProfileService.getApprovedSeller(memberId);
     return submissionRepository
@@ -150,6 +178,13 @@ public class CampaignContentService {
         .toList();
   }
 
+  /**
+   * 브랜드(캠페인 소유 업체)가 참여자에게 콘텐츠 수정을 요청합니다.
+   *
+   * <p>검토 대기 중인 제출만 가능하며, 제출과 신청을 모두 '수정 요청' 상태로 바꾸고 참여자에게 알립니다.
+   *
+   * @throws ResponseStatusException 소유 캠페인이 아니면 거절, 상태나 버전이 맞지 않으면 409
+   */
   @Transactional
   public CampaignContentDtos.Response requestRevision(
       Long memberId, Long submissionId, CampaignContentDtos.ReviewRequest request) {
@@ -167,6 +202,13 @@ public class CampaignContentService {
     return flushedResponse(submission);
   }
 
+  /**
+   * 브랜드(캠페인 소유 업체)가 콘텐츠 확인을 마칩니다.
+   *
+   * <p>제출 상태만 '브랜드 확인 완료'로 바뀌고 신청 상태는 그대로입니다. 캠페인 완료는 운영자 최종 승인에서 처리합니다.
+   *
+   * @throws ResponseStatusException 소유 캠페인이 아니면 거절, 상태나 버전이 맞지 않으면 409
+   */
   @Transactional
   public CampaignContentDtos.Response approve(
       Long memberId, Long submissionId, CampaignContentDtos.ApproveRequest request) {
@@ -183,11 +225,21 @@ public class CampaignContentService {
     return flushedResponse(submission);
   }
 
+  /**
+   * 운영자(ADMIN)가 전체 콘텐츠 제출 목록을 최신순으로 조회합니다.
+   *
+   * @throws ResponseStatusException 운영자가 아니면 거절합니다
+   */
   public List<CampaignContentDtos.Response> findOperatorContents(Long memberId) {
     memberService.getAdmin(memberId);
     return submissionRepository.findAllByOrderByIdDesc().stream().map(this::response).toList();
   }
 
+  /**
+   * 운영자가 콘텐츠 수정을 요청합니다. 검토 대기 또는 브랜드 확인 완료 상태에서 가능하며, 신청도 '수정 요청'으로 바뀝니다.
+   *
+   * @throws ResponseStatusException 운영자가 아니면 거절, 상태나 버전이 맞지 않으면 409
+   */
   @Transactional
   public CampaignContentDtos.Response requestRevisionByOperator(
       Long memberId, Long submissionId, CampaignContentDtos.ReviewRequest request) {
@@ -207,6 +259,13 @@ public class CampaignContentService {
     return flushedResponse(submission);
   }
 
+  /**
+   * 운영자가 콘텐츠를 최종 승인합니다.
+   *
+   * <p>제출은 '최종 승인', 신청은 '완료'로 바뀌며 참여자에게 완료 알림을 보냅니다. 완료 횟수는 이 두 상태를 함께 만족한 신청만 셉니다.
+   *
+   * @throws ResponseStatusException 운영자가 아니면 거절, 상태나 버전이 맞지 않으면 409
+   */
   @Transactional
   public CampaignContentDtos.Response approveByOperator(
       Long memberId, Long submissionId, CampaignContentDtos.ApproveRequest request) {
@@ -226,6 +285,7 @@ public class CampaignContentService {
     return flushedResponse(submission);
   }
 
+  /** 제출 기록을 찾고, 요청한 업체 회원이 해당 캠페인 상품의 소유자인지 확인합니다. */
   private CampaignContentSubmission getOwnedSubmission(Long memberId, Long submissionId) {
     CampaignContentSubmission submission = getSubmission(submissionId);
     productService.getOwnedProduct(
@@ -240,6 +300,7 @@ public class CampaignContentService {
             () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "콘텐츠 제출 내역을 찾을 수 없습니다."));
   }
 
+  /** 검토 결과를 참여자에게 알리고, 누가 어떤 상태로 바꿨는지 감사 로그에 남깁니다. */
   private void notifyCreatorAndAudit(
       Long actorMemberId,
       CampaignContentSubmission submission,
@@ -265,6 +326,7 @@ public class CampaignContentService {
         reason);
   }
 
+  /** 엔티티의 상태 규칙 위반(IllegalStateException)을 409 응답으로 바꿔 화면에 사유를 전달합니다. */
   private void transitionApplication(
       CampaignApplication application, Consumer<CampaignApplication> action) {
     try {
@@ -274,6 +336,7 @@ public class CampaignContentService {
     }
   }
 
+  /** 제출 상태 규칙 위반을 409 응답으로 바꿉니다. */
   private void transitionSubmission(
       CampaignContentSubmission submission, Consumer<CampaignContentSubmission> action) {
     try {
@@ -322,6 +385,11 @@ public class CampaignContentService {
         .getId();
   }
 
+  /**
+   * 콘텐츠 제출 기간을 확인합니다.
+   *
+   * <p>수정 요청에 대한 재제출은 기간과 관계없이 허용하고, 처음 제출만 시작·마감 시각을 검사합니다. 일정이 비어 있으면 그 경계는 검사하지 않습니다.
+   */
   private void requireSubmissionPeriod(
       CampaignApplication application, CampaignContentSubmission submission) {
     if (submission != null && submission.getStatus() == ContentSubmissionStatus.REVISION_REQUESTED)
@@ -363,6 +431,7 @@ public class CampaignContentService {
     }
   }
 
+  /** 내 컴퓨터(localhost)나 사내망 주소처럼 외부에 공개되지 않은 주소를 막습니다. */
   private boolean blockedHost(String host) {
     String value = host.toLowerCase(Locale.ROOT);
     if (value.equals("localhost")
@@ -381,6 +450,7 @@ public class CampaignContentService {
         HttpStatus.BAD_REQUEST, "외부 공개 콘텐츠의 http 또는 https URL을 입력해 주세요.");
   }
 
+  /** 화면이 마지막으로 본 버전과 현재 버전이 다르면 거절해, 다른 사람의 검토 결과를 모르고 덮어쓰지 않게 합니다. */
   private void requireVersion(CampaignContentSubmission submission, Long expectedVersion) {
     if (!java.util.Objects.equals(submission.getVersion(), expectedVersion)) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "콘텐츠 제출 상태가 변경되었습니다. 다시 조회해 주세요.");

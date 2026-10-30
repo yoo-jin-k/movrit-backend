@@ -24,8 +24,8 @@ public class ConfiguredCampaignController {
   private final ConfiguredCampaignService service;
 
   /**
-   * 캠페인·신청서·선택한 참여 조건·이미지와 주소를 서비스의 단일 트랜잭션으로 생성합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을
-   * 검증한 뒤 처리합니다.
+   * 캠페인·신청서·선택한 참여 조건·이미지와 주소를 서비스의 단일 트랜잭션으로 생성합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저
+   * 검사한 뒤 처리합니다.
    */
   @PostMapping
   public ResponseEntity<ConfiguredCampaignDtos.CreateResponse> create(
@@ -35,8 +35,8 @@ public class ConfiguredCampaignController {
   }
 
   /**
-   * 캠페인 구성과 각 버전을 함께 전달합니다. 서비스가 버전 충돌을 검사하여 부분 저장을 방지합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력
-   * 제약을 검증한 뒤 처리합니다.
+   * 캠페인 구성과 각 버전을 함께 전달합니다. 서비스가 버전 충돌을 검사하여 부분 저장을 방지합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을
+   * 먼저 검사한 뒤 처리합니다.
    */
   @PatchMapping("/{campaignId}")
   public ConfiguredCampaignDtos.UpdateResponse update(

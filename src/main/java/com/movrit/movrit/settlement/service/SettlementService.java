@@ -33,7 +33,7 @@ public class SettlementService {
     memberService.getAdmin(memberId);
     Preorder preorder = preorderService.getPreorder(request.preorderId());
     if (preorder.getStatus() != PreorderStatus.COMPLETED)
-      throw new ResponseStatusException(HttpStatus.CONFLICT, "구매 확정이 끝난 프리오더만 정산할 수 있어.");
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "구매 확정이 끝난 프리오더만 정산할 수 있습니다.");
     if (settlementRepository.findByPreorderId(preorder.getId()).isPresent())
       throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 정산이 생성된 프리오더야.");
     var payments = paymentRepository.findAllByOrderPreorderId(preorder.getId());

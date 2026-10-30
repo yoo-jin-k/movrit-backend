@@ -23,8 +23,8 @@ public class SellerProfileController {
    * JWT subject에는 로그인한 Member의 id가 들어 있습니다. 요청 body에서 memberId를 받지 않고 토큰에서 꺼내 사용해 본인 명의로만 신청할 수 있게
    * 합니다.
    *
-   * <p>로그인 회원의 업체 등록 심사를 신청합니다. 요청 본문으로 신청자나 승인 상태를 지정하지 않습니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의
-   * 선언된 입력 제약을 검증한 뒤 처리합니다.
+   * <p>로그인 회원의 업체 등록 심사를 신청합니다. 요청 본문으로 신청자나 승인 상태를 지정하지 않습니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력
+   * 형식을 먼저 검사한 뒤 처리합니다.
    */
   @PostMapping("/apply")
   public ResponseEntity<SellerDtos.Response> apply(
@@ -35,7 +35,7 @@ public class SellerProfileController {
         .body(sellerProfileService.apply(memberId, request));
   }
 
-  /** 업체 관련 로그인 회원에게 연결된 목록을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원에게 연결된 목록을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/me")
   public SellerDtos.Response findMine(@AuthenticationPrincipal Jwt jwt) {
     Long memberId = JwtMemberId.from(jwt);

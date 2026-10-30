@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
 
+/** 회원이 남기는 1:1 문의입니다. 운영자가 답변하면 답변 내용·답변자·시각이 기록되고 상태가 바뀝니다. */
 @Entity
 @Table(name = "inquiry")
 @Getter
@@ -49,6 +50,7 @@ public class Inquiry extends BaseEntity {
   @Column(name = "answered_at")
   private LocalDateTime answeredAt;
 
+  /** 운영자 답변을 등록하고 상태를 ANSWERED로 바꿉니다. 종료(CLOSED)된 문의에는 답변할 수 없습니다. */
   public void answer(Member admin, String answer) {
     if (status == InquiryStatus.CLOSED) {
       throw new IllegalStateException("종료된 문의에는 답변할 수 없습니다.");
@@ -59,6 +61,7 @@ public class Inquiry extends BaseEntity {
     status = InquiryStatus.ANSWERED;
   }
 
+  /** 문의를 종료합니다. 이미 종료된 문의는 그대로 둡니다. */
   public void close() {
     if (status == InquiryStatus.CLOSED) {
       return;

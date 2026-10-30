@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 public class CollaborationController {
   private final CollaborationService s;
 
-  /** 캠페인 및 협업 관련 기존 캠페인 생성 경로를 처리합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 기존 캠페인 생성 경로를 처리합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping("/campaigns")
   public ResponseEntity<CollaborationDtos.CampaignResponse> campaign(
       @AuthenticationPrincipal Jwt j, @Valid @RequestBody CollaborationDtos.CampaignRequest r) {
@@ -30,13 +30,13 @@ public class CollaborationController {
     return s.openCampaigns();
   }
 
-  /** 캠페인 및 협업 관련 업체가 관리하는 캠페인 목록을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 업체가 관리하는 캠페인 목록을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/campaigns/seller")
   public List<CollaborationDtos.CampaignResponse> sellerCampaigns(@AuthenticationPrincipal Jwt j) {
     return s.sellerCampaigns(id(j));
   }
 
-  /** 캠페인 및 협업 관련 신청 생성을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다. */
+  /** 신청 생성을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping("/campaigns/{campaignId}/apply")
   public CollaborationDtos.Response apply(
       @AuthenticationPrincipal Jwt j,
@@ -45,58 +45,56 @@ public class CollaborationController {
     return s.apply(id(j), campaignId, r);
   }
 
-  /**
-   * 캠페인 및 협업 관련 채널 프로필을 대상으로 협업을 제안합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. 요청 본문의 선언된 입력 제약을 검증한 뒤 처리합니다.
-   */
+  /** 채널 프로필을 대상으로 협업을 제안합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping("/proposals")
   public CollaborationDtos.Response propose(
       @AuthenticationPrincipal Jwt j, @Valid @RequestBody CollaborationDtos.ProposeRequest r) {
     return s.propose(id(j), r);
   }
 
-  /** 캠페인 및 협업 관련 로그인 회원에게 연결된 정보를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 회원에게 연결된 정보를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/mine")
   public List<CollaborationDtos.Response> mine(@AuthenticationPrincipal Jwt j) {
     return s.mine(id(j));
   }
 
-  /** 캠페인 및 협업 관련 업체의 관리 대상 목록을 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 업체의 관리 대상 목록을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/seller")
   public List<CollaborationDtos.Response> seller(@AuthenticationPrincipal Jwt j) {
     return s.seller(id(j));
   }
 
-  /** 캠페인 및 협업 관련 승인 처리를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 승인 처리를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{id}/approve")
   public CollaborationDtos.Response approve(@AuthenticationPrincipal Jwt j, @PathVariable Long id) {
     return s.sellerDecision(id(j), id, true);
   }
 
-  /** 캠페인 및 협업 관련 반려 처리를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 반려 처리를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{id}/reject")
   public CollaborationDtos.Response reject(@AuthenticationPrincipal Jwt j, @PathVariable Long id) {
     return s.sellerDecision(id(j), id, false);
   }
 
-  /** 캠페인 및 협업 관련 협업 제안 수락을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 협업 제안 수락을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{id}/accept")
   public CollaborationDtos.Response accept(@AuthenticationPrincipal Jwt j, @PathVariable Long id) {
     return s.creatorDecision(id(j), id, true);
   }
 
-  /** 캠페인 및 협업 관련 협업 제안 거절을 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 협업 제안 거절을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{id}/decline")
   public CollaborationDtos.Response decline(@AuthenticationPrincipal Jwt j, @PathVariable Long id) {
     return s.creatorDecision(id(j), id, false);
   }
 
-  /** 캠페인 및 협업 관련 협업 종료를 요청합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 협업 종료를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/{id}/end")
   public CollaborationDtos.Response end(@AuthenticationPrincipal Jwt j, @PathVariable Long id) {
     return s.end(id(j), id);
   }
 
-  /** 캠페인 및 협업 관련 추천 링크 방문 정보를 기록합니다. */
+  /** 추천 링크 방문 정보를 기록합니다. */
   @PostMapping("/referrals/{code}/click")
   public ResponseEntity<Void> click(
       @PathVariable String code, @RequestBody CollaborationDtos.ClickRequest r) {
@@ -104,13 +102,13 @@ public class CollaborationController {
     return ResponseEntity.noContent().build();
   }
 
-  /** 캠페인 및 협업 관련 로그인 참여자의 추천 성과를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 로그인 참여자의 추천 성과를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/performance/mine")
   public List<CollaborationDtos.PerformanceResponse> myPerformance(@AuthenticationPrincipal Jwt j) {
     return s.creatorPerformance(id(j));
   }
 
-  /** 캠페인 및 협업 관련 업체 관점의 추천 성과를 조회합니다. 요청자의 회원 ID는 인증 토큰에서 가져옵니다. */
+  /** 업체 관점의 추천 성과를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping("/performance/seller")
   public List<CollaborationDtos.PerformanceResponse> sellerPerformance(
       @AuthenticationPrincipal Jwt j) {
