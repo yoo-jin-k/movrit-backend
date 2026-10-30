@@ -49,20 +49,32 @@ public class KakaoAuthService {
     return state == null ? url : url + "&state=" + state;
   }
 
+  /**
+   * Kakao 토큰 교환 요청 본문을 만듭니다.
+   *
+   * <p>Kakao Developers에서 Client Secret 사용을 끈 앱은 secret 값이 없으므로, 값이 비어 있으면 client_secret 항목을 아예 보내지
+   * 않습니다. 사용을 켠 앱은 설정된 값을 그대로 전달합니다. redirect_uri는 인가 요청과 반드시 같은 값이어야 합니다.
+   */
+  MultiValueMap<String, String> tokenRequestBody(String code) {
+    MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+    body.add("grant_type", "authorization_code");
+    body.add("client_id", clientId);
+    body.add("redirect_uri", redirectUri);
+    body.add("code", code);
+    if (clientSecret != null && !clientSecret.isBlank()) {
+      body.add("client_secret", clientSecret);
+    }
+    return body;
+  }
+
   public String getAccessToken(String code) {
     RestTemplate restTemplate = new RestTemplate();
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-    MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-    body.add("grant_type", "authorization_code");
-    body.add("client_id", clientId);
-    body.add("redirect_uri", redirectUri);
-    body.add("code", code);
-    body.add("client_secret", clientSecret);
-
-    HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+    HttpEntity<MultiValueMap<String, String>> request =
+        new HttpEntity<>(tokenRequestBody(code), headers);
 
     ResponseEntity<Map> response =
         restTemplate.postForEntity("https://kauth.kakao.com/oauth/token", request, Map.class);
