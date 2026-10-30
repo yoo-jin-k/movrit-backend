@@ -168,7 +168,6 @@ public class Campaign extends BaseEntity {
   /**
    * 업체가 모집 내용·참여 안내·일정을 한 번에 수정합니다. 선정 방식은 현재 값을 그대로 유지합니다. 검증과 버전 확인은 아래 선정 방식을 받는 update와 같습니다.
    */
-  /** 판매자가 모집 내용과 참여 안내를 한 번에 수정할 때 사용합니다. */
   public void update(
       String title,
       String description,
@@ -224,7 +223,6 @@ public class Campaign extends BaseEntity {
    * <p>expectedScheduleVersion이 현재 버전과 다르면(다른 화면에서 먼저 수정됨) 거절합니다. 일정 순서(모집 → 선정 발표 → 체험 → 콘텐츠 등록 →
    * 결과 발표)가 맞지 않아도 거절하며, 저장에 성공하면 일정 버전을 1 올립니다.
    */
-  /** 선정 주체를 포함해 모집 내용과 참여 안내를 수정합니다. */
   public void update(
       String title,
       String description,
@@ -286,6 +284,49 @@ public class Campaign extends BaseEntity {
     this.scheduleVersion += 1L;
   }
 
+  /**
+   * 새 캠페인에 참여 안내와 세부 일정을 채웁니다. 등록 직후 한 번 사용하며 일정 버전은 올리지 않습니다.
+   *
+   * <p>일정 순서(모집 종료 → 선정 발표 → 체험 → 콘텐츠 등록 → 결과 발표)가 맞지 않으면 IllegalArgumentException으로 거절합니다.
+   */
+  public void describe(
+      String mission,
+      String channelGuide,
+      String scheduleGuide,
+      String deliveryGuide,
+      String visitGuide,
+      String caution,
+      String submissionRequirement,
+      LocalDateTime selectionAnnouncedAt,
+      LocalDateTime experienceStartAt,
+      LocalDateTime experienceEndAt,
+      LocalDateTime contentSubmissionStartAt,
+      LocalDateTime contentSubmissionEndAt,
+      LocalDateTime resultsAnnouncedAt) {
+    validateSchedule(
+        startAt,
+        endAt,
+        selectionAnnouncedAt,
+        experienceStartAt,
+        experienceEndAt,
+        contentSubmissionStartAt,
+        contentSubmissionEndAt,
+        resultsAnnouncedAt);
+    this.mission = mission;
+    this.channelGuide = channelGuide;
+    this.scheduleGuide = scheduleGuide;
+    this.deliveryGuide = deliveryGuide;
+    this.visitGuide = visitGuide;
+    this.caution = caution;
+    this.submissionRequirement = submissionRequirement;
+    this.selectionAnnouncedAt = selectionAnnouncedAt;
+    this.experienceStartAt = experienceStartAt;
+    this.experienceEndAt = experienceEndAt;
+    this.contentSubmissionStartAt = contentSubmissionStartAt;
+    this.contentSubmissionEndAt = contentSubmissionEndAt;
+    this.resultsAnnouncedAt = resultsAnnouncedAt;
+  }
+
   /** 캠페인을 마감해 사용자 목록에서 내립니다(open = false). */
   public void close() {
     open = false;
@@ -308,7 +349,6 @@ public class Campaign extends BaseEntity {
   }
 
   /** 선정된 참여자에게만 보여줄 캠페인 담당자 이름과 연락처를 저장합니다. 회원·대표자 전화번호를 자동으로 공개하지 않도록 따로 입력받습니다. */
-  /** 신청 당사자에게 공개할 캠페인 담당자 연락처만 별도로 저장합니다. */
   public void updateContact(String contactName, String contactPhone) {
     this.contactName = contactName;
     this.contactPhone = contactPhone;

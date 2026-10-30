@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
  * 새 이미지 관리 방식에서 업로드된 캠페인 이미지 한 장의 정보입니다. 원본 파일은 남기지 않고 검사·재인코딩한 표시본의 저장 위치·크기와, 올린 업체·연결된 캠페인만
  * 기록합니다.
  */
-/** 원본 대신 검증된 표시본과 현재 소유·연결 정보만 보관합니다. */
 @Entity
 @Table(name = "campaign_image_asset")
 @Getter

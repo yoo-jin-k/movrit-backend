@@ -138,7 +138,6 @@ public class CampaignMediaService {
    * <p>캠페인을 잠근 뒤 확인하며, 거절되는 경우는 다음과 같습니다. 신청 이력이 있는데 참여 유형(배송/방문)을 바꿈, 방문형을 추가하면서 장소를 안 넣음, 유형을
    * 바꾸면서 이미지 정보를 함께 보내지 않음, 다른 화면에서 이미지가 먼저 바뀜.
    */
-  /** configured의 본문/폼 변경보다 먼저 잠금·기대 버전·유형 변경을 검사합니다. */
   @Transactional
   public void preflightUpdate(
       Long memberId,
@@ -176,7 +175,6 @@ public class CampaignMediaService {
    * <p>요청에 포함된 이미지는 캠페인에 연결하고 빠진 이미지는 연결을 끊습니다. 다른 업체의 이미지나 다른 캠페인에 이미 연결된 이미지는 쓸 수 없습니다. 수정이면 방문
    * 장소 변경 기록을 남기고, 예전 화면을 위해 대표·상세 이미지 주소도 함께 맞춥니다.
    */
-  /** 같은 configured 트랜잭션 안에서만 호출하여 본문·폼·조건과 자산참조를 함께 저장합니다. */
   @Transactional
   public ManagedPresentation apply(
       Long memberId,

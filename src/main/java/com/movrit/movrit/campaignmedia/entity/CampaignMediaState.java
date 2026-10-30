@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
  * 캠페인 하나의 현재 이미지·방문 장소 구성을 담는 상태입니다(새 이미지 관리 방식). 저장할 때마다 version이 1 올라가며, 동시 수정 충돌을 막기 위해 캠페인 행을
  * 잠근 상태에서만 바꿉니다. 이 데이터가 있는 캠페인은 새 방식으로 전환된 것으로 봅니다.
  */
-/** 버전 증가와 참조 치환은 캠페인 행의 쓰기 잠금 안에서만 수행합니다. */
 @Entity
 @Table(name = "campaign_media_state")
 @Getter

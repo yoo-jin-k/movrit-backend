@@ -65,6 +65,7 @@ class CollaborationCreateCampaignTest {
         LocalDateTime.now().plusDays(7),
         null,
         null,
+        null,
         null);
   }
 
@@ -119,7 +120,8 @@ class CollaborationCreateCampaignTest {
             base.endAt(),
             com.movrit.movrit.collaboration.entity.CampaignType.LOCAL,
             "서울",
-            com.movrit.movrit.campaigncontent.entity.ContentChannel.BLOG);
+            com.movrit.movrit.campaigncontent.entity.ContentChannel.BLOG,
+            null);
 
     CollaborationDtos.CampaignResponse response = service.createCampaign(1L, local);
 
@@ -143,10 +145,89 @@ class CollaborationCreateCampaignTest {
             base.endAt(),
             com.movrit.movrit.collaboration.entity.CampaignType.LOCAL,
             "뉴욕",
+            null,
             null);
     assertThatThrownBy(() -> service.createCampaign(1L, unknown))
         .isInstanceOfSatisfying(
             ResponseStatusException.class,
             e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+  }
+
+  @Test
+  void detailsAreSavedWithNewCampaignAndScheduleOrderIsChecked() {
+    when(ownership.resolveBrandForNewCampaign(1L, null)).thenReturn(brand);
+    when(campaigns.save(any(Campaign.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    CollaborationDtos.CampaignRequest base = request(null, null);
+    LocalDateTime selection = base.endAt().plusDays(1);
+    CollaborationDtos.CampaignRequest withDetails =
+        withDetails(
+            base,
+            new CollaborationDtos.CampaignDetails(
+                "  제품을 2주간 사용하고 후기를 남겨 주세요.  ",
+                "",
+                null,
+                "선정 후 3일 안에 발송합니다.",
+                null,
+                null,
+                "#MOVRIT 해시태그 필수",
+                selection,
+                selection.plusDays(1),
+                selection.plusDays(14),
+                selection.plusDays(1),
+                selection.plusDays(20),
+                selection.plusDays(25)));
+
+    service.createCampaign(1L, withDetails);
+
+    ArgumentCaptor<Campaign> saved = ArgumentCaptor.forClass(Campaign.class);
+    verify(campaigns).save(saved.capture());
+    // 앞뒤 공백은 지우고, 빈 칸은 저장하지 않습니다.
+    assertThat(saved.getValue().getMission()).isEqualTo("제품을 2주간 사용하고 후기를 남겨 주세요.");
+    assertThat(saved.getValue().getChannelGuide()).isNull();
+    assertThat(saved.getValue().getSelectionAnnouncedAt()).isEqualTo(selection);
+    assertThat(saved.getValue().getResultsAnnouncedAt()).isEqualTo(selection.plusDays(25));
+
+    // 선정 발표가 모집 종료보다 빠르면 400으로 거절합니다.
+    CollaborationDtos.CampaignRequest wrongOrder =
+        withDetails(
+            base,
+            new CollaborationDtos.CampaignDetails(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                base.endAt().minusDays(1),
+                null,
+                null,
+                null,
+                null,
+                null));
+    assertThatThrownBy(() -> service.createCampaign(1L, wrongOrder))
+        .isInstanceOfSatisfying(
+            ResponseStatusException.class,
+            e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+  }
+
+  private static CollaborationDtos.CampaignRequest withDetails(
+      CollaborationDtos.CampaignRequest base, CollaborationDtos.CampaignDetails details) {
+    return new CollaborationDtos.CampaignRequest(
+        base.preorderId(),
+        base.brandId(),
+        base.title(),
+        base.description(),
+        base.category(),
+        base.minFollowerCount(),
+        base.recruitmentCount(),
+        base.selectionMode(),
+        base.rewardDescription(),
+        base.startAt(),
+        base.endAt(),
+        base.campaignType(),
+        base.region(),
+        base.contentChannel(),
+        details);
   }
 }

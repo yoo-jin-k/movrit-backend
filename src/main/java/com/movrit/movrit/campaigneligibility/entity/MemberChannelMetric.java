@@ -66,7 +66,6 @@ public class MemberChannelMetric extends BaseEntity {
   private MetricVerificationStatus verificationStatus;
 
   /** 회원이 지표 수치를 고칩니다. 수치가 바뀌면 예전 확인 결과를 믿을 수 없으므로 확인 상태를 '미확인(UNVERIFIED)'으로 되돌립니다. */
-  /** 사용자가 수치를 바꾸면 이전 확인 결과는 다시 사용할 수 없습니다. */
   public void updateByMember(Long value, String measurementPeriod, LocalDateTime measuredAt) {
     this.value = value;
     this.measurementPeriod = measurementPeriod;

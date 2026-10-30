@@ -14,7 +14,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /** 캠페인 방문 장소가 바뀐 기록 한 건입니다. 누가 언제 무엇을 무엇으로 바꿨는지 남깁니다. 기록은 추가만 하고 수정·삭제하지 않아 분쟁 시 증빙으로 쓸 수 있습니다. */
-/** 주소 변경 증빙은 추가만 하며 기존 이력을 수정하지 않습니다. */
 @Entity
 @Table(name = "campaign_visit_history")
 @Getter

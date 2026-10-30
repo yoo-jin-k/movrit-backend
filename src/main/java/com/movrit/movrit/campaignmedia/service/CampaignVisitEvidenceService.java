@@ -60,7 +60,6 @@ public class CampaignVisitEvidenceService {
    * 새 이미지 관리 방식에서 방문 장소가 실제로 바뀌었을 때 변경 기록을 남기고 방문 참여자에게 알립니다. 장소가 같으면 아무것도 하지 않습니다. 호출하는 쪽이 캠페인을 잠근
    * 같은 트랜잭션 안에서 불러야 합니다.
    */
-  /** 호출자가 캠페인 잠금을 보유한 동일 트랜잭션에서 주소 이력과 내부 알림을 저장합니다. */
   @Transactional
   public void recordChange(
       Long actor, Campaign campaign, String before, String after, long version) {
@@ -80,7 +79,6 @@ public class CampaignVisitEvidenceService {
   }
 
   /** 예전 방식(장소 이름·주소 칸)으로 방문 장소가 바뀌었을 때 변경 전후 값을 그대로 기록하고 참여자에게 알립니다. 값이 같으면 아무것도 하지 않습니다. */
-  /** 구 주소 저장 경로의 자유 문자열도 파싱 없이 전후 원문을 보존합니다. */
   @Transactional
   public void recordLegacyChange(
       Long actor, Campaign campaign, String nextPlace, String nextAddress) {
@@ -122,7 +120,6 @@ public class CampaignVisitEvidenceService {
   /**
    * 방문형 신청이 접수되는 순간의 방문 장소·안내를 사본으로 저장합니다. 배송형 신청은 저장하지 않으며, 같은 신청의 사본이 이미 있으면 덮어쓰지 않고 오류로 처리합니다.
    */
-  /** 신규 방문 신청의 현재 값만 저장하며 과거 신청을 소급 생성하거나 덮어쓰지 않습니다. */
   @Transactional
   public void capture(CampaignApplication application) {
     if (application.getFulfillmentType() != FulfillmentType.VISIT) return;

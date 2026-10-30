@@ -99,13 +99,38 @@ public class CollaborationService {
             .endAt(r.endAt())
             .open(true)
             .build();
-    // 유형·지역·주요 채널 분류를 적용합니다. 목록에 없는 지역이면 400으로 안내합니다.
+    // 유형·지역·주요 채널 분류와 (보냈다면) 참여 안내·세부 일정을 적용합니다.
+    // 목록에 없는 지역이나 순서가 맞지 않는 일정이면 400으로 안내합니다.
     try {
       c.classify(r.campaignType(), r.region(), r.contentChannel());
+      if (r.details() != null) applyDetails(c, r.details());
     } catch (IllegalArgumentException exception) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
     return CollaborationDtos.CampaignResponse.from(campaigns.save(c));
+  }
+
+  /** 등록 요청의 참여 안내(빈 칸은 저장하지 않음)와 세부 일정을 새 캠페인에 채웁니다. */
+  private void applyDetails(Campaign c, CollaborationDtos.CampaignDetails d) {
+    c.describe(
+        blankToNull(d.mission()),
+        blankToNull(d.channelGuide()),
+        blankToNull(d.scheduleGuide()),
+        blankToNull(d.deliveryGuide()),
+        blankToNull(d.visitGuide()),
+        blankToNull(d.caution()),
+        blankToNull(d.submissionRequirement()),
+        d.selectionAnnouncedAt(),
+        d.experienceStartAt(),
+        d.experienceEndAt(),
+        d.contentSubmissionStartAt(),
+        d.contentSubmissionEndAt(),
+        d.resultsAnnouncedAt());
+  }
+
+  /** 빈 문자열이면 null, 아니면 앞뒤 공백을 지운 값을 돌려줍니다. */
+  private static String blankToNull(String value) {
+    return value == null || value.isBlank() ? null : value.trim();
   }
 
   /**

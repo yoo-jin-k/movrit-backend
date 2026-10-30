@@ -128,7 +128,6 @@ public class CampaignManagementService {
   }
 
   /** 업체가 캠페인과 연결된 신청서를 삭제합니다. 신청 이력이 하나라도 있으면 기록 보존을 위해 삭제하지 않고 마감만 하도록 안내합니다(409). */
-  /** 신청 이력이 생긴 뒤에는 감사 추적을 위해 삭제하지 않고 종료만 허용합니다. */
   @Transactional
   public void delete(Long memberId, Long campaignId) {
     Campaign campaign = getOwnedCampaign(memberId, campaignId);

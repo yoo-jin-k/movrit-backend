@@ -7,9 +7,11 @@ import com.movrit.movrit.collaboration.entity.CampaignType;
 import com.movrit.movrit.collaboration.entity.Collaboration;
 import com.movrit.movrit.collaboration.entity.CollaborationStatus;
 import com.movrit.movrit.collaboration.entity.CollaborationType;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 /** 캠페인 및 협업 API에서 주고받는 요청·응답 형식을 모아 둔 클래스입니다. */
@@ -32,6 +34,7 @@ public final class CollaborationDtos {
    * @param campaignType 캠페인 유형(제품·지역·기자단)입니다. 비우면 제품으로 저장합니다.
    * @param region 지역 캠페인의 광역 지역(서울·경기 등)입니다. 지역 캠페인이 아니면 무시합니다.
    * @param contentChannel 주로 콘텐츠를 올릴 채널입니다(선택).
+   * @param details 참여 안내와 세부 일정입니다(선택). 비우면 나중에 수정 화면에서 채울 수 있습니다.
    */
   public record CampaignRequest(
       Long preorderId,
@@ -47,7 +50,42 @@ public final class CollaborationDtos {
       @NotNull LocalDateTime endAt,
       CampaignType campaignType,
       String region,
-      ContentChannel contentChannel) {}
+      ContentChannel contentChannel,
+      @Valid CampaignDetails details) {}
+
+  /**
+   * 캠페인 등록 때 함께 보낼 수 있는 참여 안내와 세부 일정입니다. 모든 값은 선택입니다.
+   *
+   * <p>일정은 모집 종료 → 선정 발표 → 체험 → 콘텐츠 등록 → 결과 발표 순서여야 하며, 순서가 맞지 않으면 400으로 안내합니다.
+   *
+   * @param mission 참여자가 해야 할 일(미션)입니다.
+   * @param channelGuide 채널별 작성 안내입니다.
+   * @param scheduleGuide 일정 관련 추가 안내입니다.
+   * @param deliveryGuide 배송형 체험의 배송 안내입니다.
+   * @param visitGuide 방문형 체험의 방문 안내입니다.
+   * @param caution 주의사항입니다.
+   * @param submissionRequirement 콘텐츠 제출 요구사항(해시태그·분량 등)입니다.
+   * @param selectionAnnouncedAt 선정 발표 시각입니다.
+   * @param experienceStartAt 체험 시작 시각입니다.
+   * @param experienceEndAt 체험 종료 시각입니다.
+   * @param contentSubmissionStartAt 콘텐츠 등록 시작 시각입니다.
+   * @param contentSubmissionEndAt 콘텐츠 등록 마감 시각입니다.
+   * @param resultsAnnouncedAt 결과 발표 시각입니다.
+   */
+  public record CampaignDetails(
+      @Size(max = 10000) String mission,
+      @Size(max = 5000) String channelGuide,
+      @Size(max = 5000) String scheduleGuide,
+      @Size(max = 5000) String deliveryGuide,
+      @Size(max = 5000) String visitGuide,
+      @Size(max = 5000) String caution,
+      @Size(max = 5000) String submissionRequirement,
+      LocalDateTime selectionAnnouncedAt,
+      LocalDateTime experienceStartAt,
+      LocalDateTime experienceEndAt,
+      LocalDateTime contentSubmissionStartAt,
+      LocalDateTime contentSubmissionEndAt,
+      LocalDateTime resultsAnnouncedAt) {}
 
   /**
    * 캠페인 및 협업의 기존 캠페인 목록 응답을 전달합니다.

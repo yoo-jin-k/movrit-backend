@@ -26,7 +26,6 @@ import org.springframework.web.server.ResponseStatusException;
  * 캠페인 대표·상세 이미지를 검사한 뒤 안전한 표시용 파일로 다시 만들어 저장합니다. JPG·PNG·WebP만 받고, 크기·해상도·움직이는 이미지·손상 파일을 걸러내며 위치
  * 정보 같은 원본 메타데이터는 남기지 않습니다. 상품 이미지 업로드 정책과는 별개입니다.
  */
-/** 캠페인 표시본만 검증·재인코딩하며 공통 상품 업로드 정책은 변경하지 않습니다. */
 @Service
 public class CampaignImageStorageService {
   static final long MAX_BYTES = 5L * 1024 * 1024;
@@ -125,7 +124,6 @@ public class CampaignImageStorageService {
   }
 
   /** 휴대폰 사진의 EXIF 방향 값(1~8)에 맞춰 이미지를 실제로 회전·반전합니다. 저장본에는 방향 태그가 없어도 어느 브라우저에서나 똑바로 보입니다. */
-  /** EXIF 1~8의 회전·반전을 실제 픽셀에 적용하므로 표시본에 방향 태그가 필요하지 않습니다. */
   static BufferedImage orient(BufferedImage source, int orientation) {
     int width = source.getWidth(), height = source.getHeight();
     boolean swapped = orientation >= 5;
@@ -171,7 +169,6 @@ public class CampaignImageStorageService {
   }
 
   /** 움직이는 PNG(APNG)·WebP를 거절합니다. 이미지 라이브러리는 첫 장면만 읽기 때문에 파일 안의 애니메이션 표시 조각을 직접 찾아 확인합니다. */
-  /** 기본 ImageIO가 첫 프레임만 읽을 수 있으므로 컨테이너의 애니메이션 청크도 검사합니다. */
   private static void rejectAnimation(byte[] bytes, String format) {
     if (!format.equals("png") && !format.equals("webp")) return;
     int offset = format.equals("png") ? 8 : 12;

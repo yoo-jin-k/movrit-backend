@@ -12,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 /** 새 이미지 관리 방식의 이미지 파일을 저장합니다. 누구나 접근할 수 있는 /uploads 폴더가 아닌 별도 폴더에 두고, 서버가 권한을 확인한 뒤에만 내려줍니다. */
-/** 공개 /uploads 리소스 핸들러 밖의 형제 디렉터리에 표시본을 저장합니다. */
 @Service
 public class CampaignPrivateImageStorage {
   private final Path root;
