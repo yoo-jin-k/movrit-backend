@@ -82,8 +82,10 @@ public class EmailVerificationService {
 
     // 발송에 실패하면 트랜잭션도 롤백해 사용할 수 없는 요청을 남기지 않습니다.
     delivery.send(member.getEmail(), code, expiresMinutes);
+    // 로컬 시연 모드에서만 화면 표시용 코드를 응답에 담습니다. 실제 발송 방식에서는 항상 null입니다.
+    String localPreviewCode = delivery.exposesCodeForLocalPreview() ? code : null;
     return new EmailVerificationDtos.RequestResponse(
-        challenge.getId(), mask(member.getEmail()), challenge.getExpiresAt());
+        challenge.getId(), mask(member.getEmail()), challenge.getExpiresAt(), localPreviewCode);
   }
 
   /**

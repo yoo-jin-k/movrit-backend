@@ -30,6 +30,7 @@ scripts/integration.sh stop      # 종료
 
 - JDK 17이 없으면 설치된 17 이상 JDK로 자동 빌드합니다(`-PmovritJavaVersion`).
 - 업로드 파일은 `~/.movrit/integration-uploads` 에 저장되어 재부팅 후에도 유지됩니다.
+- 이메일 인증은 통합 환경에서 **로컬 시연 모드**(`local-preview`)로 동작합니다. 실제 메일 대신 인증 화면에 6자리 코드가 표시됩니다. 실제 발송은 `EMAIL_DELIVERY=smtp` 와 메일 계정 설정이 필요합니다.
 
 ## 검증
 

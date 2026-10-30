@@ -24,8 +24,10 @@ public final class EmailVerificationDtos {
    * @param challengeId 이메일 인증 요청 식별자입니다.
    * @param maskedEmail 일부를 가린 수신 이메일 표시값입니다.
    * @param expiresAt 인증 요청 만료 시각입니다.
+   * @param localPreviewCode 로컬 시연 모드에서만 채우는 화면 표시용 인증 코드입니다. 실제 메일 발송 환경에서는 항상 null입니다.
    */
-  public record RequestResponse(Long challengeId, String maskedEmail, LocalDateTime expiresAt) {}
+  public record RequestResponse(
+      Long challengeId, String maskedEmail, LocalDateTime expiresAt, String localPreviewCode) {}
 
   /**
    * 이메일 소유 확인의 인증 상태 응답을 전달합니다.
