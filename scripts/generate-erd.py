@@ -41,7 +41,8 @@ DOMAINS = [
         "orders", "order_item", "payment", "refund", "refund_item", "shipment", "shipment_item",
         "settlement", "settlement_participant",
     ]),
-    ("06_운영_공통", "알림·문의·감사", ["notification", "inquiry", "audit_log"]),
+    ("06_운영_공통", "알림·문의·감사·공지", [
+        "notice", "notification", "inquiry", "audit_log"]),
 ]
 
 

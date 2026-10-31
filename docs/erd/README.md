@@ -2,7 +2,7 @@
 
 실제 DB 스키마로 생성한 ERD입니다. `scripts/generate-erd.py` 로 다시 만들 수 있습니다.
 
-- 테이블 50개, 외래 키 관계 76개
+- 테이블 51개, 외래 키 관계 77개
 - `MOVRIT.dbml`: 전체 관계(dbdiagram.io에 붙여 넣기)
 
 | 파일 | 도메인 | 테이블 |
@@ -12,4 +12,4 @@
 | `03_이미지_방문증빙.mmd` | 캠페인 이미지·방문 증빙 | campaign_detail_image, campaign_image_asset, campaign_media_state, campaign_visit_history, campaign_visit_snapshot, file_asset, file_attachment |
 | `04_상품_프리오더_레거시.mmd` | 상품·프리오더(레거시) | product, product_variant, product_review, preorder, preorder_variant, preorder_sale_variant, preorder_history, preorder_interest, preorder_favorite |
 | `05_주문_결제_보존.mmd` | 주문·결제·정산(레거시 보존) | orders, order_item, payment, refund, refund_item, shipment, shipment_item, settlement, settlement_participant |
-| `06_운영_공통.mmd` | 알림·문의·감사 | notification, inquiry, audit_log |
+| `06_운영_공통.mmd` | 알림·문의·감사·공지 | notice, notification, inquiry, audit_log |

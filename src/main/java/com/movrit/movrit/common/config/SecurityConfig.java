@@ -58,6 +58,9 @@ public class SecurityConfig {
                         "/api/preorders/*",
                         "/api/products/*/variants",
                         "/api/collaborations/campaigns/open",
+                        // 게시된 공지는 로그인 없이 볼 수 있습니다.
+                        "/api/notices",
+                        "/api/notices/*",
                         "/api/campaigns/*/application-form",
                         "/api/campaigns/*/eligibility-requirement")
                     .permitAll()

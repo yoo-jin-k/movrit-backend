@@ -1,5 +1,17 @@
-%% 알림·문의·감사 — scripts/generate-erd.py로 생성
+%% 알림·문의·감사·공지 — scripts/generate-erd.py로 생성
 erDiagram
+  notice {
+    bigint id PK
+    varchar title
+    text body
+    varchar category
+    boolean pinned
+    boolean published
+    timestamp published_at
+    bigint author_member_id FK
+    timestamp created_at
+    timestamp updated_at
+  }
   notification {
     bigint id PK
     bigint member_id FK
@@ -42,4 +54,5 @@ erDiagram
   member ||--o{ inquiry : "answered_by_member_id"
   member ||--o{ inquiry : "member_id"
   preorder ||--o{ inquiry : "preorder_id"
+  member ||--o{ notice : "author_member_id"
   member ||--o{ notification : "member_id"
