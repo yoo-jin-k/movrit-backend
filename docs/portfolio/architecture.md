@@ -12,11 +12,11 @@ flowchart LR
   end
   subgraph Server["Spring Boot 4.1 (Java 17)"]
     SEC["Spring Security<br/>JWT 검증"]
-    API["REST API<br/>컨트롤러 34개 · 엔드포인트 181개"]
+    API["REST API<br/>컨트롤러 36개 · 엔드포인트 199개"]
     SVC["서비스 계층<br/>상태 전이·권한·검증"]
     SCH["예약 작업<br/>프리오더 자동 진행"]
   end
-  DB[("PostgreSQL 18<br/>테이블 50개 · Flyway V1~V5")]
+  DB[("PostgreSQL 18<br/>테이블 51개 · Flyway V1~V6")]
   FS[("업로드 폴더<br/>캠페인·프로필 이미지")]
   OAUTH["Google · Kakao<br/>OAuth"]
 
@@ -31,11 +31,11 @@ flowchart LR
 | 프론트엔드 | React 19, React Router 7, Vite 8, Axios, Sass (화면 경로 80개, 첫 화면 외 지연 로딩) |
 | 백엔드 | Spring Boot 4.1, Spring Security(JWT·OAuth2 Resource Server), Spring Data JPA, Lombok |
 | DB | PostgreSQL 18, Flyway(마이그레이션 이력 `movrit_schema_history`) |
-| 품질 | 백엔드 테스트 114개(JUnit 5·Mockito), 프론트 테스트 124개(node:test), Spotless(google-java-format), ESLint·Prettier, Playwright 전체 흐름 점검 |
+| 품질 | 백엔드 테스트 117개(JUnit 5·Mockito), 프론트 테스트 131개(node:test), Spotless(google-java-format), ESLint·Prettier, Playwright 화면 자동 점검(`movrit-frontend/qa/e2e`) |
 
 ## 2. 백엔드 기능 단위 구조
 
-기능마다 `controller / service / repository / entity / dto` 로 나눕니다(총 220개 파일, 약 1만 8천 줄).
+기능마다 `controller / service / repository / entity / dto` 로 나눕니다(총 229개 파일, 약 1만 9천 줄).
 
 | 영역 | 패키지 | 맡는 일 |
 |---|---|---|
@@ -43,7 +43,7 @@ flowchart LR
 | 업체 | `seller`, `brand` | 업체 신청·승인, 브랜드 운영 |
 | 캠페인 | `collaboration`, `campaignmedia`, `campaigneligibility`, `campaignfavorite` | 캠페인 등록·수정·분류, 이미지·방문 정보, 참여 조건(채널 지표), 찜 |
 | 참여 | `campaignapplication`, `campaigncontent` | 신청서 양식, 신청·선정·참여 수락·체험 확인, 콘텐츠 제출·업체 검토·운영자 최종 승인 |
-| 운영 | `admin`, `audit`, `notification`, `inquiry` | 운영자 화면, 감사 로그, 알림, 문의 |
+| 운영 | `admin`, `notice`, `audit`, `notification`, `inquiry` | 운영자 관리 화면 조회(회원·업체·리포트·설정 등), 공지사항, 감사 로그, 알림, 문의 |
 | 프리오더(보존) | `product`, `preorder`, `order`, `payment`, `shipping`, `settlement` | 상품·재고, 프리오더, 주문·결제·배송·정산 |
 
 ## 3. 핵심 상태 흐름: 캠페인 신청
@@ -79,9 +79,11 @@ stateDiagram-v2
 | 두 DB의 스키마가 서로 달라짐 | **Flyway**로 V1 기준선 + 변경 이력 관리, ERD 자동 생성 스크립트 | 어느 PC에서도 같은 스키마 |
 | 시연 환경에 메일 서버가 없음 | 통합 환경 전용 **로컬 미리보기 발송**(인증번호를 화면에 표시) | 메일 없이 회원가입·인증 시연 |
 | 한 사람이 Google·Kakao로 따로 가입 | 계정 설정에서 **소셜 계정 연결** | 한 계정으로 두 방식 로그인 |
+| 동시 선정으로 모집 인원을 넘길 수 있음 | 선정 시 캠페인 행을 **쓰기 잠금**한 뒤 인원을 세고 선정 | 동시 요청 2건 중 1건만 성공(자동 점검으로 확인) |
+| 관리자 화면이 예시 데이터라 시연 신뢰도가 낮음 | 운영자 전용 **읽기 API**(`/api/admin/*`)를 따로 두고 개인정보는 가려서 응답 | 모든 관리자 화면이 실제 데이터, 연락처는 010-****-1234 |
 | 신청 서비스가 974줄로 비대 | 양식·검사·응답 변환·JSON 도우미로 **역할 분리**(642줄) | 기능별로 읽고 고치기 쉬움 |
 
 ## 5. 데이터 구조
 
-- 테이블 50개, 외래 키 76개. 전체 ERD는 [`docs/erd/MOVRIT.dbml`](../erd/MOVRIT.dbml), 도메인별 그림은 [`docs/erd/`](../erd/README.md)에 있습니다.
-- DB 변경 절차와 V1~V5 이력은 [`docs/db-migration.md`](../db-migration.md)를 따릅니다.
+- 테이블 51개, 외래 키 77개. 전체 ERD는 [`docs/erd/MOVRIT.dbml`](../erd/MOVRIT.dbml), 도메인별 그림은 [`docs/erd/`](../erd/README.md)에 있습니다.
+- DB 변경 절차와 V1~V6 이력은 [`docs/db-migration.md`](../db-migration.md)를 따릅니다.
