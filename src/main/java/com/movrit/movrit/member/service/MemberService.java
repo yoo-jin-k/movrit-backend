@@ -131,6 +131,9 @@ public class MemberService {
   @Transactional
   public MemberSignupResponse updateStatus(Long adminId, Long id, MemberStatus status) {
     getAdmin(adminId);
+    // 운영자가 자기 계정을 정지하면 다시 로그인할 수 없으므로 막습니다.
+    if (adminId.equals(id))
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "본인 계정의 상태는 바꿀 수 없습니다.");
     Member m = getMember(id);
     try {
       m.changeStatus(status);
