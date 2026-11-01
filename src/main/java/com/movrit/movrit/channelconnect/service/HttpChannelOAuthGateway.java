@@ -99,7 +99,7 @@ public class HttpChannelOAuthGateway implements ChannelOAuthGateway {
     JsonNode token = postForm("https://api.instagram.com/oauth/access_token", form);
     String accessToken = text(token, "access_token");
 
-    JsonNode me =
+    JsonNode response =
         http.get()
             .uri(
                 "https://graph.instagram.com/"
@@ -108,6 +108,11 @@ public class HttpChannelOAuthGateway implements ChannelOAuthGateway {
                 accessToken)
             .retrieve()
             .body(JsonNode.class);
+    // 문서 예시에 따라 계정 정보가 data 배열 안에 오는 경우와 바로 오는 경우를 모두 받습니다.
+    JsonNode me =
+        response != null && response.path("data").isArray() && !response.get("data").isEmpty()
+            ? response.get("data").get(0)
+            : response;
     String username = text(me, "username");
     String userId = me.hasNonNull("user_id") ? me.get("user_id").asString() : text(me, "id");
     Long followers = me.hasNonNull("followers_count") ? me.get("followers_count").asLong() : null;

@@ -47,7 +47,7 @@ public class ChannelConnectSettings {
   private String naverClientSecret;
 
   /** 인스타그램 Graph API 버전입니다. 메타가 버전을 올리면 환경 변수로 바꿉니다. */
-  @Value("${movrit.channel-connect.instagram.graph-version:v23.0}")
+  @Value("${movrit.channel-connect.instagram.graph-version:v26.0}")
   private String instagramGraphVersion;
 
   public String clientId(ChannelProvider provider) {
