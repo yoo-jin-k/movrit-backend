@@ -13,14 +13,17 @@ class CampaignApplicationManageTest {
   }
 
   @Test
-  void selectionCanBeUndoneOnlyBeforeAcceptance() {
-    CampaignApplication selected = application(CampaignApplicationStatus.SELECTED);
+  void selectionCanBeUndoneBeforeExperienceConfirmation() {
+    CampaignApplication selected = application(CampaignApplicationStatus.SUBMITTED);
+    selected.select();
     selected.unselect();
     assertThat(selected.getStatus()).isEqualTo(CampaignApplicationStatus.SUBMITTED);
 
-    // 참여자가 이미 수락했다면 선정 취소가 아니라 '참여 취소'로 처리해야 합니다.
-    assertThatThrownBy(() -> application(CampaignApplicationStatus.ACTIVE).unselect())
-        .isInstanceOf(IllegalStateException.class);
+    // 참여자가 체험 완료를 확인한 뒤에는 선정 취소가 아니라 '참여 취소'로 처리해야 합니다.
+    CampaignApplication experienced = application(CampaignApplicationStatus.SUBMITTED);
+    experienced.select();
+    experienced.confirmExperience();
+    assertThatThrownBy(experienced::unselect).isInstanceOf(IllegalStateException.class);
   }
 
   @Test

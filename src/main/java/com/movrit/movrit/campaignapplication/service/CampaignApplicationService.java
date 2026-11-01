@@ -335,12 +335,13 @@ public class CampaignApplicationService {
     }
     CampaignApplicationDtos.Response response =
         transition(application, CampaignApplication::select);
+    // 선정과 동시에 참여가 확정되므로 참여자에게는 바로 체험을 시작하도록 안내합니다.
     notifyCreatorAndAudit(
         actorMemberId,
         application,
-        "신청이 선정되었습니다.",
+        "캠페인에 선정되었습니다. 체험 후 콘텐츠를 제출해 주세요.",
         "CAMPAIGN_APPLICATION_SELECTED",
-        "SELECTED",
+        "ACTIVE",
         null);
     return response;
   }
@@ -408,7 +409,7 @@ public class CampaignApplicationService {
    * 업체가 선정을 편집합니다(업체 직접 선정 캠페인).
    *
    * <ul>
-   *   <li>UNSELECT: 참여 수락 전 선정을 취소하고 다시 접수 상태로 돌립니다.
+   *   <li>UNSELECT: 체험 완료 확인 전인 선정을 취소하고 다시 접수 상태로 돌립니다.
    *   <li>RESTORE: 미선정을 되돌려 다시 접수 상태로 검토합니다.
    *   <li>CANCEL: 참여자 사정 등으로 선정·참여 중인 신청을 취소합니다(사유 필수).
    * </ul>
@@ -518,39 +519,21 @@ public class CampaignApplicationService {
   }
 
   /**
-   * 참여자가 본인 신청을 취소합니다. 선정 전(접수) 상태에서만 가능하고, 취소 사유를 기록해 업체에 알립니다. 선정된 뒤의 취소는 업체가 선정 편집의 '참여 취소'로
-   * 처리합니다.
+   * 참여자 본인 취소 요청을 거절합니다.
    *
-   * @throws ResponseStatusException 본인 신청이 아니면 404, 선정 이후 등 본인이 취소할 수 없는 상태면 409
+   * <p>캠페인 신청은 한 번 하면 본인이 취소할 수 없습니다. 참여가 어려운 사정이 생기면 업체에 문의하고, 업체가 선정 편집의 '참여 취소'로 처리합니다. 이전 화면이나
+   * 외부 호출이 이 주소를 부르더라도 상태가 바뀌지 않도록 409로 안내합니다.
+   *
+   * @throws ResponseStatusException 본인 신청이 아니면 404, 본인 신청이면 항상 409
    */
-  @Transactional
+  @Transactional(readOnly = true)
   public CampaignApplicationDtos.Response cancel(
       Long memberId, Long applicationId, CampaignApplicationDtos.CancelRequest request) {
-    CampaignApplication application =
-        applicationRepository
-            .findByIdAndCreatorMemberId(applicationId, memberId)
-            .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
-    CampaignApplicationStatus previousStatus = application.getStatus();
-    CampaignApplicationDtos.Response response =
-        transition(application, value -> value.cancel(request.reason().trim()));
-    Long sellerMemberId = application.getCampaign().getBrand().getSeller().getMember().getId();
-    notificationService.send(
-        sellerMemberId,
-        "CAMPAIGN_APPLICATION",
-        "캠페인 신청이 취소되었습니다.",
-        application.getCreator().getNickname() + "님이 신청을 취소하셨습니다.",
-        "CAMPAIGN_APPLICATION",
-        application.getId());
-    auditLogService.record(
-        memberId,
-        "CAMPAIGN_APPLICATION_CANCELLED",
-        "CAMPAIGN_APPLICATION",
-        application.getId(),
-        "{\"status\":\"" + previousStatus + "\"}",
-        "{\"status\":\"CANCELLED\"}",
-        request.reason().trim());
-    return response;
+    applicationRepository
+        .findByIdAndCreatorMemberId(applicationId, memberId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
+    throw new ResponseStatusException(
+        HttpStatus.CONFLICT, "캠페인 신청은 직접 취소할 수 없습니다. 참여가 어려우면 업체 담당자에게 문의해 주세요.");
   }
 
   /**

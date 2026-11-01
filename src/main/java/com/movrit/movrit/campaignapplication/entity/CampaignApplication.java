@@ -126,10 +126,15 @@ public class CampaignApplication extends BaseEntity {
   @Column(name = "experience_confirmed_at")
   private LocalDateTime experienceConfirmedAt;
 
-  /** 신청을 선정합니다. 접수(SUBMITTED) 상태에서만 가능하며 선정(SELECTED)으로 바뀝니다. */
+  /**
+   * 신청을 선정합니다. 접수(SUBMITTED) 상태에서만 가능합니다.
+   *
+   * <p>참여자는 신청할 때 이미 참여 의사를 밝혔으므로, 선정되면 별도의 '참여 수락' 없이 바로 진행 중(ACTIVE)이 됩니다. 이전 방식으로 선정(SELECTED)에
+   * 머물러 있는 기존 신청은 {@link #activate()}로 이어서 진행할 수 있습니다.
+   */
   public void select() {
     requireStatus(CampaignApplicationStatus.SUBMITTED, "접수된 신청만 선정할 수 있습니다.");
-    status = CampaignApplicationStatus.SELECTED;
+    status = CampaignApplicationStatus.ACTIVE;
     respondedAt = LocalDateTime.now();
   }
 
@@ -141,12 +146,17 @@ public class CampaignApplication extends BaseEntity {
   }
 
   /**
-   * 선정을 취소하고 다시 '접수' 상태로 돌립니다. 참여자가 수락하기 전(선정 상태)에만 가능합니다.
+   * 선정을 취소하고 다시 '접수' 상태로 돌립니다.
    *
-   * <p>선정 인원이 하나 줄어 다른 신청자를 선정할 수 있습니다.
+   * <p>선정된 뒤 참여자가 체험 완료를 확인하기 전까지만 가능합니다. 그 이후에는 '참여 취소'로 처리합니다. 선정 인원이 하나 줄어 다른 신청자를 선정할 수 있습니다.
    */
   public void unselect() {
-    requireStatus(CampaignApplicationStatus.SELECTED, "참여 수락 전인 선정만 취소할 수 있습니다.");
+    boolean undoable =
+        status == CampaignApplicationStatus.SELECTED
+            || (status == CampaignApplicationStatus.ACTIVE && experienceConfirmedAt == null);
+    if (!undoable) {
+      throw new IllegalStateException("체험 완료 확인 전인 선정만 취소할 수 있습니다. 이후에는 참여 취소를 이용해 주세요.");
+    }
     status = CampaignApplicationStatus.SUBMITTED;
     respondedAt = null;
   }
@@ -173,7 +183,11 @@ public class CampaignApplication extends BaseEntity {
     cancelledAt = LocalDateTime.now();
   }
 
-  /** 선정된 참여자가 참여를 수락합니다. 선정(SELECTED)에서 진행 중(ACTIVE)으로 바뀝니다. */
+  /**
+   * 이전 방식으로 선정(SELECTED)에 머물러 있는 신청을 진행 중(ACTIVE)으로 바꿉니다.
+   *
+   * <p>지금은 선정과 동시에 진행 중이 되므로 새 신청에는 쓰이지 않고, 기존 데이터만 이어서 처리합니다.
+   */
   public void activate() {
     requireStatus(CampaignApplicationStatus.SELECTED, "선정된 신청만 참여를 확정할 수 있습니다.");
     status = CampaignApplicationStatus.ACTIVE;
@@ -217,21 +231,6 @@ public class CampaignApplication extends BaseEntity {
   public void completeContentReview() {
     requireStatus(CampaignApplicationStatus.CONTENT_SUBMITTED, "제출된 콘텐츠만 승인할 수 있습니다.");
     status = CampaignApplicationStatus.COMPLETED;
-  }
-
-  /**
-   * 참여자 본인이 신청을 취소합니다.
-   *
-   * <p>선정 전(접수) 상태에서만 가능합니다. 선정된 뒤에는 본인이 취소할 수 없고, 업체가 사유와 함께 {@link #cancelByManager(String)}로
-   * 처리합니다. 취소 사유와 시각을 기록하며, 캠페인 신청만 취소하고 주문·결제 데이터는 건드리지 않습니다.
-   */
-  public void cancel(String reason) {
-    if (status != CampaignApplicationStatus.SUBMITTED) {
-      throw new IllegalStateException("선정 전 접수 상태에서만 신청을 취소할 수 있습니다. 선정 후에는 업체에 문의해 주세요.");
-    }
-    status = CampaignApplicationStatus.CANCELLED;
-    cancellationReason = reason;
-    cancelledAt = LocalDateTime.now();
   }
 
   private void requireStatus(CampaignApplicationStatus expected, String message) {
