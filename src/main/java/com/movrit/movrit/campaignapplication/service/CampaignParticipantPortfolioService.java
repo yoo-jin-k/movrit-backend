@@ -16,6 +16,7 @@ import com.movrit.movrit.campaigneligibility.dto.CampaignEligibilityDtos;
 import com.movrit.movrit.campaigneligibility.entity.MemberChannelMetric;
 import com.movrit.movrit.campaigneligibility.entity.MetricVerificationStatus;
 import com.movrit.movrit.campaigneligibility.repository.MemberChannelMetricRepository;
+import com.movrit.movrit.channelconnect.service.ChannelConnectionService;
 import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.creator.entity.Creator;
 import java.net.URI;
@@ -49,6 +50,7 @@ public class CampaignParticipantPortfolioService {
   private final MemberChannelMetricRepository metricRepository;
   private final CampaignOwnershipService campaignOwnership;
   private final ObjectMapper objectMapper;
+  private final ChannelConnectionService channelConnections;
 
   /**
    * 신청 한 건의 참여자 포트폴리오를 조회합니다.
@@ -86,7 +88,8 @@ public class CampaignParticipantPortfolioService {
         completed.size(),
         completed.stream()
             .map(submission -> completedCampaign(submission, linksBySubmission))
-            .toList());
+            .toList(),
+        channelConnections.linkedChannels(creator.getMember().getId()));
   }
 
   private CampaignParticipantDtos.Profile profile(Creator creator) {

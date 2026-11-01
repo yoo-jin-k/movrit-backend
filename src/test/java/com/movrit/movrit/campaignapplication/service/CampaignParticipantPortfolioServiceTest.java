@@ -17,6 +17,7 @@ import com.movrit.movrit.campaigncontent.repository.CampaignContentSubmissionRep
 import com.movrit.movrit.campaigneligibility.entity.MemberChannelMetric;
 import com.movrit.movrit.campaigneligibility.entity.MetricVerificationStatus;
 import com.movrit.movrit.campaigneligibility.repository.MemberChannelMetricRepository;
+import com.movrit.movrit.channelconnect.service.ChannelConnectionService;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.creator.entity.Creator;
@@ -101,7 +102,14 @@ class CampaignParticipantPortfolioServiceTest {
 
     var result =
         new CampaignParticipantPortfolioService(
-                applications, forms, submissions, links, metrics, products, new ObjectMapper())
+                applications,
+                forms,
+                submissions,
+                links,
+                metrics,
+                products,
+                new ObjectMapper(),
+                mock(ChannelConnectionService.class))
             .find(20L, 12L);
 
     verify(products)

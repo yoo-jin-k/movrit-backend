@@ -6,6 +6,7 @@ import com.movrit.movrit.common.security.JwtMemberId;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -15,7 +16,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 로그인 회원의 SNS 채널(인스타그램·유튜브·네이버 블로그) 계정 연결 API입니다. 회원은 로그인 토큰으로만 확인합니다.
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>GET /api/users/me/channel-connections: 서비스별 연결 상태
  *   <li>POST /{provider}/start: SNS 로그인 주소 발급
  *   <li>POST /{provider}/complete: SNS에서 돌아온 인가 코드로 연결 완료
+ *   <li>POST /{provider}/manual: 직접 등록(주소·팔로워 수·프로필 캡처, multipart). 운영자 확인 전까지 '확인 대기'
  *   <li>DELETE /{provider}: 연결 해제
  * </ul>
  */
@@ -50,6 +55,17 @@ public class ChannelConnectionController {
       @PathVariable String provider,
       @Valid @RequestBody ChannelConnectDtos.CompleteRequest request) {
     return service.complete(JwtMemberId.from(jwt), provider, request);
+  }
+
+  @PostMapping(value = "/{provider}/manual", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ChannelConnectDtos.ProviderStatus registerManually(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable String provider,
+      @RequestParam String profileUrl,
+      @RequestParam(required = false) Long followerCount,
+      @RequestPart("evidence") MultipartFile evidence) {
+    return service.registerManually(
+        JwtMemberId.from(jwt), provider, profileUrl, followerCount, evidence);
   }
 
   @DeleteMapping("/{provider}")

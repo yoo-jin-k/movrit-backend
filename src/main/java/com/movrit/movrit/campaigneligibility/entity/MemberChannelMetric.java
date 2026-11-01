@@ -80,6 +80,11 @@ public class MemberChannelMetric extends BaseEntity {
     this.verificationStatus = MetricVerificationStatus.VERIFIED;
   }
 
+  /** 운영자가 직접 등록한 채널을 반려하면 그 수치도 '반려(REJECTED)'로 둡니다. */
+  public void markRejected() {
+    this.verificationStatus = MetricVerificationStatus.REJECTED;
+  }
+
   /** SNS 계정 연결을 해제하면 더 이상 확인된 값이 아니므로 '미확인'으로 되돌립니다. 수치는 그대로 둡니다. */
   public void markUnverified() {
     this.verificationStatus = MetricVerificationStatus.UNVERIFIED;

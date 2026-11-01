@@ -2,6 +2,7 @@ package com.movrit.movrit.campaignapplication.dto;
 
 import com.movrit.movrit.campaigneligibility.dto.CampaignEligibilityDtos;
 import com.movrit.movrit.campaigneligibility.entity.MetricVerificationStatus;
+import com.movrit.movrit.channelconnect.dto.ChannelConnectDtos;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -55,7 +56,7 @@ public final class CampaignParticipantDtos {
       LocalDateTime completedAt,
       List<PublicContentLink> publicContentLinks) {}
 
-  /** 배송 연락처·주소와 다른 캠페인의 신청 답변은 포함하지 않습니다. */
+  /** 배송 연락처·주소와 다른 캠페인의 신청 답변은 포함하지 않습니다. linkedChannels는 참여자가 연결·등록한 SNS 채널(반려 제외)입니다. */
   public record DetailResponse(
       Long applicationId,
       Long campaignId,
@@ -64,5 +65,6 @@ public final class CampaignParticipantDtos {
       List<ApplicationAnswer> applicationAnswers,
       RequirementEvaluation requirementEvaluation,
       long completedCampaignCount,
-      List<CompletedCampaign> completedCampaigns) {}
+      List<CompletedCampaign> completedCampaigns,
+      List<ChannelConnectDtos.LinkedChannel> linkedChannels) {}
 }

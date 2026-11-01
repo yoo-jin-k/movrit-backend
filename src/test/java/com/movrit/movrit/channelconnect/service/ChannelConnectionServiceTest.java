@@ -16,16 +16,19 @@ import com.movrit.movrit.campaigneligibility.entity.MetricVerificationStatus;
 import com.movrit.movrit.campaigneligibility.repository.MemberChannelMetricRepository;
 import com.movrit.movrit.channelconnect.dto.ChannelConnectDtos;
 import com.movrit.movrit.channelconnect.entity.ChannelProvider;
+import com.movrit.movrit.channelconnect.entity.ChannelVerificationStatus;
 import com.movrit.movrit.channelconnect.entity.MemberChannelConnection;
 import com.movrit.movrit.channelconnect.repository.MemberChannelConnectionRepository;
 import com.movrit.movrit.channelconnect.service.ChannelOAuthGateway.ConnectedAccount;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.service.MemberService;
+import com.movrit.movrit.notification.service.NotificationService;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 /** SNS 채널 연결의 시작·완료·해제 규칙을 SNS 통신 없이 확인합니다. */
@@ -37,9 +40,18 @@ class ChannelConnectionServiceTest {
   private final ChannelConnectSettings settings = mock(ChannelConnectSettings.class);
   private final ChannelOAuthStateStore states = new ChannelOAuthStateStore();
   private final ChannelOAuthGateway gateway = mock(ChannelOAuthGateway.class);
+  private final ChannelEvidenceStorage evidence = mock(ChannelEvidenceStorage.class);
   private final ChannelConnectionService service =
       new ChannelConnectionService(
-          repository, metrics, members, settings, states, gateway, mock(AuditLogService.class));
+          repository,
+          metrics,
+          members,
+          settings,
+          states,
+          gateway,
+          mock(AuditLogService.class),
+          evidence,
+          mock(NotificationService.class));
 
   private final Member member = Member.builder().id(7L).name("참여자").build();
 
@@ -133,5 +145,77 @@ class ChannelConnectionServiceTest {
     assertThat(service.findMine(7L))
         .extracting(ChannelConnectDtos.ProviderStatus::provider)
         .containsExactly("instagram", "youtube", "naver-blog");
+  }
+
+  @Test
+  void manualRegistrationStartsPendingAndRecordsUnverifiedFollowers() {
+    when(repository.findByMemberIdAndProvider(7L, ChannelProvider.INSTAGRAM))
+        .thenReturn(Optional.empty());
+    when(repository.findByProviderAndExternalId(ChannelProvider.INSTAGRAM, "manual:movrit.daily"))
+        .thenReturn(Optional.empty());
+    when(metrics.findByMemberIdAndChannelTypeAndMetricType(7L, "INSTAGRAM", "FOLLOWER_COUNT"))
+        .thenReturn(Optional.empty());
+    when(members.getMember(7L)).thenReturn(member);
+    when(evidence.store(any())).thenReturn("key.png");
+
+    ChannelConnectDtos.ProviderStatus result =
+        service.registerManually(
+            7L, "instagram", "instagram.com/Movrit.Daily/", 850L, mock(MultipartFile.class));
+
+    assertThat(result.connection().accountName()).isEqualTo("@movrit.daily");
+    assertThat(result.connection().profileUrl())
+        .isEqualTo("https://www.instagram.com/movrit.daily");
+    assertThat(result.connection().verificationStatus())
+        .isEqualTo(ChannelVerificationStatus.PENDING);
+    ArgumentCaptor<MemberChannelMetric> metric = ArgumentCaptor.forClass(MemberChannelMetric.class);
+    verify(metrics).save(metric.capture());
+    assertThat(metric.getValue().getVerificationStatus())
+        .isEqualTo(MetricVerificationStatus.UNVERIFIED);
+  }
+
+  @Test
+  void manualRegistrationNeedsFollowersAndValidAddress() {
+    assertThatThrownBy(
+            () ->
+                service.registerManually(
+                    7L, "instagram", "https://example.com/me", 10L, mock(MultipartFile.class)))
+        .isInstanceOfSatisfying(
+            ResponseStatusException.class,
+            e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+    assertThatThrownBy(
+            () ->
+                service.registerManually(
+                    7L,
+                    "youtube",
+                    "https://www.youtube.com/@movrit",
+                    null,
+                    mock(MultipartFile.class)))
+        .isInstanceOfSatisfying(
+            ResponseStatusException.class,
+            e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+    verify(evidence, never()).store(any());
+  }
+
+  @Test
+  void approvedManualChannelBecomesVerifiedAndCannotBeReviewedTwice() {
+    MemberChannelConnection pending =
+        MemberChannelConnection.builder()
+            .id(5L)
+            .member(member)
+            .provider(ChannelProvider.INSTAGRAM)
+            .build();
+    pending.registerManually(
+        "manual:movrit", "@movrit", "https://www.instagram.com/movrit", 300L, "key.png");
+    when(repository.findById(5L)).thenReturn(Optional.of(pending));
+    when(metrics.findByMemberIdAndChannelTypeAndMetricType(7L, "INSTAGRAM", "FOLLOWER_COUNT"))
+        .thenReturn(Optional.empty());
+    when(members.getMember(7L)).thenReturn(member);
+
+    assertThat(service.approve(1L, 5L).verificationStatus())
+        .isEqualTo(ChannelVerificationStatus.VERIFIED);
+    assertThatThrownBy(() -> service.reject(1L, 5L, "사유"))
+        .isInstanceOfSatisfying(
+            ResponseStatusException.class,
+            e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
   }
 }
