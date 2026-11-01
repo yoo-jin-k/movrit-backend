@@ -134,7 +134,13 @@ public class CollaborationService {
   }
 
   /**
-   * 현재 모집 기간 안에 있는 공개 캠페인 목록을 반환합니다.
+   * 사용자 목록·검색에 보여줄 공개 캠페인 목록을 반환합니다.
+   *
+   * <ul>
+   *   <li>모집이 시작된 공개(open) 캠페인을 모두 보여줍니다. 모집 기간이 끝났어도 목록에서 사라지지 않고, 화면에서 '모집 마감'으로 표시합니다.
+   *   <li>모집 중인 캠페인을 앞에, 모집이 끝난 캠페인을 뒤에 두고 각각 최신순으로 정렬합니다.
+   *   <li>업체나 운영자가 직접 마감(open = false)한 캠페인과 아직 시작 전인 캠페인은 보여주지 않습니다.
+   * </ul>
    *
    * <p>카드에 "신청 N / 모집 M명"을 보여줄 수 있도록 취소를 제외한 신청 수를 캠페인 ID 묶음으로 한 번에 집계해 붙입니다. 신청이 없는 캠페인은 0으로
    * 응답합니다.
@@ -143,7 +149,9 @@ public class CollaborationService {
     LocalDateTime now = LocalDateTime.now();
     List<Campaign> visible =
         campaigns.findAllByOpenTrueOrderByIdDesc().stream()
-            .filter(c -> !now.isBefore(c.getStartAt()) && now.isBefore(c.getEndAt()))
+            .filter(c -> !now.isBefore(c.getStartAt()))
+            // 정렬이 안정적이므로 같은 그룹 안에서는 최신순(ID 내림차순)이 유지됩니다.
+            .sorted(java.util.Comparator.comparing((Campaign c) -> !now.isBefore(c.getEndAt())))
             .toList();
     if (visible.isEmpty()) return List.of();
     Map<Long, Long> counts = new HashMap<>();

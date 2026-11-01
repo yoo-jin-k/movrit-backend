@@ -62,9 +62,23 @@ class CollaborationOpenCampaignCountTest {
   }
 
   @Test
-  void closedPeriodCampaignsAreExcludedWithoutCountQuery() {
+  void endedCampaignsStayVisibleAfterRecruitingOnes() {
+    // 모집이 끝난 캠페인도 목록에서 사라지지 않고, 모집 중인 캠페인 뒤에 놓입니다.
     Campaign ended = campaign(3L, LocalDateTime.now().minusDays(1));
-    when(campaignRepository.findAllByOpenTrueOrderByIdDesc()).thenReturn(List.of(ended));
+    Campaign recruiting = campaign(2L, LocalDateTime.now().plusDays(2));
+    when(campaignRepository.findAllByOpenTrueOrderByIdDesc())
+        .thenReturn(List.of(ended, recruiting));
+    when(applicationRepository.countActiveApplicationsByCampaignIds(anyCollection()))
+        .thenReturn(List.of());
+
+    assertThat(service.openCampaigns())
+        .extracting(CollaborationDtos.CampaignResponse::id)
+        .containsExactly(2L, 3L);
+  }
+
+  @Test
+  void emptyListSkipsCountQuery() {
+    when(campaignRepository.findAllByOpenTrueOrderByIdDesc()).thenReturn(List.of());
 
     assertThat(service.openCampaigns()).isEmpty();
     // 보여줄 캠페인이 없으면 빈 IN 조건 쿼리를 보내지 않습니다.

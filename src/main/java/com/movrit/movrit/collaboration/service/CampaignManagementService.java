@@ -69,8 +69,14 @@ public class CampaignManagementService {
                 CampaignApplicationStatus.CONTENT_SUBMITTED,
                 CampaignApplicationStatus.REVISION_REQUESTED,
                 CampaignApplicationStatus.COMPLETED));
+    // open은 '지금 신청할 수 있는지'입니다. 공개 상태여도 모집 기간 밖이면 false로 알려 화면에 '모집 종료'를 표시합니다.
+    java.time.LocalDateTime now = java.time.LocalDateTime.now();
+    boolean recruiting =
+        campaign.isOpen()
+            && !now.isBefore(campaign.getStartAt())
+            && now.isBefore(campaign.getEndAt());
     return new CampaignManagementDtos.RecruitmentStatus(
-        campaignId, campaign.getRecruitmentCount(), applied, selected, accepted, campaign.isOpen());
+        campaignId, campaign.getRecruitmentCount(), applied, selected, accepted, recruiting);
   }
 
   /**
