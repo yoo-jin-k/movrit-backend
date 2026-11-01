@@ -1,6 +1,7 @@
 package com.movrit.movrit.collaboration.service;
 
 import com.movrit.movrit.audit.service.AuditLogService;
+import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationFormRepository;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
 import com.movrit.movrit.campaignmedia.service.CampaignPublicPolicy;
@@ -35,6 +36,41 @@ public class CampaignManagementService {
             .map(CampaignPublicPolicy::includesVisit)
             .orElse(false);
     return CampaignManagementDtos.DetailResponse.from(campaign, visit);
+  }
+
+  /**
+   * 공개 캠페인의 모집 현황(신청·선정·수락 인원)을 돌려줍니다. 로그인하지 않아도 볼 수 있습니다.
+   *
+   * @throws ResponseStatusException 캠페인이 없거나 공개 대상이 아니면 404
+   */
+  public CampaignManagementDtos.RecruitmentStatus getRecruitment(Long campaignId) {
+    Campaign campaign = getCampaign(campaignId);
+    CampaignPublicPolicy.requireVisible(campaign);
+    long applied =
+        applicationRepository
+            .countActiveApplicationsByCampaignIds(java.util.List.of(campaignId))
+            .stream()
+            .mapToLong(row -> row.getApplicationCount())
+            .sum();
+    long selected =
+        applicationRepository.countByCampaignIdAndStatusIn(
+            campaignId,
+            java.util.List.of(
+                CampaignApplicationStatus.SELECTED,
+                CampaignApplicationStatus.ACTIVE,
+                CampaignApplicationStatus.CONTENT_SUBMITTED,
+                CampaignApplicationStatus.REVISION_REQUESTED,
+                CampaignApplicationStatus.COMPLETED));
+    long accepted =
+        applicationRepository.countByCampaignIdAndStatusIn(
+            campaignId,
+            java.util.List.of(
+                CampaignApplicationStatus.ACTIVE,
+                CampaignApplicationStatus.CONTENT_SUBMITTED,
+                CampaignApplicationStatus.REVISION_REQUESTED,
+                CampaignApplicationStatus.COMPLETED));
+    return new CampaignManagementDtos.RecruitmentStatus(
+        campaignId, campaign.getRecruitmentCount(), applied, selected, accepted, campaign.isOpen());
   }
 
   /**

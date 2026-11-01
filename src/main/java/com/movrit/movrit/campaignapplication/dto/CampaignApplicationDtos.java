@@ -158,6 +158,14 @@ public final class CampaignApplicationDtos {
   public record CancelRequest(@NotBlank String reason) {}
 
   /**
+   * 업체·운영자의 선정 편집 요청입니다.
+   *
+   * @param action unselect(선정 취소), restore(미선정 되돌리기), cancel(참여 취소) 중 하나입니다.
+   * @param reason 참여 취소 사유입니다. cancel일 때만 필수입니다.
+   */
+  public record ManageRequest(@NotBlank String action, @Size(max = 500) String reason) {}
+
+  /**
    * 캠페인 신청의 신청 가능 여부 응답을 전달합니다.
    *
    * @param campaignId 캠페인 식별자입니다.

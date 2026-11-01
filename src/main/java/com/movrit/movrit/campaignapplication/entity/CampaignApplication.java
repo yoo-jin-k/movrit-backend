@@ -140,6 +140,39 @@ public class CampaignApplication extends BaseEntity {
     respondedAt = LocalDateTime.now();
   }
 
+  /**
+   * 선정을 취소하고 다시 '접수' 상태로 돌립니다. 참여자가 수락하기 전(선정 상태)에만 가능합니다.
+   *
+   * <p>선정 인원이 하나 줄어 다른 신청자를 선정할 수 있습니다.
+   */
+  public void unselect() {
+    requireStatus(CampaignApplicationStatus.SELECTED, "참여 수락 전인 선정만 취소할 수 있습니다.");
+    status = CampaignApplicationStatus.SUBMITTED;
+    respondedAt = null;
+  }
+
+  /** 미선정 처리를 되돌려 다시 '접수' 상태로 검토할 수 있게 합니다. */
+  public void restoreToReview() {
+    requireStatus(CampaignApplicationStatus.REJECTED, "미선정된 신청만 다시 검토로 돌릴 수 있습니다.");
+    status = CampaignApplicationStatus.SUBMITTED;
+    respondedAt = null;
+  }
+
+  /**
+   * 업체(또는 운영자)가 참여자의 사정 등으로 참여를 취소합니다. 선정·참여 중 상태에서만 가능합니다.
+   *
+   * <p>콘텐츠를 제출한 뒤에는 취소할 수 없습니다. 사유 앞에 '[업체 취소]'를 붙여 참여자 본인 취소와 구분합니다.
+   */
+  public void cancelByManager(String reason) {
+    if (status != CampaignApplicationStatus.SELECTED
+        && status != CampaignApplicationStatus.ACTIVE) {
+      throw new IllegalStateException("선정 또는 참여 중인 신청만 업체가 취소할 수 있습니다.");
+    }
+    status = CampaignApplicationStatus.CANCELLED;
+    cancellationReason = "[업체 취소] " + reason;
+    cancelledAt = LocalDateTime.now();
+  }
+
   /** 선정된 참여자가 참여를 수락합니다. 선정(SELECTED)에서 진행 중(ACTIVE)으로 바뀝니다. */
   public void activate() {
     requireStatus(CampaignApplicationStatus.SELECTED, "선정된 신청만 참여를 확정할 수 있습니다.");

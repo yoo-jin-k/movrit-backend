@@ -30,6 +30,12 @@ public class CampaignManagementController {
     return service.getDetail(campaignId);
   }
 
+  /** 모집 현황(신청·선정·수락 인원)을 조회합니다. 로그인 없이 볼 수 있습니다. */
+  @GetMapping("/{campaignId}/recruitment")
+  public CampaignManagementDtos.RecruitmentStatus recruitment(@PathVariable Long campaignId) {
+    return service.getRecruitment(campaignId);
+  }
+
   /** 수정을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PatchMapping("/{campaignId}")
   public CampaignManagementDtos.DetailResponse update(

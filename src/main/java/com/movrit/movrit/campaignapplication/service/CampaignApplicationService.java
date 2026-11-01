@@ -385,6 +385,103 @@ public class CampaignApplicationService {
     return response;
   }
 
+  // ───────── 선정 편집(업체·운영자) ─────────
+
+  /** 선정 편집 종류입니다. 상태 변경, 참여자 알림 제목, 감사 기록 이름을 함께 묶습니다. */
+  private enum ManageAction {
+    UNSELECT("선정이 취소되었습니다.", "CAMPAIGN_APPLICATION_UNSELECTED", "SUBMITTED"),
+    RESTORE("신청이 다시 검토 대상이 되었습니다.", "CAMPAIGN_APPLICATION_RESTORED", "SUBMITTED"),
+    CANCEL("업체 사정으로 캠페인 참여가 취소되었습니다.", "CAMPAIGN_APPLICATION_MANAGER_CANCELLED", "CANCELLED");
+
+    private final String notice;
+    private final String auditAction;
+    private final String nextStatus;
+
+    ManageAction(String notice, String auditAction, String nextStatus) {
+      this.notice = notice;
+      this.auditAction = auditAction;
+      this.nextStatus = nextStatus;
+    }
+  }
+
+  /**
+   * 업체가 선정을 편집합니다(업체 직접 선정 캠페인).
+   *
+   * <ul>
+   *   <li>UNSELECT: 참여 수락 전 선정을 취소하고 다시 접수 상태로 돌립니다.
+   *   <li>RESTORE: 미선정을 되돌려 다시 접수 상태로 검토합니다.
+   *   <li>CANCEL: 참여자 사정 등으로 선정·참여 중인 신청을 취소합니다(사유 필수).
+   * </ul>
+   *
+   * <p>취소·선정 취소로 자리가 비면 다른 신청자를 새로 선정할 수 있습니다. 참여자에게 알림을 보내고 감사 기록을 남깁니다.
+   */
+  @Transactional
+  public CampaignApplicationDtos.Response manage(
+      Long memberId, Long applicationId, String action, String reason) {
+    CampaignApplication application = getSellerApplication(memberId, applicationId);
+    requireSelectionMode(application, CampaignSelectionMode.BRAND_DIRECT);
+    return manageApplication(memberId, application, parseAction(action), reason);
+  }
+
+  /** 운영자가 선정을 편집합니다(운영자 선정 캠페인). 규칙은 업체 편집과 같습니다. */
+  @Transactional
+  public CampaignApplicationDtos.Response operatorManage(
+      Long adminMemberId, Long applicationId, String action, String reason) {
+    memberService.getAdmin(adminMemberId);
+    CampaignApplication application = getApplication(applicationId);
+    requireSelectionMode(application, CampaignSelectionMode.OPERATOR);
+    return manageApplication(adminMemberId, application, parseAction(action), reason);
+  }
+
+  /** 선정 편집 공통 처리입니다. 캠페인을 잠가 선정 인원 계산과 겹치지 않게 합니다. */
+  private CampaignApplicationDtos.Response manageApplication(
+      Long actorMemberId, CampaignApplication application, ManageAction action, String reason) {
+    campaignRepository
+        .findByIdForUpdate(application.getCampaign().getId())
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "캠페인을 찾을 수 없습니다."));
+    String cleanReason = reason == null || reason.isBlank() ? null : reason.trim();
+    if (action == ManageAction.CANCEL && cleanReason == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "참여 취소 사유를 입력해 주세요.");
+    }
+    CampaignApplicationStatus previous = application.getStatus();
+    CampaignApplicationDtos.Response response =
+        transition(
+            application,
+            value -> {
+              switch (action) {
+                case UNSELECT -> value.unselect();
+                case RESTORE -> value.restoreToReview();
+                case CANCEL -> value.cancelByManager(cleanReason);
+              }
+            });
+    notificationService.send(
+        application.getCreator().getMember().getId(),
+        "CAMPAIGN_APPLICATION",
+        action.notice,
+        application.getCampaign().getTitle() + (cleanReason == null ? "" : " · 사유: " + cleanReason),
+        "CAMPAIGN_APPLICATION",
+        application.getId());
+    auditLogService.record(
+        actorMemberId,
+        action.auditAction,
+        "CAMPAIGN_APPLICATION",
+        application.getId(),
+        "{\"status\":\"" + previous + "\"}",
+        "{\"status\":\"" + action.nextStatus + "\"}",
+        cleanReason);
+    return response;
+  }
+
+  /** 화면에서 보낸 편집 이름(unselect·restore·cancel)을 편집 종류로 바꿉니다. */
+  private static ManageAction parseAction(String action) {
+    return switch (action == null ? "" : action) {
+      case "unselect" -> ManageAction.UNSELECT;
+      case "restore" -> ManageAction.RESTORE;
+      case "cancel" -> ManageAction.CANCEL;
+      default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "지원하지 않는 선정 편집입니다.");
+    };
+  }
+
   /**
    * 선정된 참여자가 본인 신청의 참여를 수락합니다. 선정에서 진행 중으로 바뀌고 업체에 알림을 보냅니다.
    *

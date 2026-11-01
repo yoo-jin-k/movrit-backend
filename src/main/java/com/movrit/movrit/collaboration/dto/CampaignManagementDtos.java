@@ -213,4 +213,21 @@ public final class CampaignManagementDtos {
   /** 업체가 캠페인별 공개 담당자 연락처를 저장합니다. */
   public record ContactSaveRequest(
       @NotBlank @Size(max = 100) String name, @NotBlank @Size(max = 30) String phone) {}
+
+  /**
+   * 캠페인 모집 현황입니다. 사용자 상세 화면이 주기적으로 다시 불러와 '신청 1 / 모집 2명'처럼 보여줍니다.
+   *
+   * @param recruitmentCount 모집 인원입니다.
+   * @param applicationCount 취소를 뺀 신청 수입니다.
+   * @param selectedCount 선정된 인원(선정·참여 중·제출·완료)입니다. 모집 인원을 넘지 않습니다.
+   * @param acceptedCount 참여를 수락한 인원(참여 중·제출·완료)입니다.
+   * @param open 모집을 받고 있는지(공개 상태)입니다.
+   */
+  public record RecruitmentStatus(
+      Long campaignId,
+      Integer recruitmentCount,
+      long applicationCount,
+      long selectedCount,
+      long acceptedCount,
+      boolean open) {}
 }

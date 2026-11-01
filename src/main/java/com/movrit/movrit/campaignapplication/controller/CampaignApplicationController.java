@@ -102,6 +102,17 @@ public class CampaignApplicationController {
     return service.select(memberId(jwt), applicationId);
   }
 
+  /**
+   * 업체가 선정을 편집합니다: 선정 취소(unselect), 미선정 되돌리기(restore), 참여 취소(cancel, 사유 필수). 업체 직접 선정 캠페인만 가능합니다.
+   */
+  @PatchMapping("/applications/{applicationId}/manage")
+  public CampaignApplicationDtos.Response manage(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long applicationId,
+      @Valid @RequestBody CampaignApplicationDtos.ManageRequest request) {
+    return service.manage(memberId(jwt), applicationId, request.action(), request.reason());
+  }
+
   /** 반려 처리를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @PatchMapping("/applications/{applicationId}/reject")
   public CampaignApplicationDtos.Response reject(

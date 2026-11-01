@@ -69,6 +69,12 @@ public class SecurityConfig {
                         new RegexRequestMatcher(
                             "^/api/collaborations/campaigns/[0-9]+$", HttpMethod.GET.name()))
                     .permitAll()
+                    // 캠페인 모집 현황(신청·선정 인원)도 로그인 없이 볼 수 있습니다.
+                    .requestMatchers(
+                        new RegexRequestMatcher(
+                            "^/api/collaborations/campaigns/[0-9]+/recruitment$",
+                            HttpMethod.GET.name()))
+                    .permitAll()
                     .requestMatchers(
                         new RegexRequestMatcher(
                             "^/api/campaigns/[0-9]+/presentation$", HttpMethod.GET.name()))
