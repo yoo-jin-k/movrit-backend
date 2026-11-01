@@ -220,16 +220,14 @@ public class CampaignApplication extends BaseEntity {
   }
 
   /**
-   * 캠페인 참여를 취소합니다.
+   * 참여자 본인이 신청을 취소합니다.
    *
-   * <p>접수·선정·진행 중 상태에서만 가능하며, 콘텐츠를 제출한 뒤에는 취소할 수 없습니다. 취소 사유와 시각을 기록합니다. 캠페인 참여만 취소하고 주문·결제 데이터는
-   * 건드리지 않습니다.
+   * <p>선정 전(접수) 상태에서만 가능합니다. 선정된 뒤에는 본인이 취소할 수 없고, 업체가 사유와 함께 {@link #cancelByManager(String)}로
+   * 처리합니다. 취소 사유와 시각을 기록하며, 캠페인 신청만 취소하고 주문·결제 데이터는 건드리지 않습니다.
    */
   public void cancel(String reason) {
-    if (status != CampaignApplicationStatus.SUBMITTED
-        && status != CampaignApplicationStatus.SELECTED
-        && status != CampaignApplicationStatus.ACTIVE) {
-      throw new IllegalStateException("접수·선정·진행 상태에서만 참여를 취소할 수 있습니다.");
+    if (status != CampaignApplicationStatus.SUBMITTED) {
+      throw new IllegalStateException("선정 전 접수 상태에서만 신청을 취소할 수 있습니다. 선정 후에는 업체에 문의해 주세요.");
     }
     status = CampaignApplicationStatus.CANCELLED;
     cancellationReason = reason;

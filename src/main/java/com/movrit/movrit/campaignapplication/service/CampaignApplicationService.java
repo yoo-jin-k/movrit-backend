@@ -518,9 +518,10 @@ public class CampaignApplicationService {
   }
 
   /**
-   * 참여자가 본인 신청을 취소합니다. 접수·선정·진행 중 상태에서만 가능하고, 취소 사유를 기록해 업체에 알립니다.
+   * 참여자가 본인 신청을 취소합니다. 선정 전(접수) 상태에서만 가능하고, 취소 사유를 기록해 업체에 알립니다. 선정된 뒤의 취소는 업체가 선정 편집의 '참여 취소'로
+   * 처리합니다.
    *
-   * @throws ResponseStatusException 본인 신청이 아니면 404, 콘텐츠 제출 이후 등 취소할 수 없는 상태면 409
+   * @throws ResponseStatusException 본인 신청이 아니면 404, 선정 이후 등 본인이 취소할 수 없는 상태면 409
    */
   @Transactional
   public CampaignApplicationDtos.Response cancel(
@@ -537,8 +538,8 @@ public class CampaignApplicationService {
     notificationService.send(
         sellerMemberId,
         "CAMPAIGN_APPLICATION",
-        "캠페인 참여가 취소되었습니다.",
-        application.getCreator().getNickname() + "님이 참여를 취소하셨습니다.",
+        "캠페인 신청이 취소되었습니다.",
+        application.getCreator().getNickname() + "님이 신청을 취소하셨습니다.",
         "CAMPAIGN_APPLICATION",
         application.getId());
     auditLogService.record(

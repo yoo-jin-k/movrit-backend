@@ -3,6 +3,7 @@ package com.movrit.movrit.campaignapplication.entity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class CampaignApplicationTest {
@@ -29,8 +30,8 @@ class CampaignApplicationTest {
   }
 
   @Test
-  void activeApplicationCanBeCancelledWithoutChangingPaymentData() {
-    CampaignApplication application = application(CampaignApplicationStatus.ACTIVE);
+  void submittedApplicationCanBeCancelledWithoutChangingPaymentData() {
+    CampaignApplication application = application(CampaignApplicationStatus.SUBMITTED);
 
     application.cancel("개인 일정으로 참여가 어렵습니다.");
 
@@ -40,12 +41,18 @@ class CampaignApplicationTest {
   }
 
   @Test
-  void completedApplicationCannotBeCancelled() {
-    CampaignApplication application = application(CampaignApplicationStatus.COMPLETED);
-
-    assertThatThrownBy(() -> application.cancel("완료 후 취소"))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("접수·선정·진행 상태에서만 참여를 취소할 수 있습니다.");
+  void participantCannotCancelAfterSelection() {
+    // 선정·참여 중·완료 상태에서는 본인 취소를 막고 업체 문의를 안내합니다.
+    for (CampaignApplicationStatus status :
+        List.of(
+            CampaignApplicationStatus.SELECTED,
+            CampaignApplicationStatus.ACTIVE,
+            CampaignApplicationStatus.COMPLETED)) {
+      CampaignApplication application = application(status);
+      assertThatThrownBy(() -> application.cancel("선정 후 취소"))
+          .isInstanceOf(IllegalStateException.class)
+          .hasMessageContaining("선정 전 접수 상태에서만");
+    }
   }
 
   @Test
