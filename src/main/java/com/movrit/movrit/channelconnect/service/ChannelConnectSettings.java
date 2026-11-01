@@ -18,6 +18,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class ChannelConnectSettings {
 
+  /** 로그인 연결 사용 여부입니다. 지금은 직접 등록만 쓰기로 해 기본값은 꺼짐(false)입니다. */
+  // 환경 파일에 빈 값으로 두어도 서버가 멈추지 않도록 문자열로 받아 'true'일 때만 켭니다.
+  @Value("${movrit.channel-connect.login-enabled:false}")
+  private String loginEnabled;
+
   @Value("${movrit.channel-connect.redirect-base:http://localhost:5174}")
   private String redirectBase;
 
@@ -66,9 +71,11 @@ public class ChannelConnectSettings {
     };
   }
 
-  /** 키와 비밀값이 모두 있어야 연결을 시작할 수 있습니다. */
+  /** 로그인 연결이 켜져 있고 키와 비밀값이 모두 있어야 로그인 연결을 시작할 수 있습니다. */
   public boolean configured(ChannelProvider provider) {
-    return notBlank(clientId(provider)) && notBlank(clientSecret(provider));
+    return "true".equalsIgnoreCase(loginEnabled == null ? "" : loginEnabled.trim())
+        && notBlank(clientId(provider))
+        && notBlank(clientSecret(provider));
   }
 
   /** SNS 로그인 후 돌아올 화면 주소입니다. 개발자 앱에 등록한 값과 글자까지 같아야 합니다. */

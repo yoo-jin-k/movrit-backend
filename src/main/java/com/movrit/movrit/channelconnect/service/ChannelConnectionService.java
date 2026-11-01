@@ -420,7 +420,7 @@ public class ChannelConnectionService {
     if (!settings.configured(provider)) {
       throw new ResponseStatusException(
           HttpStatus.SERVICE_UNAVAILABLE,
-          provider.label() + " 연결은 아직 준비 중입니다. 운영자가 연동 키를 등록하면 사용할 수 있습니다.");
+          provider.label() + " 로그인 연결은 아직 열리지 않았습니다. 직접 등록을 이용해 주세요.");
     }
   }
 }
