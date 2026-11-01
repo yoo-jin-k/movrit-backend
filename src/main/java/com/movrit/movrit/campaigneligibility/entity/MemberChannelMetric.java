@@ -72,4 +72,16 @@ public class MemberChannelMetric extends BaseEntity {
     this.measuredAt = measuredAt;
     this.verificationStatus = MetricVerificationStatus.UNVERIFIED;
   }
+
+  /** SNS 계정 연결로 받은 수치를 기록합니다. 서비스가 직접 알려준 값이므로 '확인됨(VERIFIED)'으로 둡니다. */
+  public void verifyFromConnection(Long value, LocalDateTime measuredAt) {
+    this.value = value;
+    this.measuredAt = measuredAt;
+    this.verificationStatus = MetricVerificationStatus.VERIFIED;
+  }
+
+  /** SNS 계정 연결을 해제하면 더 이상 확인된 값이 아니므로 '미확인'으로 되돌립니다. 수치는 그대로 둡니다. */
+  public void markUnverified() {
+    this.verificationStatus = MetricVerificationStatus.UNVERIFIED;
+  }
 }
