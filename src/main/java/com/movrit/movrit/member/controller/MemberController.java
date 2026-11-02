@@ -5,8 +5,10 @@ import com.movrit.movrit.member.dto.MemberPasswordChangeRequest;
 import com.movrit.movrit.member.dto.MemberSignupRequest;
 import com.movrit.movrit.member.dto.MemberSignupResponse;
 import com.movrit.movrit.member.dto.MemberUpdateRequest;
+import com.movrit.movrit.member.dto.MemberWithdrawalDtos;
 import com.movrit.movrit.member.entity.MemberStatus;
 import com.movrit.movrit.member.service.MemberService;
+import com.movrit.movrit.member.service.MemberWithdrawalService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/members")
 public class MemberController {
   private final MemberService service;
+  private final MemberWithdrawalService withdrawalService;
 
   /** 일반 회원가입을 요청합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping("/signup")
@@ -65,10 +67,18 @@ public class MemberController {
     return service.passwordCapability(id(jwt));
   }
 
-  /** 로그인 회원 탈퇴를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
-  @DeleteMapping("/me")
-  public ResponseEntity<Void> withdraw(@AuthenticationPrincipal Jwt j) {
-    service.delete(id(j));
+  /** 지금 탈퇴할 수 있는지(진행 중인 캠페인 등 막는 이유)를 확인합니다. */
+  @GetMapping("/me/withdrawal")
+  public MemberWithdrawalDtos.Eligibility withdrawalCheck(@AuthenticationPrincipal Jwt j) {
+    return withdrawalService.check(id(j));
+  }
+
+  /** 로그인 회원 본인 탈퇴입니다. 확인 문구 '탈퇴합니다'가 필요하며, 진행 중인 캠페인이 있으면 409입니다. */
+  @PostMapping("/me/withdrawal")
+  public ResponseEntity<Void> withdraw(
+      @AuthenticationPrincipal Jwt j,
+      @Valid @RequestBody MemberWithdrawalDtos.WithdrawRequest request) {
+    withdrawalService.withdraw(id(j), request.confirmText());
     return ResponseEntity.noContent().build();
   }
 

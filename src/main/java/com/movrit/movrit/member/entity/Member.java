@@ -134,6 +134,23 @@ public class Member extends BaseEntity {
     this.deletedAt = LocalDateTime.now();
   }
 
+  /**
+   * 본인 탈퇴 시 개인정보를 지웁니다. 이메일·닉네임은 다시 가입할 수 있도록 겹치지 않는 값으로 바꾸고, 이름·연락처·비밀번호·프로필 사진은 비웁니다. 캠페인·주문 기록은
+   * 법적 보관과 업체 정산을 위해 남지만 화면에는 '탈퇴한 회원'으로 보입니다.
+   */
+  public void anonymizeForWithdrawal() {
+    withdraw();
+    this.email = "withdrawn-" + id + "@movrit.invalid";
+    this.nickname = "탈퇴회원" + id;
+    this.name = "탈퇴한 회원";
+    this.phone = null;
+    this.passwordHash = null;
+    this.emailVerifiedAt = null;
+    this.avatarKey = null;
+    this.avatarContentType = null;
+    this.avatarVersion++;
+  }
+
   /** 운영자가 회원 상태를 바꿉니다. 관리자 계정은 정지·탈퇴 상태로 바꿀 수 없고, WITHDRAWN이면 탈퇴 시각도 기록합니다. */
   public void changeStatus(MemberStatus status) {
     if (this.role == MemberRole.ADMIN && status != MemberStatus.ACTIVE)

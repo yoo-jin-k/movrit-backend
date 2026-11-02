@@ -24,4 +24,7 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
 
   /** 해당 회원이 소유한 브랜드의 캠페인을 최신순으로 조회합니다(업체 화면용). */
   List<Campaign> findAllByBrandSellerMemberIdOrderByIdDesc(Long id);
+
+  /** 업체 회원이 운영 중(공개)인 캠페인 수입니다(탈퇴 가능 여부 확인용). */
+  long countByBrandSellerMemberIdAndOpenTrue(Long memberId);
 }
