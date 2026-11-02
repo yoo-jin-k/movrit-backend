@@ -120,6 +120,20 @@ erDiagram
     timestamp created_at
     timestamp updated_at
   }
+  campaign_content_metric {
+    bigint id PK
+    bigint submission_id FK
+    varchar channel_type
+    varchar content_url
+    integer view_count
+    integer like_count
+    integer comment_count
+    date measured_on
+    bigint recorded_by_member_id FK
+    varchar recorded_by_role
+    timestamp created_at
+    timestamp updated_at
+  }
   collaboration {
     bigint id PK
     bigint preorder_id FK
@@ -183,6 +197,8 @@ erDiagram
   influencer_profile ||--o{ campaign_application : "creator_id"
   collaboration_campaign ||--o{ campaign_application_form : "campaign_id"
   campaign_content_submission ||--o{ campaign_content_link : "submission_id"
+  member ||--o{ campaign_content_metric : "recorded_by_member_id"
+  campaign_content_submission ||--o{ campaign_content_metric : "submission_id"
   campaign_application ||--o{ campaign_content_submission : "application_id"
   campaign_application ||--o{ campaign_deadline_reminder : "application_id"
   collaboration_campaign ||--o{ campaign_detail_image : "campaign_id"

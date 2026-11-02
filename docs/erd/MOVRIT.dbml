@@ -92,6 +92,24 @@ Table campaign_content_link {
   updated_at "timestamp" [not null]
 }
 
+Table campaign_content_metric {
+  id "bigint" [pk]
+  submission_id "bigint" [not null]
+  channel_type "varchar(30)" [not null]
+  content_url "varchar(1000)" [not null]
+  view_count "integer"
+  like_count "integer"
+  comment_count "integer"
+  measured_on "date" [not null]
+  recorded_by_member_id "bigint"
+  recorded_by_role "varchar(20)" [not null]
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+  indexes {
+    (submission_id, content_url, measured_on) [unique]
+  }
+}
+
 Table campaign_content_submission {
   id "bigint" [pk]
   application_id "bigint" [unique, not null]
@@ -372,6 +390,8 @@ Table community_comment {
   deleted_at "timestamp"
   created_at "timestamp" [not null]
   updated_at "timestamp" [not null]
+  hidden "boolean"
+  hidden_at "timestamp"
 }
 
 Table community_post {
@@ -387,6 +407,7 @@ Table community_post {
   deleted_at "timestamp"
   created_at "timestamp" [not null]
   updated_at "timestamp" [not null]
+  hidden_at "timestamp"
 }
 
 Table content_report {
@@ -955,6 +976,8 @@ Ref: campaign_application.campaign_id > collaboration_campaign.id
 Ref: campaign_application.creator_id > influencer_profile.id
 Ref: campaign_application_form.campaign_id > collaboration_campaign.id
 Ref: campaign_content_link.submission_id > campaign_content_submission.id
+Ref: campaign_content_metric.recorded_by_member_id > member.id
+Ref: campaign_content_metric.submission_id > campaign_content_submission.id
 Ref: campaign_content_submission.application_id > campaign_application.id
 Ref: campaign_deadline_reminder.application_id > campaign_application.id
 Ref: campaign_detail_image.campaign_id > collaboration_campaign.id

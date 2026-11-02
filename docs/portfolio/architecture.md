@@ -1,7 +1,7 @@
 # MOVRIT 구조 설명
 
 README가 "무엇을 만들었나"라면, 이 문서는 "어떻게 나눴고 왜 그렇게 했나"를 적은 것입니다.
-수치는 2026-11-02 기준입니다.
+수치는 2026-11-03 기준입니다.
 
 ## 1. 시스템 구성
 
@@ -12,12 +12,12 @@ flowchart LR
   end
   subgraph Server["Spring Boot 4.1 (Java 17)"]
     SEC["Spring Security<br/>JWT 검증"]
-    API["REST API<br/>컨트롤러 46개 · API 264개"]
+    API["REST API<br/>컨트롤러 48개 · API 273개"]
     SVC["서비스 계층<br/>상태 전이·권한·검증"]
     HUB["ChatEventHub<br/>SSE 연결 관리"]
     SCH["예약 작업<br/>마감 알림 · 프리오더 진행"]
   end
-  DB[("PostgreSQL 18<br/>테이블 66개 · Flyway V1~V15")]
+  DB[("PostgreSQL 18<br/>테이블 67개 · Flyway V1~V17")]
   FS[("업로드 폴더<br/>캠페인 이미지 · 채팅 첨부 · 구매 증빙")]
   OAUTH["Google · Kakao"]
 
@@ -31,27 +31,29 @@ flowchart LR
 
 | 구분 | 사용 |
 |---|---|
-| 프론트엔드 | React 19, React Router 7, Vite 8, Axios, Sass. 경로 91개, 첫 화면 외 지연 로딩 |
+| 프론트엔드 | React 19, React Router 7, Vite 8, Axios, Sass. 경로 92개, 첫 화면 외 지연 로딩 |
 | 백엔드 | Spring Boot 4.1, Spring Security(JWT·OAuth2 Resource Server), Spring Data JPA, Lombok |
 | DB | PostgreSQL 18, Flyway(이력 테이블 `movrit_schema_history`), JPA `validate` |
-| 품질 | 백엔드 테스트 160개(JUnit 5·Mockito), 프론트 단위 테스트 175개(node:test), Spotless, ESLint·Prettier, Playwright 화면 점검 16종 |
+| 품질 | 백엔드 테스트 180개(JUnit 5·Mockito), 프론트 단위 테스트 188개(node:test), Spotless, ESLint·Prettier, Playwright 화면 점검 17종 |
 
 ## 2. 패키지와 책임
 
-기능마다 패키지를 두고 안에서 `controller / service / repository / entity / dto`로 나눴습니다. Java 파일 308개, 약 2만 7천 줄입니다.
+기능마다 패키지를 두고 안에서 `controller / service / repository / entity / dto`로 나눴습니다. Java 파일 317개, 약 2만 9천 줄입니다.
 
 | 영역 | 패키지 | 맡는 일 |
 |---|---|---|
 | 회원·인증 | `auth`, `member`, `memberavatar`, `memberaddress`, `emailverification`, `passwordreset`, `channelconnect` | 이메일·소셜 로그인과 계정 연결, 프로필 사진, 배송지, 이메일 인증, 비밀번호 재설정, SNS 채널 연결과 지표 |
 | 업체 | `seller`, `brand` | 업체 신청·심사, 업체 하나가 여러 브랜드 운영 |
-| 캠페인 | `collaboration`, `campaignmedia`, `campaigneligibility`, `campaignfavorite` | 캠페인 등록·분류·일정, 이미지와 방문 장소, 참여 조건(채널 지표), 찜 |
+| 캠페인 | `collaboration`, `campaignmedia`, `campaigneligibility`, `campaignfavorite` | 캠페인 등록·분류·일정, 목록 검색·정렬·페이지, 이미지와 방문 장소, 참여 조건(채널 지표), 찜 |
 | 참여 | `campaignapplication` | 신청서 양식, 신청·수정·선정·미선정·선정 편집, 일괄 처리 |
 | | `campaigncontent` | 콘텐츠 제출, 업체 검토, 운영자 최종 승인, 수정 요청 |
+| | `contentmetric` | 게시물별 조회수·좋아요·댓글 날짜별 기록, 캠페인 성과 합계 |
 | | `campaignshipping` | 송장번호·택배사, 배송지 엑셀 |
 | | `purchasereview` | 구매평 캠페인의 구매 정보, 구매 인증, 환급 |
 | | `participation` | 활동 등급, 패널티와 신청 제한, 방문 예약, 참여자 평가, 마감 알림 |
-| 소통 | `chat`, `community`, `notification` | 1:1 채팅(SSE), 게시판, 알림 |
-| 운영 | `report`, `admin`, `notice`, `inquiry`, `audit` | 신고·제재, 운영자 조회 API, 공지, 문의, 감사 기록 |
+| 소통 | `chat`, `community`, `notification` | 1:1 채팅(SSE), 게시판과 운영자 가리기·다시 보이기, 알림 |
+| 운영 | `report`, `admin`, `notice`, `inquiry`, `audit` | 신고·제재, 운영자 조회 API, 기간별 운영 리포트·엑셀, 공지, 문의, 감사 기록 |
+| 공통 | `common` | 보안 설정, 파일 저장, 엑셀 작성기(`common.excel`) |
 | 프리오더(보존) | `product`, `preorder`, `order`, `payment`, `shipping`, `settlement` | 초기 기획의 공동구매 흐름. 실제 결제 연동 없이 상태 흐름만 |
 
 새 기능은 되도록 새 패키지로 붙였습니다. 예를 들어 패널티·방문 예약·평가는 신청 서비스에 넣지 않고 `participation`으로 분리했고, 신청 서비스는 `ActivityService.requireCanApply` 한 줄만 부릅니다. 신청 서비스가 한때 974줄까지 커져서 양식·검사·응답 변환을 나눴던 경험 때문입니다.
@@ -99,7 +101,11 @@ stateDiagram-v2
 | 실시간 채팅에 WebSocket이 과함 | 보내기는 POST, 받기만 SSE. 25초마다 빈 이벤트 | 구현·디버깅이 단순, 프록시 타임아웃 회피 |
 | 확장자만 바꾼 파일이 첨부됨 | ImageIO로 실제 내용을 읽어 JPEG·PNG 확인, 깨진 파일은 400 | 서버 500 대신 안내 메시지 |
 | 신고된 글을 작성자가 지우면 판단 근거가 사라짐 | 신고할 때 대상 내용을 스냅샷, 같은 대상 신고 수 집계 | 원문이 없어도 처리 가능 |
-| 배송지 엑셀 하나에 라이브러리가 큼 | zip + XML로 xlsx 직접 작성 | 의존성 추가 없음 |
+| 배송지 엑셀 하나에 라이브러리가 큼 | zip + XML로 xlsx 직접 작성. 리포트용으로 여러 시트·숫자 칸을 더해 `common.excel`로 옮김 | 의존성 없이 배송지·운영 리포트 엑셀 |
+| 신고로 가린 댓글을 되돌릴 수 없음(삭제했음) | 댓글에 `hidden` 표시(V16), 운영자 커뮤니티 관리 화면에서 가리기·다시 보이기 | 회원에게는 안내 문구, 운영자에게는 원문 |
+| 재제출하면 링크 행이 새로 생겨 성과 기록이 끊김 | 성과를 (제출 건, 게시물 주소, 날짜)로 묶고 같은 날은 고쳐 씀(V17) | 재제출 뒤에도 같은 게시물 기록 유지 |
+| 캠페인 목록을 전부 내려받아 화면에서 거름 | 서버 검색 API: 조건은 쿼리로, 신청 수가 필요한 정렬은 집계 뒤 서버에서, 20개씩 페이지 | 화면은 한 페이지만 받음 |
+| 검색 쿼리의 null 날짜 파라미터가 PostgreSQL에서 500 | null 대신 아주 이른 시각을 넘김 | 실제 DB 점검으로 발견·수정 |
 | 읽기 전용 트랜잭션에서 감사 기록 저장 실패(500) | 내려받기도 쓰기 작업으로 보고 일반 트랜잭션 | 내려받기 기록이 남음 |
 | PC마다 스키마가 다름 | 그때 스키마를 V1 기준선으로, 이후 Flyway만. JPA `validate` | 어긋나면 서버가 뜨지 않아 바로 발견 |
 | 메일 서버 없는 시연 환경 | 통합 환경에서는 인증번호를 화면에 표시(`local-preview`) | 메일 없이 가입·인증 시연 |
@@ -107,8 +113,8 @@ stateDiagram-v2
 
 ## 5. 데이터 구조
 
-- 테이블 66개, 외래 키 104개. 전체 ERD는 [`docs/erd/MOVRIT.dbml`](../erd/MOVRIT.dbml), 도메인별 그림은 [`docs/erd/`](../erd/README.md)에 있습니다.
-- 변경 절차와 V1~V15 이력은 [`docs/db-migration.md`](../db-migration.md)를 따릅니다.
+- 테이블 67개, 외래 키 106개. 전체 ERD는 [`docs/erd/MOVRIT.dbml`](../erd/MOVRIT.dbml), 도메인별 그림은 [`docs/erd/`](../erd/README.md)에 있습니다.
+- 변경 절차와 V1~V17 이력은 [`docs/db-migration.md`](../db-migration.md)를 따릅니다.
 
 | 버전 | 내용 |
 |---|---|
@@ -119,3 +125,5 @@ stateDiagram-v2
 | V13 | 구매평(구매 정보·구매 인증) |
 | V14 | 마감 알림, 방문 예약, 패널티, 참여자 평가, 신고, 채팅 가림 |
 | V15 | 캠페인 송장 |
+| V16 | 커뮤니티 댓글 가림 표시, 글·댓글 가린 시각 |
+| V17 | 콘텐츠 성과 기록 |

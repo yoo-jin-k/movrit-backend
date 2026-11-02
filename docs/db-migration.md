@@ -21,6 +21,8 @@
 | 13 | `V13__purchase_review.sql` | 구매평 캠페인: 구매 정보(campaign_purchase_review)와 참여자 구매 인증·환급 상태(campaign_purchase_proof) |
 | 14 | `V14__participation_operations.sql` | 마감 알림 기록, 방문 예약, 패널티, 참여자 평가, 신고(content_report), 채팅 메시지 가림(hidden_at) |
 | 15 | `V15__campaign_shipment.sql` | 배송형 캠페인 송장(campaign_shipment). 신청 한 건에 하나, 택배사·송장번호·발송 시각 |
+| 16 | `V16__community_comment_hidden.sql` | 커뮤니티 댓글 가림 표시(hidden)와 글·댓글 가린 시각(hidden_at). 운영자가 지우지 않고 가렸다가 되돌릴 수 있음 |
+| 17 | `V17__campaign_content_metric.sql` | 콘텐츠 성과 기록(campaign_content_metric). (제출 건, 게시물 주소, 날짜)마다 한 줄, 조회수·좋아요·댓글과 입력한 사람 |
 
 - 적용 이력 테이블: `movrit_schema_history`
   - 8월 실험 때 남은 `flyway_schema_history` 와는 별개입니다. 기존 표는 사용하지 않으며 지우지 않았습니다.
