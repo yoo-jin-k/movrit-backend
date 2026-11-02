@@ -30,7 +30,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
    */
   @EntityGraph(attributePaths = "sender")
   @Query(
-      "select m from ChatMessage m where m.room.id = :roomId"
+      "select m from ChatMessage m where m.room.id = :roomId and m.hiddenAt is null"
           + " and (lower(m.body) like :pattern escape '\\'"
           + " or lower(coalesce(m.attachmentName, '')) like :pattern escape '\\')"
           + " order by m.id desc")

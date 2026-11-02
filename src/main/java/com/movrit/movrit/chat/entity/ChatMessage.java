@@ -64,7 +64,20 @@ public class ChatMessage extends BaseEntity {
   @Column(name = "attachment_size")
   private Long attachmentSize;
 
+  /** 운영자가 신고 처리로 가린 시각입니다. 가린 메시지는 내용·첨부 대신 안내 문구로 보여줍니다. */
+  @Column(name = "hidden_at")
+  private java.time.LocalDateTime hiddenAt;
+
   public boolean hasAttachment() {
     return attachmentKey != null;
+  }
+
+  public boolean isHidden() {
+    return hiddenAt != null;
+  }
+
+  /** 운영자가 메시지를 가립니다(원문은 신고 기록에 남습니다). */
+  public void hideByAdmin() {
+    if (hiddenAt == null) hiddenAt = java.time.LocalDateTime.now();
   }
 }

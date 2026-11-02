@@ -310,6 +310,54 @@ public class ChatService {
         Map.of("roomId", room.getId(), "memberId", me.getId(), "name", senderName(room, role, me)));
   }
 
+  /** 신고 대상 확인 결과입니다(작성자 회원 ID와 신고 당시 내용). */
+  public record ReportTarget(Long ownerMemberId, String snapshot) {}
+
+  /**
+   * 신고할 수 있는 메시지인지 확인하고 작성자와 내용을 돌려줍니다. 그 방 참여자만 신고할 수 있고, 내 메시지는 신고할 수 없습니다.
+   *
+   * @throws ResponseStatusException 볼 수 없는 메시지면 404, 내 메시지면 400
+   */
+  @Transactional(readOnly = true)
+  public ReportTarget reportTarget(Long memberId, Long messageId) {
+    ChatMessage message =
+        messageRepository
+            .findById(messageId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "메시지를 찾을 수 없습니다."));
+    boolean joined =
+        participantRepository
+            .findByRoomIdAndMemberId(message.getRoom().getId(), memberId)
+            .isPresent();
+    if (!joined) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "메시지를 찾을 수 없습니다.");
+    Long owner = message.getSender() == null ? null : message.getSender().getId();
+    if (memberId.equals(owner)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "내 메시지는 신고할 수 없습니다.");
+    }
+    String text =
+        message.getBody()
+            + (message.hasAttachment() ? " [첨부: " + message.getAttachmentName() + "]" : "");
+    return new ReportTarget(owner, text.length() > 1900 ? text.substring(0, 1900) : text);
+  }
+
+  /** 운영자가 신고 처리로 메시지를 가리고, 방 참여자 화면이 바로 바뀌도록 이벤트를 보냅니다. */
+  @Transactional
+  public void hideMessage(Long messageId) {
+    ChatMessage message =
+        messageRepository
+            .findById(messageId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "메시지를 찾을 수 없습니다."));
+    message.hideByAdmin();
+    eventHub.publish(
+        participantRepository.findAllByRoomId(message.getRoom().getId()).stream()
+            .map(p -> p.getMember().getId())
+            .toList(),
+        false,
+        "hidden",
+        Map.of("roomId", message.getRoom().getId(), "messageId", message.getId()));
+  }
+
   /** 첨부 파일 정보입니다(내려받기 응답용). */
   public record AttachmentFile(java.nio.file.Path path, String name, String contentType) {}
 
@@ -321,7 +369,11 @@ public class ChatService {
     ChatMessage message =
         messageRepository
             .findById(messageId)
-            .filter(value -> value.getRoom().getId().equals(roomId) && value.hasAttachment())
+            .filter(
+                value ->
+                    value.getRoom().getId().equals(roomId)
+                        && value.hasAttachment()
+                        && !value.isHidden())
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "첨부 파일을 찾을 수 없습니다."));
     return new AttachmentFile(
@@ -507,8 +559,21 @@ public class ChatService {
         .toList();
   }
 
+  /** 운영자가 가린 메시지에 보여줄 문구입니다. */
+  static final String HIDDEN_TEXT = "운영 정책에 따라 운영자가 가린 메시지입니다.";
+
   private ChatDtos.Message view(ChatMessage message, Member me) {
     Member sender = message.getSender();
+    if (message.isHidden()) {
+      return new ChatDtos.Message(
+          message.getId(),
+          message.getSenderRole(),
+          senderName(message.getRoom(), message.getSenderRole(), sender),
+          sender != null && Objects.equals(sender.getId(), me.getId()),
+          HIDDEN_TEXT,
+          message.getCreatedAt(),
+          null);
+    }
     return new ChatDtos.Message(
         message.getId(),
         message.getSenderRole(),
