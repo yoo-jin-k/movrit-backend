@@ -84,6 +84,12 @@ public class SecurityConfig {
                             "^/api/collaborations/campaigns/[0-9]+/recruitment$",
                             HttpMethod.GET.name()))
                     .permitAll()
+                    // 구매평 캠페인의 구매처·판매가·환급액 안내도 로그인 없이 볼 수 있습니다.
+                    .requestMatchers(
+                        new RegexRequestMatcher(
+                            "^/api/collaborations/campaigns/[0-9]+/purchase-review$",
+                            HttpMethod.GET.name()))
+                    .permitAll()
                     .requestMatchers(
                         new RegexRequestMatcher(
                             "^/api/campaigns/[0-9]+/presentation$", HttpMethod.GET.name()))

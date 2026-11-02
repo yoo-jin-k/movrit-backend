@@ -35,12 +35,17 @@ class CampaignApplicationValidator {
     validateAgreements(forms.agreements(form), request.agreementAcceptances());
   }
 
-  /** 배송형은 수령인·연락처·우편번호·주소를 모두 요구하고, 방문형은 배송 주소를 받지 않습니다. */
+  /** 배송형은 수령인·연락처·우편번호·주소를 모두 요구하고, 방문형·구매형은 배송 주소를 받지 않습니다. */
   private void validateShippingContact(CampaignApplicationDtos.CreateRequest request) {
     CampaignApplicationDtos.ShippingContact contact = request.shippingContact();
-    if (request.fulfillmentType() == FulfillmentType.VISIT) {
+    if (request.fulfillmentType() == FulfillmentType.VISIT
+        || request.fulfillmentType() == FulfillmentType.PURCHASE) {
       if (contact != null) {
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "방문형 캠페인은 배송 주소를 수집하지 않습니다.");
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST,
+            request.fulfillmentType() == FulfillmentType.VISIT
+                ? "방문형 캠페인은 배송 주소를 수집하지 않습니다."
+                : "구매평 캠페인은 직접 구매하므로 배송 주소를 받지 않습니다.");
       }
       return;
     }

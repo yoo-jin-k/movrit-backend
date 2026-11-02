@@ -548,6 +548,10 @@ public class CampaignApplicationService {
             .findByIdAndCreatorMemberId(applicationId, memberId)
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
+    // 구매평 캠페인은 '체험 완료 확인' 대신 구매 인증(주문번호·캡처)을 제출해야 다음 단계로 넘어갑니다.
+    if (application.getFulfillmentType() == FulfillmentType.PURCHASE) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "구매평 캠페인은 구매 인증을 제출해 주세요.");
+    }
     CampaignApplicationDtos.Response response =
         transition(application, CampaignApplication::confirmExperience);
     Long sellerMemberId = application.getCampaign().getBrand().getSeller().getMember().getId();

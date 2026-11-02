@@ -105,6 +105,7 @@ public class CampaignApplicationFormService {
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "캠페인을 찾을 수 없습니다."));
     campaignOwnership.requireOwner(sellerMemberId, campaign);
     validateDefinition(request);
+    requireMatchingFulfillment(campaign, request.allowedFulfillmentTypes());
 
     CampaignApplicationForm form =
         formRepository
@@ -128,6 +129,26 @@ public class CampaignApplicationFormService {
           json.write(request.agreements()));
     }
     return formResponse(formRepository.save(form));
+  }
+
+  /**
+   * 구매평 캠페인은 '구매형'만, 다른 캠페인은 배송형·방문형만 허용합니다.
+   *
+   * <p>구매형은 배송 주소를 받지 않고 구매 인증으로 진행하므로, 다른 유형과 섞이면 진행 단계가 맞지 않습니다.
+   */
+  private static void requireMatchingFulfillment(
+      Campaign campaign, java.util.List<FulfillmentType> types) {
+    boolean purchaseCampaign =
+        campaign.getCampaignType()
+            == com.movrit.movrit.collaboration.entity.CampaignType.PURCHASE_REVIEW;
+    boolean onlyPurchase = types.stream().allMatch(type -> type == FulfillmentType.PURCHASE);
+    boolean hasPurchase = types.contains(FulfillmentType.PURCHASE);
+    if (purchaseCampaign && !onlyPurchase) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "구매평 캠페인은 '직접 구매' 방식만 고를 수 있습니다.");
+    }
+    if (!purchaseCampaign && hasPurchase) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "'직접 구매' 방식은 구매평 캠페인에서만 쓸 수 있습니다.");
+    }
   }
 
   /** 신청서 양식 자체를 검사합니다. 질문·동의 문서 ID 중복과 선택지 없는 단일 선택 질문을 거절합니다. */
