@@ -3,6 +3,7 @@ package com.movrit.movrit.settlement.controller;
 import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.settlement.dto.SettlementDtos;
 import com.movrit.movrit.settlement.service.SettlementService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +20,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 정산 기록의 HTTP 요청을 서비스로 연결합니다. 인증 주체는 토큰에서 읽고, 업무 권한과 상태 검증은 호출한 서비스의 정책을 따릅니다. */
+@Tag(name = "이전 기능 · 정산")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/settlements")
 public class SettlementController {
   private final SettlementService service;
 
-  /** 생성을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
+  /** 정산 기록을 만듭니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping
   public ResponseEntity<SettlementDtos.Response> create(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody SettlementDtos.CreateRequest r) {

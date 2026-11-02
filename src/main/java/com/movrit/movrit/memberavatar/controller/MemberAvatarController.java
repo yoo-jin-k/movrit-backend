@@ -3,6 +3,7 @@ package com.movrit.movrit.memberavatar.controller;
 import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.member.dto.MemberSignupResponse;
 import com.movrit.movrit.memberavatar.service.MemberAvatarService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /** 회원 프로필 사진 API입니다. 사진 올리기·삭제는 본인만, 사진 보기는 누구나 할 수 있습니다. */
+@Tag(name = "공통 · 프로필 사진")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/members")

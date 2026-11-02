@@ -3,6 +3,7 @@ package com.movrit.movrit.campaignfavorite.controller;
 import com.movrit.movrit.campaignfavorite.dto.CampaignFavoriteDtos;
 import com.movrit.movrit.campaignfavorite.service.CampaignFavoriteService;
 import com.movrit.movrit.common.security.JwtMemberId;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>DELETE /api/members/me/favorite-campaigns/{campaignId} : 찜 해제(여러 번 호출해도 결과 동일)
  * </ul>
  */
+@Tag(name = "참여자 · 찜")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/members/me/favorite-campaigns")

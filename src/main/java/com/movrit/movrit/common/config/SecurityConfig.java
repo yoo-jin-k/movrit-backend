@@ -55,6 +55,10 @@ public class SecurityConfig {
                         // 로그인 전 비밀번호 찾기·재설정
                         "/api/auth/password/**",
                         "/uploads/**",
+                        // API 문서(Swagger) 화면과 원본 JSON. 끄려면 API_DOCS_ENABLED=false로 실행합니다.
+                        "/swagger-ui.html",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
                         "/error")
                     .permitAll()
                     .requestMatchers(

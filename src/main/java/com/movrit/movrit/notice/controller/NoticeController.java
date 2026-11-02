@@ -3,6 +3,7 @@ package com.movrit.movrit.notice.controller;
 import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.notice.dto.NoticeDtos;
 import com.movrit.movrit.notice.service.NoticeService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>운영자: GET·POST /api/admin/notices, PUT·DELETE /api/admin/notices/{id}
  * </ul>
  */
+@Tag(name = "공통 · 공지")
 @RestController
 @RequiredArgsConstructor
 public class NoticeController {

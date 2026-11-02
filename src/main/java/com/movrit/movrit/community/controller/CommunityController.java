@@ -3,6 +3,7 @@ package com.movrit.movrit.community.controller;
 import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.community.dto.CommunityDtos;
 import com.movrit.movrit.community.service.CommunityService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,12 +29,14 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>POST /api/community/posts/{id}/comments, DELETE /api/community/comments/{id}: 댓글 달기·지우기
  * </ul>
  */
+@Tag(name = "공통 · 커뮤니티")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/community")
 public class CommunityController {
   private final CommunityService service;
 
+  /** 게시판별 글 목록을 검색·분류·페이지(20개)로 조회합니다. */
   @GetMapping("/posts")
   public CommunityDtos.PostPage list(
       @RequestParam String board,
@@ -43,18 +46,21 @@ public class CommunityController {
     return service.list(board, category, q, page);
   }
 
+  /** 글 상세와 댓글을 조회하고 조회수를 1 올립니다. */
   @GetMapping("/posts/{postId}")
   public CommunityDtos.PostDetail detail(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long postId) {
     return service.detail(jwt == null ? null : JwtMemberId.from(jwt), postId);
   }
 
+  /** 글을 등록합니다. 운영 안내·이벤트 게시판은 운영자만 쓸 수 있습니다. */
   @PostMapping("/posts")
   public CommunityDtos.PostDetail create(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CommunityDtos.PostRequest request) {
     return service.create(JwtMemberId.from(jwt), request);
   }
 
+  /** 작성자가 글을 고칩니다. */
   @PutMapping("/posts/{postId}")
   public CommunityDtos.PostDetail update(
       @AuthenticationPrincipal Jwt jwt,
@@ -63,12 +69,14 @@ public class CommunityController {
     return service.update(JwtMemberId.from(jwt), postId, request);
   }
 
+  /** 작성자 또는 운영자가 글을 지웁니다(기록은 남기는 삭제). */
   @DeleteMapping("/posts/{postId}")
   public ResponseEntity<Void> delete(@AuthenticationPrincipal Jwt jwt, @PathVariable Long postId) {
     service.delete(JwtMemberId.from(jwt), postId);
     return ResponseEntity.noContent().build();
   }
 
+  /** 글에 댓글을 답니다. */
   @PostMapping("/posts/{postId}/comments")
   public CommunityDtos.Comment addComment(
       @AuthenticationPrincipal Jwt jwt,
@@ -77,6 +85,7 @@ public class CommunityController {
     return service.addComment(JwtMemberId.from(jwt), postId, request.body());
   }
 
+  /** 작성자 또는 운영자가 댓글을 지웁니다. */
   @DeleteMapping("/comments/{commentId}")
   public ResponseEntity<Void> deleteComment(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long commentId) {

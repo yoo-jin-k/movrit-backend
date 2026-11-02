@@ -34,6 +34,11 @@ dependencies {
     // 캠페인 WebP 디코딩과 EXIF 방향 확인에 사용합니다.
     implementation 'com.twelvemonkeys.imageio:imageio-webp:3.12.0'
     implementation 'com.drewnoakes:metadata-extractor:2.19.0'
+    // API 문서(Swagger UI: /swagger-ui.html, OpenAPI JSON: /v3/api-docs)를 코드에서 자동으로 만듭니다.
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
+    // 컨트롤러 메서드의 Javadoc 주석을 API 문서의 설명으로 그대로 보여 줍니다.
+    implementation 'com.github.therapi:therapi-runtime-javadoc:0.15.0'
+    annotationProcessor 'com.github.therapi:therapi-runtime-javadoc-scribe:0.15.0'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'

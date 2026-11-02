@@ -3,6 +3,7 @@ package com.movrit.movrit.campaigneligibility.controller;
 import com.movrit.movrit.campaigneligibility.dto.ConfiguredCampaignDtos;
 import com.movrit.movrit.campaigneligibility.service.ConfiguredCampaignService;
 import com.movrit.movrit.common.security.JwtMemberId;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 캠페인 참여 조건의 HTTP 요청을 서비스로 연결합니다. 인증 주체는 토큰에서 읽고, 업무 권한과 상태 검증은 호출한 서비스의 정책을 따릅니다. */
+@Tag(name = "업체 · 캠페인 등록(조건 설정)")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/campaigns/configured")

@@ -2,6 +2,7 @@ package com.movrit.movrit.creator.controller;
 
 import com.movrit.movrit.creator.dto.CreatorDtos;
 import com.movrit.movrit.creator.service.CreatorService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -18,13 +19,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 채널 프로필의 HTTP 요청을 서비스로 연결합니다. 인증 주체는 토큰에서 읽고, 업무 권한과 상태 검증은 호출한 서비스의 정책을 따릅니다. */
+@Tag(name = "참여자 · 크리에이터 프로필")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/creators")
 public class CreatorController {
   private final CreatorService service;
 
-  /** 생성을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
+  /** 크리에이터 프로필을 만듭니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping
   public ResponseEntity<CreatorDtos.Response> create(
       @AuthenticationPrincipal Jwt j, @Valid @RequestBody CreatorDtos.SaveRequest r) {
@@ -49,7 +51,7 @@ public class CreatorController {
     return service.findById(id);
   }
 
-  /** 수정을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
+  /** 내 크리에이터 프로필을 고칩니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PutMapping("/me")
   public CreatorDtos.Response update(
       @AuthenticationPrincipal Jwt j, @Valid @RequestBody CreatorDtos.SaveRequest r) {

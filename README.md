@@ -61,9 +61,10 @@
 | 인증 | 이메일 + JWT(액세스·리프레시), Google·Kakao 로그인, 계정 연결 |
 | 실시간 | SSE(채팅 메시지·읽음·입력 중·가림 이벤트) |
 | 테스트·품질 | JUnit 5, Mockito, Spotless(google-java-format) |
+| API 문서 | springdoc-openapi(Swagger UI), 메서드 Javadoc을 설명으로 사용 |
 | 프론트엔드 | React 19, React Router 7, Vite 8 → [movrit-frontend](https://github.com/yoo-jin-k/movrit-frontend) |
 
-규모(2026-11-03 기준): 컨트롤러 48개, API 273개, Java 파일 317개(약 2만 9천 줄), 테이블 67개, 외래 키 106개, 백엔드 테스트 180개.
+규모(2026-11-03 기준): 컨트롤러 48개, API 273개, Java 파일 317개(약 2만 9천 줄), 테이블 67개, 외래 키 106개, 백엔드 테스트 182개.
 
 ## 구조
 
@@ -176,6 +177,15 @@ MOVRIT_QA_PASSWORD=... node qa/portfolio/seed-portfolio.mjs
 | 운영자 | `demo-admin@movrit.local` |
 
 비밀번호는 문서에 적지 않았습니다. 시연 순서는 [docs/portfolio/demo-scenario.md](docs/portfolio/demo-scenario.md)에 있습니다.
+
+## API 문서
+
+서버를 켜면 http://localhost:18080/swagger-ui.html 에서 전체 API를 보고 직접 호출해 볼 수 있습니다.
+
+- 오른쪽 위 목록에서 **서비스 API**(공통·참여자·업체), **운영자 API**, **이전 기능**(프리오더·주문·결제) 중 하나를 고릅니다.
+- `POST /api/auth/login`으로 로그인한 뒤 응답의 `accessToken`을 **Authorize**에 넣으면, 로그인이 필요한 API도 실행됩니다.
+- 설명은 컨트롤러 메서드의 Javadoc 주석에서 자동으로 가져옵니다. 코드 주석과 문서가 따로 놀지 않게 하려고 이렇게 했습니다.
+- 원본 JSON은 `/v3/api-docs/1-service`, `/v3/api-docs/2-admin`, `/v3/api-docs/3-legacy`입니다. 공개 서버에서 숨기려면 `API_DOCS_ENABLED=false`로 실행합니다.
 
 ## 테스트
 

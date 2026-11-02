@@ -3,6 +3,7 @@ package com.movrit.movrit.payment.controller;
 import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.payment.dto.PaymentDtos;
 import com.movrit.movrit.payment.service.PaymentService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +20,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 결제 기록의 HTTP 요청을 서비스로 연결합니다. 인증 주체는 토큰에서 읽고, 업무 권한과 상태 검증은 호출한 서비스의 정책을 따릅니다. */
+@Tag(name = "이전 기능 · 결제 기록")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/payments")
 public class PaymentController {
   private final PaymentService paymentService;
 
-  /** 생성을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
+  /** 결제 기록을 남깁니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping
   public ResponseEntity<PaymentDtos.Response> create(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody PaymentDtos.CreateRequest request) {

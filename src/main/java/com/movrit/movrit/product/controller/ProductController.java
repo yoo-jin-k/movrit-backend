@@ -3,6 +3,7 @@ package com.movrit.movrit.product.controller;
 import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.product.dto.ProductDtos;
 import com.movrit.movrit.product.service.ProductService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /** 상품 및 옵션의 HTTP 요청을 서비스로 연결합니다. 인증 주체는 토큰에서 읽고, 업무 권한과 상태 검증은 호출한 서비스의 정책을 따릅니다. */
+@Tag(name = "이전 기능 · 상품")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/products")
@@ -30,7 +32,7 @@ public class ProductController {
 
   private final ProductService productService;
 
-  /** 생성을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
+  /** 상품을 등록합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping
   public ResponseEntity<ProductDtos.Response> create(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ProductDtos.CreateRequest request) {
@@ -50,7 +52,7 @@ public class ProductController {
     return productService.findById(id);
   }
 
-  /** 수정을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
+  /** 상품을 고칩니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PutMapping("/{id}")
   public ProductDtos.Response update(
       @AuthenticationPrincipal Jwt jwt,
@@ -68,7 +70,7 @@ public class ProductController {
     return productService.uploadThumbnail(memberId(jwt), id, file);
   }
 
-  /** 상품 옵션 생성을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
+  /** 상품 옵션을 추가합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping("/{id}/variants")
   public ProductDtos.VariantResponse createVariant(
       @AuthenticationPrincipal Jwt jwt,
@@ -92,7 +94,7 @@ public class ProductController {
     return productService.restock(memberId(jwt), variantId, request.quantity());
   }
 
-  /** 옵션 안전 재고 수정을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
+  /** 상품 옵션의 안전 재고를 고칩니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PatchMapping("/variants/{variantId}/safety-stock")
   public ProductDtos.VariantResponse updateSafetyStock(
       @AuthenticationPrincipal Jwt jwt,
@@ -101,7 +103,7 @@ public class ProductController {
     return productService.updateSafetyStock(memberId(jwt), variantId, request.quantity());
   }
 
-  /** 옵션 정보 수정을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
+  /** 상품 옵션을 고칩니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PutMapping("/variants/{variantId}")
   public ProductDtos.VariantResponse updateVariant(
       @AuthenticationPrincipal Jwt jwt,
@@ -117,7 +119,7 @@ public class ProductController {
     return productService.deactivateVariant(memberId(jwt), variantId);
   }
 
-  /** 삭제를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
+  /** 상품을 지웁니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> delete(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
     productService.delete(memberId(jwt), id);

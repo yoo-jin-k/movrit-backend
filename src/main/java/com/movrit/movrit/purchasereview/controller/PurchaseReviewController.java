@@ -3,6 +3,7 @@ package com.movrit.movrit.purchasereview.controller;
 import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.purchasereview.dto.PurchaseReviewDtos;
 import com.movrit.movrit.purchasereview.service.PurchaseReviewService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.nio.file.Path;
 import lombok.RequiredArgsConstructor;
@@ -39,16 +40,19 @@ import org.springframework.web.multipart.MultipartFile;
  *   <li>GET /api/campaigns/purchase-paybacks: 업체 환급 관리 목록
  * </ul>
  */
+@Tag(name = "공통 · 구매평 캠페인")
 @RestController
 @RequiredArgsConstructor
 public class PurchaseReviewController {
   private final PurchaseReviewService service;
 
+  /** 구매평 캠페인의 구매처·판매가·환급액 안내를 조회합니다(로그인 없이 볼 수 있습니다). */
   @GetMapping("/api/collaborations/campaigns/{campaignId}/purchase-review")
   public PurchaseReviewDtos.Info info(@PathVariable Long campaignId) {
     return service.info(campaignId);
   }
 
+  /** 캠페인 업체가 구매처·상품 주소·판매가·환급액 안내를 저장합니다. */
   @PutMapping("/api/campaigns/{campaignId}/purchase-review")
   public PurchaseReviewDtos.Info saveInfo(
       @AuthenticationPrincipal Jwt jwt,
@@ -57,6 +61,7 @@ public class PurchaseReviewController {
     return service.saveInfo(JwtMemberId.from(jwt), campaignId, request);
   }
 
+  /** 참여자가 구매 인증(주문번호·결제 금액·캡처)을 제출합니다. 환급 전까지 다시 제출할 수 있습니다. */
   @PostMapping(
       value = "/api/campaigns/applications/{applicationId}/purchase-proof",
       consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -70,6 +75,7 @@ public class PurchaseReviewController {
         JwtMemberId.from(jwt), applicationId, orderNumber, paidAmount, evidence);
   }
 
+  /** 구매 인증(주문번호·결제 금액·캡처)을 조회합니다. 제출 전이면 204를 돌려줍니다. */
   @GetMapping("/api/campaigns/applications/{applicationId}/purchase-proof")
   public ResponseEntity<PurchaseReviewDtos.Proof> proof(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long applicationId) {
@@ -79,6 +85,7 @@ public class PurchaseReviewController {
         .orElseGet(() -> ResponseEntity.noContent().build());
   }
 
+  /** 참여자·캠페인 업체·운영자만 구매 인증 캡처를 내려받습니다. */
   @GetMapping("/api/campaigns/applications/{applicationId}/purchase-proof/evidence")
   public ResponseEntity<Resource> evidence(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long applicationId) {
@@ -95,6 +102,7 @@ public class PurchaseReviewController {
     return service.sellerPaybacks(JwtMemberId.from(jwt));
   }
 
+  /** 캠페인 업체가 환급(페이백) 완료를 기록합니다. 참여를 마친 신청에 한 번만 기록할 수 있습니다. */
   @PatchMapping("/api/campaigns/applications/{applicationId}/payback")
   public PurchaseReviewDtos.Proof markPaid(
       @AuthenticationPrincipal Jwt jwt,

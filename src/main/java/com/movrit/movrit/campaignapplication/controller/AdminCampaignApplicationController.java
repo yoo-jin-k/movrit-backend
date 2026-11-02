@@ -3,6 +3,7 @@ package com.movrit.movrit.campaignapplication.controller;
 import com.movrit.movrit.campaignapplication.dto.CampaignApplicationDtos;
 import com.movrit.movrit.campaignapplication.service.CampaignApplicationService;
 import com.movrit.movrit.common.security.JwtMemberId;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 운영자 선정 캠페인의 신청 목록과 선정 명령을 제공합니다. */
+@Tag(name = "운영자 · 신청 선정")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/campaign-applications")

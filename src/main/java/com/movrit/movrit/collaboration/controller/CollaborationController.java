@@ -3,6 +3,7 @@ package com.movrit.movrit.collaboration.controller;
 import com.movrit.movrit.collaboration.dto.CollaborationDtos;
 import com.movrit.movrit.collaboration.service.CampaignSearchService;
 import com.movrit.movrit.collaboration.service.CollaborationService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 캠페인 및 협업의 HTTP 요청을 서비스로 연결합니다. 인증 주체는 토큰에서 읽고, 업무 권한과 상태 검증은 호출한 서비스의 정책을 따릅니다. */
+@Tag(name = "공통 · 캠페인 목록·상세")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/collaborations")
@@ -68,7 +70,7 @@ public class CollaborationController {
     return s.sellerCampaigns(id(j));
   }
 
-  /** 신청 생성을 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
+  /** 참여자가 캠페인 협업을 신청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping("/campaigns/{campaignId}/apply")
   public CollaborationDtos.Response apply(
       @AuthenticationPrincipal Jwt j,

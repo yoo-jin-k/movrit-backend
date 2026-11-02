@@ -5,6 +5,7 @@ import com.movrit.movrit.campaignmedia.dto.CampaignMediaDtos.ManagedPresentation
 import com.movrit.movrit.campaignmedia.dto.CampaignMediaDtos.PublicPresentation;
 import com.movrit.movrit.campaignmedia.service.CampaignMediaService;
 import com.movrit.movrit.common.security.JwtMemberId;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /** 캠페인 이미지와 방문 주소의 HTTP 요청을 서비스로 연결합니다. 인증 주체는 토큰에서 읽고, 업무 권한과 상태 검증은 호출한 서비스의 정책을 따릅니다. */
+@Tag(name = "업체 · 캠페인 이미지")
 @RestController
 @RequiredArgsConstructor
 public class CampaignMediaController {

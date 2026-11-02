@@ -3,6 +3,7 @@ package com.movrit.movrit.community.controller;
 import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.community.dto.CommunityDtos;
 import com.movrit.movrit.community.service.CommunityAdminService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,12 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>PATCH /api/admin/community/comments/{commentId}/visibility: 댓글 가리기·다시 보이기
  * </ul>
  */
+@Tag(name = "운영자 · 커뮤니티 관리")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/community")
 public class CommunityAdminController {
   private final CommunityAdminService service;
 
+  /** 운영자가 숨김 글을 포함한 커뮤니티 글 목록을 조회합니다. */
   @GetMapping("/posts")
   public CommunityDtos.AdminPostPage list(
       @AuthenticationPrincipal Jwt jwt,
@@ -41,12 +44,14 @@ public class CommunityAdminController {
     return service.list(JwtMemberId.from(jwt), board, status, q, page);
   }
 
+  /** 운영자가 숨김 댓글을 포함한 글 상세를 조회합니다. */
   @GetMapping("/posts/{postId}")
   public CommunityDtos.AdminPostDetail detail(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long postId) {
     return service.detail(JwtMemberId.from(jwt), postId);
   }
 
+  /** 운영자가 글을 숨기거나 다시 보이게 합니다. */
   @PatchMapping("/posts/{postId}/visibility")
   public CommunityDtos.AdminPostDetail setPostHidden(
       @AuthenticationPrincipal Jwt jwt,
@@ -55,6 +60,7 @@ public class CommunityAdminController {
     return service.setPostHidden(JwtMemberId.from(jwt), postId, request);
   }
 
+  /** 운영자가 댓글을 숨기거나 다시 보이게 합니다. */
   @PatchMapping("/comments/{commentId}/visibility")
   public CommunityDtos.AdminPostDetail setCommentHidden(
       @AuthenticationPrincipal Jwt jwt,

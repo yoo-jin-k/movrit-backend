@@ -15,6 +15,7 @@ import com.movrit.movrit.auth.service.SocialLinkStateService;
 import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.service.MemberService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -39,6 +40,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 
 /** 로그인 및 소셜 인증의 HTTP 요청을 서비스로 연결합니다. 인증 주체는 토큰에서 읽고, 업무 권한과 상태 검증은 호출한 서비스의 정책을 따릅니다. */
+@Tag(name = "공통 · 로그인·소셜 인증")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -67,7 +69,7 @@ public class AuthController {
     }
   }
 
-  /** 이메일과 비밀번호를 검증하는 로그인 서비스에 요청을 전달합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
+  /** 이메일과 비밀번호로 로그인하고 접근 토큰을 받습니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping("/login")
   public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
     return ResponseEntity.ok(authService.login(request));

@@ -3,6 +3,7 @@ package com.movrit.movrit.notification.controller;
 import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.notification.dto.NotificationDtos;
 import com.movrit.movrit.notification.service.NotificationService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 내부 알림의 HTTP 요청을 서비스로 연결합니다. 인증 주체는 토큰에서 읽고, 업무 권한과 상태 검증은 호출한 서비스의 정책을 따릅니다. */
+@Tag(name = "공통 · 알림")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/notifications")

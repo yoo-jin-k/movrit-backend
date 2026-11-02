@@ -3,6 +3,7 @@ package com.movrit.movrit.report.controller;
 import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.report.dto.ReportDtos;
 import com.movrit.movrit.report.service.ReportService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -26,11 +27,13 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>PATCH /api/admin/content-reports/{id}: 운영자 처리(DISMISS·WARN·HIDE·SUSPEND)
  * </ul>
  */
+@Tag(name = "공통 · 신고")
 @RestController
 @RequiredArgsConstructor
 public class ReportController {
   private final ReportService service;
 
+  /** 회원이 글·댓글·회원을 신고합니다. */
   @PostMapping("/api/reports")
   @ResponseStatus(HttpStatus.CREATED)
   public ReportDtos.Created create(
@@ -38,11 +41,13 @@ public class ReportController {
     return service.create(JwtMemberId.from(jwt), request);
   }
 
+  /** 운영자가 최근 신고 목록(200건)을 조회합니다. */
   @GetMapping("/api/admin/content-reports")
   public List<ReportDtos.Item> list(@AuthenticationPrincipal Jwt jwt) {
     return service.list(JwtMemberId.from(jwt));
   }
 
+  /** 운영자가 신고를 처리합니다(기각·경고·가리기·이용 정지). */
   @PatchMapping("/api/admin/content-reports/{reportId}")
   public ReportDtos.Item handle(
       @AuthenticationPrincipal Jwt jwt,

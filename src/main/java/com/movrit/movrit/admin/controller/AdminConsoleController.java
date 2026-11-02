@@ -4,6 +4,7 @@ import com.movrit.movrit.admin.dto.AdminConsoleDtos;
 import com.movrit.movrit.admin.service.AdminConsoleService;
 import com.movrit.movrit.admin.service.AdminReportService;
 import com.movrit.movrit.common.security.JwtMemberId;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>상태 변경은 기존 API를 씁니다: 회원 상태 PATCH /api/members/admin/{id}/status, 업체 승인·반려
  * /api/admin/sellers/{id}/approve·reject, 정산 확정·지급·취소 /api/settlements/{id}/...
  */
+@Tag(name = "운영자 · 관리 화면 조회")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin")
@@ -35,20 +37,20 @@ public class AdminConsoleController {
   private final AdminConsoleService service;
   private final AdminReportService reports;
 
-  /** 회원 목록입니다. */
+  /** 운영자가 회원 목록을 조회합니다. */
   @GetMapping("/members")
   public List<AdminConsoleDtos.MemberRow> members(@AuthenticationPrincipal Jwt jwt) {
     return service.members(JwtMemberId.from(jwt));
   }
 
-  /** 회원 상세입니다. */
+  /** 운영자가 회원 상세(신청·제재 이력 포함)를 조회합니다. */
   @GetMapping("/members/{memberId}")
   public AdminConsoleDtos.MemberDetail member(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long memberId) {
     return service.member(JwtMemberId.from(jwt), memberId);
   }
 
-  /** 업체 상세입니다. 업체 목록은 기존 GET /api/admin/sellers 를 씁니다. */
+  /** 운영자가 업체 상세를 조회합니다. 업체 목록은 기존 GET /api/admin/sellers 를 씁니다. */
   @GetMapping("/sellers/{sellerId}")
   public AdminConsoleDtos.SellerDetail seller(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long sellerId) {
@@ -68,13 +70,13 @@ public class AdminConsoleController {
     return service.creator(JwtMemberId.from(jwt), creatorId);
   }
 
-  /** 프리오더 목록입니다. */
+  /** 운영자가 프리오더 목록을 조회합니다. */
   @GetMapping("/preorders")
   public List<AdminConsoleDtos.PreorderRow> preorders(@AuthenticationPrincipal Jwt jwt) {
     return service.preorders(JwtMemberId.from(jwt));
   }
 
-  /** 프리오더 상세입니다. */
+  /** 운영자가 프리오더 상세를 조회합니다. */
   @GetMapping("/preorders/{preorderId}")
   public AdminConsoleDtos.PreorderDetail preorder(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long preorderId) {
@@ -87,7 +89,7 @@ public class AdminConsoleController {
     return service.orders(JwtMemberId.from(jwt));
   }
 
-  /** 주문 상세입니다. */
+  /** 운영자가 주문 상세를 조회합니다. */
   @GetMapping("/orders/{orderId}")
   public AdminConsoleDtos.OrderDetail order(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long orderId) {
@@ -100,7 +102,7 @@ public class AdminConsoleController {
     return service.collaborations(JwtMemberId.from(jwt));
   }
 
-  /** 운영 리포트입니다. from·to(yyyy-MM-dd, 포함)를 비우면 전체 기간입니다. */
+  /** 운영자가 기간별 운영 리포트를 조회합니다. from·to(yyyy-MM-dd, 포함)를 비우면 전체 기간입니다. */
   @GetMapping("/reports")
   public AdminConsoleDtos.Report report(
       @AuthenticationPrincipal Jwt jwt,

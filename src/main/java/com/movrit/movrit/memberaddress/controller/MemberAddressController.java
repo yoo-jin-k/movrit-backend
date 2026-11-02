@@ -3,6 +3,7 @@ package com.movrit.movrit.memberaddress.controller;
 import com.movrit.movrit.common.security.JwtMemberId;
 import com.movrit.movrit.memberaddress.dto.MemberAddressDtos;
 import com.movrit.movrit.memberaddress.service.MemberAddressService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 로그인한 회원의 배송지 주소록 API입니다. 캠페인 신청 시 배송 정보를 불러오는 데 사용합니다. */
+@Tag(name = "참여자 · 배송지")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/members/me/addresses")

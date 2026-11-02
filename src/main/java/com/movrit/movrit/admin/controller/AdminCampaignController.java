@@ -3,6 +3,7 @@ package com.movrit.movrit.admin.controller;
 import com.movrit.movrit.admin.dto.AdminCampaignDtos;
 import com.movrit.movrit.admin.service.AdminCampaignService;
 import com.movrit.movrit.common.security.JwtMemberId;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -24,17 +25,20 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>PATCH /{id}/reopen: 다시 공개
  * </ul>
  */
+@Tag(name = "운영자 · 캠페인")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/campaigns")
 public class AdminCampaignController {
   private final AdminCampaignService service;
 
+  /** 운영자가 전체 캠페인 목록을 조회합니다. */
   @GetMapping
   public List<AdminCampaignDtos.Item> list(@AuthenticationPrincipal Jwt jwt) {
     return service.list(JwtMemberId.from(jwt));
   }
 
+  /** 운영자가 캠페인 모집을 마감합니다. */
   @PatchMapping("/{campaignId}/close")
   public AdminCampaignDtos.Item close(
       @AuthenticationPrincipal Jwt jwt,
@@ -43,6 +47,7 @@ public class AdminCampaignController {
     return service.close(JwtMemberId.from(jwt), campaignId, request.reason());
   }
 
+  /** 운영자가 마감된 캠페인 모집을 다시 엽니다. */
   @PatchMapping("/{campaignId}/reopen")
   public AdminCampaignDtos.Item reopen(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {

@@ -3,6 +3,7 @@ package com.movrit.movrit.campaignshipping.controller;
 import com.movrit.movrit.campaignshipping.dto.CampaignShippingDtos;
 import com.movrit.movrit.campaignshipping.service.CampaignShippingService;
 import com.movrit.movrit.common.security.JwtMemberId;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -32,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>GET /api/campaigns/applications/{applicationId}/shipment: 참여자·업체용 발송 정보(없으면 204)
  * </ul>
  */
+@Tag(name = "공통 · 캠페인 배송")
 @RestController
 @RequiredArgsConstructor
 public class CampaignShippingController {
@@ -40,17 +42,20 @@ public class CampaignShippingController {
 
   private final CampaignShippingService service;
 
+  /** 배송 등록에 쓸 수 있는 택배사 목록을 조회합니다. */
   @GetMapping("/api/campaigns/shipping/couriers")
   public List<String> couriers() {
     return CampaignShippingService.COURIERS;
   }
 
+  /** 캠페인 업체가 선정자별 배송지·송장·수령 확인 목록을 조회합니다. */
   @GetMapping("/api/campaigns/{campaignId}/shipping")
   public List<CampaignShippingDtos.Row> rows(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {
     return service.rows(JwtMemberId.from(jwt), campaignId);
   }
 
+  /** 캠페인 업체가 송장 여러 건을 한 번에 저장하고 건별 결과를 돌려받습니다. */
   @PutMapping("/api/campaigns/{campaignId}/shipping")
   public CampaignShippingDtos.SaveResponse save(
       @AuthenticationPrincipal Jwt jwt,
@@ -59,6 +64,7 @@ public class CampaignShippingController {
     return service.save(JwtMemberId.from(jwt), campaignId, request);
   }
 
+  /** 캠페인 업체가 배송지 목록을 엑셀(.xlsx) 파일로 내려받습니다. */
   @GetMapping("/api/campaigns/{campaignId}/shipping/export")
   public ResponseEntity<byte[]> export(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {
@@ -76,6 +82,7 @@ public class CampaignShippingController {
         .body(file);
   }
 
+  /** 참여자·업체가 신청 건의 발송 정보(택배사·송장 번호)를 조회합니다. 발송 전이면 204를 돌려줍니다. */
   @GetMapping("/api/campaigns/applications/{applicationId}/shipment")
   public ResponseEntity<CampaignShippingDtos.Shipment> shipment(
       @AuthenticationPrincipal Jwt jwt, @PathVariable Long applicationId) {
