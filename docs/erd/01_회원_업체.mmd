@@ -77,6 +77,33 @@ erDiagram
     timestamp created_at
     timestamp updated_at
   }
+  password_reset_token {
+    bigint id PK
+    bigint member_id FK
+    varchar token_hash
+    timestamp expires_at
+    timestamp used_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  member_channel_connection {
+    bigint id PK
+    bigint member_id FK
+    varchar provider
+    varchar external_id
+    varchar account_name
+    varchar profile_url
+    bigint follower_count
+    timestamp connected_at
+    timestamp created_at
+    timestamp updated_at
+    varchar connection_method
+    varchar verification_status
+    varchar evidence_key
+    varchar review_note
+    timestamp reviewed_at
+    bigint reviewed_by_member_id FK
+  }
   seller_profile {
     bigint id PK
     bigint member_id FK
@@ -132,10 +159,20 @@ erDiagram
   influencer_profile ||--o{ campaign_application : "creator_id"
   member ||--o{ campaign_favorite : "member_id"
   member ||--o{ campaign_image_asset : "owner_member_id"
+  member ||--o{ campaign_participant_rating : "member_id"
+  member ||--o{ campaign_participant_rating : "rated_by_member_id"
   member ||--o{ campaign_visit_history : "actor_member_id"
+  member ||--o{ chat_message : "sender_member_id"
+  member ||--o{ chat_participant : "member_id"
+  member ||--o{ chat_room : "owner_member_id"
   influencer_profile ||--o{ collaboration : "creator_id"
   influencer_profile ||--o{ collaboration : "influencer_id"
   brand ||--o{ collaboration_campaign : "brand_id"
+  member ||--o{ community_comment : "author_member_id"
+  member ||--o{ community_post : "author_member_id"
+  member ||--o{ content_report : "handled_by_member_id"
+  member ||--o{ content_report : "reporter_member_id"
+  member ||--o{ content_report : "target_member_id"
   member ||--o{ email_verification_challenge : "member_id"
   member ||--o{ file_asset : "uploader_member_id"
   member ||--o{ influencer_profile : "member_id"
@@ -143,12 +180,18 @@ erDiagram
   member ||--o{ inquiry : "answered_by_member_id"
   member ||--o{ inquiry : "member_id"
   member ||--o{ member_address : "member_id"
+  member ||--o{ member_channel_connection : "member_id"
+  member ||--o{ member_channel_connection : "reviewed_by_member_id"
   member ||--o{ member_channel_metric : "member_id"
+  member ||--o{ member_penalty : "created_by_member_id"
+  member ||--o{ member_penalty : "member_id"
+  member ||--o{ member_penalty : "revoked_by_member_id"
   member ||--o{ member_role : "member_id"
   member ||--o{ member_social_account : "member_id"
   member ||--o{ notice : "author_member_id"
   member ||--o{ notification : "member_id"
   member ||--o{ orders : "member_id"
+  member ||--o{ password_reset_token : "member_id"
   member ||--o{ preorder_favorite : "member_id"
   member ||--o{ preorder_history : "changed_by_member_id"
   member ||--o{ preorder_interest : "member_id"

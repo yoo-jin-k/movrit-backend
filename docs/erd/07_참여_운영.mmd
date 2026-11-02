@@ -1,0 +1,76 @@
+%% 배송·구매평·방문 예약·패널티·평가 — scripts/generate-erd.py로 생성
+erDiagram
+  campaign_shipment {
+    bigint application_id PK
+    varchar courier
+    varchar tracking_number
+    timestamp shipped_at
+    timestamp updated_at
+  }
+  campaign_purchase_review {
+    bigint campaign_id PK
+    varchar store_name
+    varchar product_url
+    integer product_price
+    integer payback_amount
+    varchar purchase_guide
+    timestamp updated_at
+  }
+  campaign_purchase_proof {
+    bigint application_id PK
+    varchar order_number
+    integer paid_amount
+    varchar evidence_key
+    timestamp submitted_at
+    varchar payback_status
+    timestamp payback_paid_at
+    varchar payback_note
+  }
+  campaign_visit_reservation {
+    bigint application_id PK
+    timestamp visit_at
+    integer party_size
+    varchar request_note
+    varchar status
+    varchar reject_reason
+    timestamp requested_at
+    timestamp decided_at
+  }
+  campaign_deadline_reminder {
+    bigint id PK
+    bigint application_id FK
+    varchar stage
+    timestamp sent_at
+  }
+  campaign_participant_rating {
+    bigint application_id PK
+    bigint member_id FK
+    integer rating
+    varchar memo
+    bigint rated_by_member_id FK
+    timestamp updated_at
+  }
+  member_penalty {
+    bigint id PK
+    bigint member_id FK
+    bigint application_id FK
+    varchar penalty_type
+    varchar reason
+    bigint created_by_member_id FK
+    timestamp created_at
+    timestamp revoked_at
+    bigint revoked_by_member_id FK
+    varchar revoke_reason
+  }
+  campaign_application ||--o{ campaign_deadline_reminder : "application_id"
+  campaign_application ||--o{ campaign_participant_rating : "application_id"
+  member ||--o{ campaign_participant_rating : "member_id"
+  member ||--o{ campaign_participant_rating : "rated_by_member_id"
+  campaign_application ||--o{ campaign_purchase_proof : "application_id"
+  collaboration_campaign ||--o{ campaign_purchase_review : "campaign_id"
+  campaign_application ||--o{ campaign_shipment : "application_id"
+  campaign_application ||--o{ campaign_visit_reservation : "application_id"
+  campaign_application ||--o{ member_penalty : "application_id"
+  member ||--o{ member_penalty : "created_by_member_id"
+  member ||--o{ member_penalty : "member_id"
+  member ||--o{ member_penalty : "revoked_by_member_id"

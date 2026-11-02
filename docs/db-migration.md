@@ -12,6 +12,15 @@
 | 4 | `V4__campaign_type_region_channel.sql` | 탐색 메뉴용 분류 추가: 캠페인 종류(제품·지역·기자단), 방문 지역, 콘텐츠 채널, 프리미어 여부. 방문 전용 신청 폼을 가진 기존 캠페인은 지역 캠페인으로, 방문 주소 앞부분으로 지역을 채움 |
 | 5 | `V5__campaign_favorite.sql` | 캠페인 찜 테이블(campaign_favorite) 추가. 회원·캠페인 쌍은 한 번만 저장되며 회원·캠페인 삭제 시 함께 정리 |
 | 6 | `V6__notice.sql` | 공지사항 테이블(notice) 추가. 운영자가 작성·게시하며, 게시된 공지만 사용자 공지 목록에 표시 |
+| 7 | `V7__member_channel_connection.sql` | SNS 로그인으로 연결한 채널 기록(member_channel_connection). 접근 토큰은 저장하지 않고 계정 정보와 팔로워 수만 보관 |
+| 8 | `V8__channel_connection_manual_verification.sql` | 채널 직접 등록(주소·팔로워 수·캡처)과 운영자 확인 상태. 로그인 연결은 처음부터 확인됨, 직접 등록은 확인 대기로 시작 |
+| 9 | `V9__chat.sql` | 채팅방·참여자·메시지(chat_room, chat_participant, chat_message). 신청 한 건마다 참여자 ↔ 브랜드 방 하나 |
+| 10 | `V10__password_reset_token.sql` | 비밀번호 재설정 토큰. 원문 대신 SHA-256 해시만 저장, 30분 만료, 한 번만 사용 |
+| 11 | `V11__community.sql` | 커뮤니티 글·댓글. 삭제는 deleted_at, 운영자 가림은 hidden으로 구분 |
+| 12 | `V12__chat_attachment.sql` | 채팅 메시지 첨부(사진·영상·PDF) 컬럼 |
+| 13 | `V13__purchase_review.sql` | 구매평 캠페인: 구매 정보(campaign_purchase_review)와 참여자 구매 인증·환급 상태(campaign_purchase_proof) |
+| 14 | `V14__participation_operations.sql` | 마감 알림 기록, 방문 예약, 패널티, 참여자 평가, 신고(content_report), 채팅 메시지 가림(hidden_at) |
+| 15 | `V15__campaign_shipment.sql` | 배송형 캠페인 송장(campaign_shipment). 신청 한 건에 하나, 택배사·송장번호·발송 시각 |
 
 - 적용 이력 테이블: `movrit_schema_history`
   - 8월 실험 때 남은 `flyway_schema_history` 와는 별개입니다. 기존 표는 사용하지 않으며 지우지 않았습니다.

@@ -107,6 +107,16 @@ Table campaign_content_submission {
   version "bigint"
 }
 
+Table campaign_deadline_reminder {
+  id "bigint" [pk]
+  application_id "bigint" [not null]
+  stage "varchar(10)" [not null]
+  sent_at "timestamp" [not null]
+  indexes {
+    (application_id, stage) [unique]
+  }
+}
+
 Table campaign_detail_image {
   id "bigint" [pk]
   created_at "timestamp" [not null]
@@ -169,6 +179,44 @@ Table campaign_media_state {
   updated_at "timestamp" [not null]
 }
 
+Table campaign_participant_rating {
+  application_id "bigint" [pk]
+  member_id "bigint" [not null]
+  rating "integer" [not null]
+  memo "varchar(1000)"
+  rated_by_member_id "bigint" [not null]
+  updated_at "timestamp" [not null]
+}
+
+Table campaign_purchase_proof {
+  application_id "bigint" [pk]
+  order_number "varchar(60)" [not null]
+  paid_amount "integer" [not null]
+  evidence_key "varchar(80)" [not null]
+  submitted_at "timestamp" [not null]
+  payback_status "varchar(20)"
+  payback_paid_at "timestamp"
+  payback_note "varchar(200)"
+}
+
+Table campaign_purchase_review {
+  campaign_id "bigint" [pk]
+  store_name "varchar(50)" [not null]
+  product_url "varchar(500)" [not null]
+  product_price "integer" [not null]
+  payback_amount "integer" [not null]
+  purchase_guide "varchar(2000)"
+  updated_at "timestamp" [not null]
+}
+
+Table campaign_shipment {
+  application_id "bigint" [pk]
+  courier "varchar(30)" [not null]
+  tracking_number "varchar(30)" [not null]
+  shipped_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+}
+
 Table campaign_visit_history {
   id "bigint" [pk]
   campaign_id "bigint" [not null]
@@ -183,6 +231,17 @@ Table campaign_visit_history {
   changed_at "timestamp" [not null]
 }
 
+Table campaign_visit_reservation {
+  application_id "bigint" [pk]
+  visit_at "timestamp" [not null]
+  party_size "integer"
+  request_note "varchar(500)"
+  status "varchar(20)" [not null]
+  reject_reason "varchar(500)"
+  requested_at "timestamp" [not null]
+  decided_at "timestamp"
+}
+
 Table campaign_visit_snapshot {
   application_id "bigint" [pk]
   campaign_id "bigint" [not null]
@@ -192,6 +251,45 @@ Table campaign_visit_snapshot {
   legacy_place_name "text"
   legacy_address "text"
   captured_at "timestamp" [not null]
+}
+
+Table chat_message {
+  id "bigint" [pk]
+  room_id "bigint" [not null]
+  sender_member_id "bigint"
+  sender_role "varchar(20)" [not null]
+  body "varchar(2000)" [not null]
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+  attachment_key "varchar(100)"
+  attachment_name "varchar(200)"
+  attachment_type "varchar(100)"
+  attachment_size "bigint"
+  hidden_at "timestamp"
+}
+
+Table chat_participant {
+  id "bigint" [pk]
+  room_id "bigint" [not null]
+  member_id "bigint" [not null]
+  participant_role "varchar(20)" [not null]
+  last_read_message_id "bigint"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+  indexes {
+    (room_id, member_id) [unique]
+  }
+}
+
+Table chat_room {
+  id "bigint" [pk]
+  room_type "varchar(20)" [not null]
+  application_id "bigint" [unique]
+  owner_member_id "bigint"
+  title "varchar(200)" [not null]
+  last_message_at "timestamp"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
 }
 
 Table collaboration {
@@ -264,6 +362,51 @@ Table collaboration_campaign {
   region "varchar(20)"
   content_channel "varchar(20)"
   premier "boolean"
+}
+
+Table community_comment {
+  id "bigint" [pk]
+  post_id "bigint" [not null]
+  author_member_id "bigint"
+  body "varchar(1000)" [not null]
+  deleted_at "timestamp"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+}
+
+Table community_post {
+  id "bigint" [pk]
+  board "varchar(20)" [not null]
+  category "varchar(20)" [not null]
+  title "varchar(100)" [not null]
+  body "varchar(5000)" [not null]
+  author_member_id "bigint"
+  view_count "integer"
+  comment_count "integer"
+  hidden "boolean"
+  deleted_at "timestamp"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+}
+
+Table content_report {
+  id "bigint" [pk]
+  reporter_member_id "bigint" [not null]
+  target_type "varchar(30)" [not null]
+  target_id "bigint" [not null]
+  target_member_id "bigint"
+  target_snapshot "varchar(2000)"
+  reason "varchar(30)" [not null]
+  detail "varchar(1000)"
+  status "varchar(20)"
+  resolution "varchar(30)"
+  resolution_note "varchar(500)"
+  handled_by_member_id "bigint"
+  handled_at "timestamp"
+  created_at "timestamp" [not null]
+  indexes {
+    (reporter_member_id, target_type, target_id) [unique]
+  }
 }
 
 Table email_verification_challenge {
@@ -384,6 +527,29 @@ Table member_address {
   updated_at "timestamp"
 }
 
+Table member_channel_connection {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  provider "varchar(20)" [not null]
+  external_id "varchar(100)" [not null]
+  account_name "varchar(100)"
+  profile_url "varchar(500)"
+  follower_count "bigint"
+  connected_at "timestamp" [not null]
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
+  connection_method "varchar(10)"
+  verification_status "varchar(20)"
+  evidence_key "varchar(100)"
+  review_note "varchar(500)"
+  reviewed_at "timestamp"
+  reviewed_by_member_id "bigint"
+  indexes {
+    (provider, external_id) [unique]
+    (member_id, provider) [unique]
+  }
+}
+
 Table member_channel_metric {
   id "bigint" [pk]
   member_id "bigint" [not null]
@@ -398,6 +564,19 @@ Table member_channel_metric {
   indexes {
     (member_id, channel_type, metric_type) [unique]
   }
+}
+
+Table member_penalty {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  application_id "bigint" [unique, not null]
+  penalty_type "varchar(20)" [not null]
+  reason "varchar(500)" [not null]
+  created_by_member_id "bigint" [not null]
+  created_at "timestamp" [not null]
+  revoked_at "timestamp"
+  revoked_by_member_id "bigint"
+  revoke_reason "varchar(500)"
 }
 
 Table member_role {
@@ -490,6 +669,16 @@ Table orders {
   indexes {
     (member_id, request_key) [unique]
   }
+}
+
+Table password_reset_token {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  token_hash "varchar(64)" [unique, not null]
+  expires_at "timestamp" [not null]
+  used_at "timestamp"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
 }
 
 Table payment {
@@ -767,6 +956,7 @@ Ref: campaign_application.creator_id > influencer_profile.id
 Ref: campaign_application_form.campaign_id > collaboration_campaign.id
 Ref: campaign_content_link.submission_id > campaign_content_submission.id
 Ref: campaign_content_submission.application_id > campaign_application.id
+Ref: campaign_deadline_reminder.application_id > campaign_application.id
 Ref: campaign_detail_image.campaign_id > collaboration_campaign.id
 Ref: campaign_eligibility_requirement.campaign_id > collaboration_campaign.id
 Ref: campaign_favorite.campaign_id > collaboration_campaign.id
@@ -775,15 +965,34 @@ Ref: campaign_image_asset.campaign_id > collaboration_campaign.id
 Ref: campaign_image_asset.owner_member_id > member.id
 Ref: campaign_media_state.campaign_id > collaboration_campaign.id
 Ref: campaign_media_state.representative_asset_id > campaign_image_asset.id
+Ref: campaign_participant_rating.application_id > campaign_application.id
+Ref: campaign_participant_rating.member_id > member.id
+Ref: campaign_participant_rating.rated_by_member_id > member.id
+Ref: campaign_purchase_proof.application_id > campaign_application.id
+Ref: campaign_purchase_review.campaign_id > collaboration_campaign.id
+Ref: campaign_shipment.application_id > campaign_application.id
 Ref: campaign_visit_history.actor_member_id > member.id
 Ref: campaign_visit_history.campaign_id > collaboration_campaign.id
+Ref: campaign_visit_reservation.application_id > campaign_application.id
 Ref: campaign_visit_snapshot.application_id > campaign_application.id
 Ref: campaign_visit_snapshot.campaign_id > collaboration_campaign.id
+Ref: chat_message.room_id > chat_room.id
+Ref: chat_message.sender_member_id > member.id
+Ref: chat_participant.member_id > member.id
+Ref: chat_participant.room_id > chat_room.id
+Ref: chat_room.application_id > campaign_application.id
+Ref: chat_room.owner_member_id > member.id
 Ref: collaboration.creator_id > influencer_profile.id
 Ref: collaboration.influencer_id > influencer_profile.id
 Ref: collaboration.preorder_id > preorder.id
 Ref: collaboration_campaign.brand_id > brand.id
 Ref: collaboration_campaign.preorder_id > preorder.id
+Ref: community_comment.author_member_id > member.id
+Ref: community_comment.post_id > community_post.id
+Ref: community_post.author_member_id > member.id
+Ref: content_report.handled_by_member_id > member.id
+Ref: content_report.reporter_member_id > member.id
+Ref: content_report.target_member_id > member.id
 Ref: email_verification_challenge.member_id > member.id
 Ref: file_asset.uploader_member_id > member.id
 Ref: file_attachment.file_asset_id > file_asset.id
@@ -793,7 +1002,13 @@ Ref: inquiry.answered_by_member_id > member.id
 Ref: inquiry.member_id > member.id
 Ref: inquiry.preorder_id > preorder.id
 Ref: member_address.member_id > member.id
+Ref: member_channel_connection.member_id > member.id
+Ref: member_channel_connection.reviewed_by_member_id > member.id
 Ref: member_channel_metric.member_id > member.id
+Ref: member_penalty.application_id > campaign_application.id
+Ref: member_penalty.created_by_member_id > member.id
+Ref: member_penalty.member_id > member.id
+Ref: member_penalty.revoked_by_member_id > member.id
 Ref: member_role.member_id > member.id
 Ref: member_social_account.member_id > member.id
 Ref: notice.author_member_id > member.id
@@ -804,6 +1019,7 @@ Ref: order_item.product_id > product.id
 Ref: orders.attribution_id > attribution.id
 Ref: orders.member_id > member.id
 Ref: orders.preorder_id > preorder.id
+Ref: password_reset_token.member_id > member.id
 Ref: payment.order_id > orders.id
 Ref: preorder.product_id > product.id
 Ref: preorder_favorite.member_id > member.id

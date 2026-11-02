@@ -21,7 +21,8 @@ import sys
 DOMAINS = [
     ("01_회원_업체", "회원·인증·업체", [
         "member", "member_role", "member_social_account", "member_address", "member_channel_metric",
-        "refresh_token", "email_verification_challenge", "seller_profile", "brand",
+        "refresh_token", "email_verification_challenge", "password_reset_token",
+        "member_channel_connection", "seller_profile", "brand",
         "influencer_profile", "influencer_social_account",
     ]),
     ("02_캠페인_신청", "캠페인·신청·콘텐츠", [
@@ -43,6 +44,15 @@ DOMAINS = [
     ]),
     ("06_운영_공통", "알림·문의·감사·공지", [
         "notice", "notification", "inquiry", "audit_log"]),
+    ("07_참여_운영", "배송·구매평·방문 예약·패널티·평가", [
+        "campaign_shipment", "campaign_purchase_review", "campaign_purchase_proof",
+        "campaign_visit_reservation", "campaign_deadline_reminder", "campaign_participant_rating",
+        "member_penalty",
+    ]),
+    ("08_소통_신고", "채팅·커뮤니티·신고", [
+        "chat_room", "chat_participant", "chat_message", "community_post", "community_comment",
+        "content_report",
+    ]),
 ]
 
 
@@ -142,8 +152,8 @@ def main():
         readme.append(f"| `{file}.mmd` | {title} | {', '.join(n for n in names if n in tables)} |")
     others = sorted(set(tables) - grouped)
     if others:
-        open(os.path.join(out_dir, "07_기타.mmd"), "w", encoding="utf-8").write(mermaid("기타", others, tables, fks, pks))
-        readme.append(f"| `07_기타.mmd` | 기타 | {', '.join(others)} |")
+        open(os.path.join(out_dir, "99_기타.mmd"), "w", encoding="utf-8").write(mermaid("기타", others, tables, fks, pks))
+        readme.append(f"| `99_기타.mmd` | 기타 | {', '.join(others)} |")
     open(os.path.join(out_dir, "README.md"), "w", encoding="utf-8").write("\n".join(readme) + "\n")
     print(f"tables={len(tables)} fks={len(fks)} others={others}")
 

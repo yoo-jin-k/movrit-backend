@@ -1,0 +1,86 @@
+%% 채팅·커뮤니티·신고 — scripts/generate-erd.py로 생성
+erDiagram
+  chat_room {
+    bigint id PK
+    varchar room_type
+    bigint application_id FK
+    bigint owner_member_id FK
+    varchar title
+    timestamp last_message_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  chat_participant {
+    bigint id PK
+    bigint room_id FK
+    bigint member_id FK
+    varchar participant_role
+    bigint last_read_message_id
+    timestamp created_at
+    timestamp updated_at
+  }
+  chat_message {
+    bigint id PK
+    bigint room_id FK
+    bigint sender_member_id FK
+    varchar sender_role
+    varchar body
+    timestamp created_at
+    timestamp updated_at
+    varchar attachment_key
+    varchar attachment_name
+    varchar attachment_type
+    bigint attachment_size
+    timestamp hidden_at
+  }
+  community_post {
+    bigint id PK
+    varchar board
+    varchar category
+    varchar title
+    varchar body
+    bigint author_member_id FK
+    integer view_count
+    integer comment_count
+    boolean hidden
+    timestamp deleted_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  community_comment {
+    bigint id PK
+    bigint post_id FK
+    bigint author_member_id FK
+    varchar body
+    timestamp deleted_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  content_report {
+    bigint id PK
+    bigint reporter_member_id FK
+    varchar target_type
+    bigint target_id
+    bigint target_member_id FK
+    varchar target_snapshot
+    varchar reason
+    varchar detail
+    varchar status
+    varchar resolution
+    varchar resolution_note
+    bigint handled_by_member_id FK
+    timestamp handled_at
+    timestamp created_at
+  }
+  chat_room ||--o{ chat_message : "room_id"
+  member ||--o{ chat_message : "sender_member_id"
+  member ||--o{ chat_participant : "member_id"
+  chat_room ||--o{ chat_participant : "room_id"
+  campaign_application ||--o{ chat_room : "application_id"
+  member ||--o{ chat_room : "owner_member_id"
+  member ||--o{ community_comment : "author_member_id"
+  community_post ||--o{ community_comment : "post_id"
+  member ||--o{ community_post : "author_member_id"
+  member ||--o{ content_report : "handled_by_member_id"
+  member ||--o{ content_report : "reporter_member_id"
+  member ||--o{ content_report : "target_member_id"
