@@ -2,14 +2,24 @@ package com.movrit.movrit.admin.controller;
 
 import com.movrit.movrit.admin.dto.AdminConsoleDtos;
 import com.movrit.movrit.admin.service.AdminConsoleService;
+import com.movrit.movrit.admin.service.AdminReportService;
 import com.movrit.movrit.common.security.JwtMemberId;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -23,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/admin")
 public class AdminConsoleController {
   private final AdminConsoleService service;
+  private final AdminReportService reports;
 
   /** 회원 목록입니다. */
   @GetMapping("/members")
@@ -89,10 +100,40 @@ public class AdminConsoleController {
     return service.collaborations(JwtMemberId.from(jwt));
   }
 
-  /** 운영 리포트입니다. */
+  /** 운영 리포트입니다. from·to(yyyy-MM-dd, 포함)를 비우면 전체 기간입니다. */
   @GetMapping("/reports")
-  public AdminConsoleDtos.Report report(@AuthenticationPrincipal Jwt jwt) {
-    return service.report(JwtMemberId.from(jwt));
+  public AdminConsoleDtos.Report report(
+      @AuthenticationPrincipal Jwt jwt,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+    return reports.report(JwtMemberId.from(jwt), from, to);
+  }
+
+  /** 운영 리포트 엑셀(.xlsx)입니다. 요약·날짜별·상태별 시트로 나뉩니다. */
+  @GetMapping("/reports/export")
+  public ResponseEntity<byte[]> exportReport(
+      @AuthenticationPrincipal Jwt jwt,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+    byte[] file = reports.export(JwtMemberId.from(jwt), from, to);
+    String name =
+        "MOVRIT_운영리포트_"
+            + (from == null && to == null
+                ? "전체"
+                : (from == null ? "" : from) + "_" + (to == null ? "" : to))
+            + ".xlsx";
+    return ResponseEntity.ok()
+        .cacheControl(CacheControl.noStore())
+        .contentType(
+            MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+        .header(
+            HttpHeaders.CONTENT_DISPOSITION,
+            ContentDisposition.attachment()
+                .filename(name, StandardCharsets.UTF_8)
+                .build()
+                .toString())
+        .body(file);
   }
 
   /** 운영 설정 현황입니다. */

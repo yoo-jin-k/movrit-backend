@@ -2,6 +2,7 @@ package com.movrit.movrit.campaignshipping.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.movrit.movrit.common.excel.SimpleXlsxWriter;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;

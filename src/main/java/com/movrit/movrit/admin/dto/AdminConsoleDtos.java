@@ -178,11 +178,21 @@ public final class AdminConsoleDtos {
       LocalDateTime createdAt) {}
 
   /**
-   * 운영 리포트입니다. 상태별 건수와 주요 비율·금액을 담습니다.
+   * 운영 리포트입니다. 기간 안에 생긴 회원·캠페인·신청·콘텐츠·주문·정산을 상태별로 세고, 주요 비율·금액과 날짜별 추이를 담습니다.
    *
-   * @param completionRate 선정된 신청 중 완료된 비율(%)입니다. 선정된 신청이 없으면 0입니다.
+   * @param from 시작일(포함). 전체 기간이면 null입니다.
+   * @param to 종료일(포함). 전체 기간이면 null입니다.
+   * @param openCampaigns 지금 모집 중인 캠페인 수입니다(기간과 관계없는 현재 값).
+   * @param completionRate 기간 안 신청 중 선정된 신청이 완료된 비율(%)입니다. 선정된 신청이 없으면 0입니다.
+   * @param daily 날짜별 가입·신청·콘텐츠 제출·완료 수입니다. 기간을 고른 경우에만 채웁니다.
    */
   public record Report(
+      java.time.LocalDate from,
+      java.time.LocalDate to,
+      long newMembers,
+      long newCampaigns,
+      long newApplications,
+      long completedApplications,
       Map<String, Long> membersByStatus,
       Map<String, Long> campaignsByType,
       long openCampaigns,
@@ -193,7 +203,12 @@ public final class AdminConsoleDtos {
       BigDecimal paidAmount,
       BigDecimal refundedAmount,
       Map<String, Long> settlementsByStatus,
+      List<DailyRow> daily,
       LocalDateTime generatedAt) {}
+
+  /** 날짜 하루의 추이입니다. completed는 그날 운영자 최종 승인으로 완료된 신청 수입니다. */
+  public record DailyRow(
+      java.time.LocalDate date, long signups, long applications, long contents, long completed) {}
 
   /**
    * 운영 설정 현황입니다. 비밀값 자체는 담지 않고 설정 여부만 알려 줍니다.

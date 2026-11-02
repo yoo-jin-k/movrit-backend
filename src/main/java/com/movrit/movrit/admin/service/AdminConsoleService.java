@@ -6,7 +6,6 @@ import com.movrit.movrit.brand.repository.BrandRepository;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplication;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
 import com.movrit.movrit.campaignapplication.repository.CampaignApplicationRepository;
-import com.movrit.movrit.campaigncontent.repository.CampaignContentSubmissionRepository;
 import com.movrit.movrit.campaigneligibility.repository.MemberChannelMetricRepository;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.entity.Collaboration;
@@ -33,14 +32,12 @@ import com.movrit.movrit.settlement.repository.SettlementRepository;
 import com.movrit.movrit.shipping.entity.Shipping;
 import com.movrit.movrit.shipping.repository.ShippingRepository;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -62,14 +59,6 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class AdminConsoleService {
-  /** 신청 완료율을 계산할 때 '선정 이후' 단계로 보는 상태입니다. */
-  private static final List<CampaignApplicationStatus> SELECTED_OR_LATER =
-      List.of(
-          CampaignApplicationStatus.SELECTED,
-          CampaignApplicationStatus.ACTIVE,
-          CampaignApplicationStatus.CONTENT_SUBMITTED,
-          CampaignApplicationStatus.REVISION_REQUESTED,
-          CampaignApplicationStatus.COMPLETED);
 
   private final MemberService memberService;
   private final MemberRepository members;
@@ -80,7 +69,6 @@ public class AdminConsoleService {
   private final MemberChannelMetricRepository metrics;
   private final CampaignRepository campaigns;
   private final CampaignApplicationRepository applications;
-  private final CampaignContentSubmissionRepository contents;
   private final PreorderRepository preorders;
   private final OrderRepository orders;
   private final OrderItemRepository orderItems;
@@ -335,33 +323,9 @@ public class AdminConsoleService {
         .toList();
   }
 
-  // ───────────────────────── 리포트·설정 ─────────────────────────
+  // ───────────────────────── 설정 ─────────────────────────
 
-  /** 운영 리포트: 회원·캠페인·신청·콘텐츠·주문·정산의 상태별 건수와 완료율·결제 금액입니다. */
-  public AdminConsoleDtos.Report report(Long adminId) {
-    memberService.getAdmin(adminId);
-    List<CampaignApplication> allApplications = applications.findAll();
-    long selectedOrLater =
-        allApplications.stream().filter(a -> SELECTED_OR_LATER.contains(a.getStatus())).count();
-    long completed =
-        allApplications.stream()
-            .filter(a -> a.getStatus() == CampaignApplicationStatus.COMPLETED)
-            .count();
-    List<Payment> allPayments = payments.findAll();
-    List<Campaign> allCampaigns = campaigns.findAll();
-    return new AdminConsoleDtos.Report(
-        count(members.findAll().stream().filter(m -> m.getDeletedAt() == null), Member::getStatus),
-        count(allCampaigns.stream(), Campaign::getCampaignType),
-        allCampaigns.stream().filter(Campaign::isOpen).count(),
-        count(allApplications.stream(), CampaignApplication::getStatus),
-        count(contents.findAll().stream(), submission -> submission.getStatus()),
-        selectedOrLater == 0 ? 0 : Math.round(completed * 1000.0 / selectedOrLater) / 10.0,
-        count(orders.findAll().stream(), Order::getStatus),
-        sumApproved(allPayments, PaymentStatus.PAID),
-        sumApproved(allPayments, PaymentStatus.REFUNDED),
-        count(settlements.findAll().stream(), settlement -> settlement.getStatus()),
-        LocalDateTime.now());
-  }
+  // 운영 리포트(기간 선택·엑셀)는 AdminReportService가 맡습니다.
 
   /** 운영 설정 현황: 실행 프로필, 이메일 발송 방식, 소셜 로그인 설정 여부, DB 버전 등입니다. 비밀값은 담지 않습니다. */
   public AdminConsoleDtos.Settings settings(Long adminId) {
@@ -498,12 +462,6 @@ public class AdminConsoleService {
         .map(Payment::getApprovedAmount)
         .filter(Objects::nonNull)
         .reduce(BigDecimal.ZERO, BigDecimal::add);
-  }
-
-  /** 값(주로 상태 enum)별 건수를 이름 순으로 셉니다. */
-  private static <T> Map<String, Long> count(java.util.stream.Stream<T> items, Function<T, ?> key) {
-    return items.collect(
-        Collectors.groupingBy(item -> name(key.apply(item)), TreeMap::new, Collectors.counting()));
   }
 
   /** enum이나 값을 문자열로 바꿉니다. null이면 '미지정'입니다. */
