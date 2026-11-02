@@ -41,10 +41,27 @@ public class CommunityComment extends BaseEntity {
   @Column(nullable = false, length = 1000)
   private String body;
 
+  /** 운영자가 가린 댓글입니다. 자리는 남기고 내용 대신 안내 문구를 보여 줍니다. */
+  @Column(nullable = false)
+  private boolean hidden;
+
+  @Column(name = "hidden_at")
+  private LocalDateTime hiddenAt;
+
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
   public void delete() {
     if (deletedAt == null) deletedAt = LocalDateTime.now();
+  }
+
+  public void hideByAdmin() {
+    if (!hidden) hiddenAt = LocalDateTime.now();
+    hidden = true;
+  }
+
+  public void unhideByAdmin() {
+    hidden = false;
+    hiddenAt = null;
   }
 }

@@ -55,6 +55,10 @@ public class CommunityPost extends BaseEntity {
   @Column(nullable = false)
   private boolean hidden;
 
+  /** 운영자가 가린 시각입니다. 다시 보이게 하면 비웁니다. */
+  @Column(name = "hidden_at")
+  private LocalDateTime hiddenAt;
+
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
@@ -74,7 +78,14 @@ public class CommunityPost extends BaseEntity {
   }
 
   public void hideByAdmin() {
+    if (!hidden) hiddenAt = LocalDateTime.now();
     this.hidden = true;
+  }
+
+  /** 운영자가 가린 글을 다시 보이게 합니다. */
+  public void unhideByAdmin() {
+    this.hidden = false;
+    this.hiddenAt = null;
   }
 
   public void increaseView() {

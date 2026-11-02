@@ -23,4 +23,27 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPost, Lo
       @Param("category") String category,
       @Param("keyword") String keyword,
       Pageable pageable);
+
+  /**
+   * 운영자 목록입니다. 게시판·검색어(제목·내용·작성자 닉네임)가 비어 있으면 거르지 않습니다.
+   *
+   * <p>status: VISIBLE(보이는 글), HIDDEN(가린 글), DELETED(지운 글), 그 밖에는 전체입니다.
+   */
+  @EntityGraph(attributePaths = "author")
+  @Query(
+      "select p from CommunityPost p left join p.author a where"
+          + " (:board is null or p.board = :board)"
+          + " and (:keyword is null or lower(p.title) like :keyword escape '\\'"
+          + "      or lower(p.body) like :keyword escape '\\'"
+          + "      or lower(coalesce(a.nickname, '')) like :keyword escape '\\')"
+          + " and (:status = 'ALL'"
+          + "      or (:status = 'VISIBLE' and p.deletedAt is null and p.hidden = false)"
+          + "      or (:status = 'HIDDEN' and p.deletedAt is null and p.hidden = true)"
+          + "      or (:status = 'DELETED' and p.deletedAt is not null))"
+          + " order by p.id desc")
+  Page<CommunityPost> adminSearch(
+      @Param("board") String board,
+      @Param("keyword") String keyword,
+      @Param("status") String status,
+      Pageable pageable);
 }

@@ -24,14 +24,55 @@ public final class CommunityDtos {
   /** 목록 한 페이지입니다(20개씩). */
   public record PostPage(List<PostSummary> items, int page, int totalPages, long total) {}
 
-  /** 댓글입니다. mine은 로그인한 내가 쓴 댓글인지, deletable은 내가 지울 수 있는지(본인·운영자)입니다. */
+  /**
+   * 댓글입니다. mine은 로그인한 내가 쓴 댓글인지, deletable은 내가 지울 수 있는지(본인·운영자)입니다. hidden이면 운영자가 가린 댓글이라 body에 안내
+   * 문구가 들어갑니다.
+   */
   public record Comment(
       Long id,
       String authorName,
       String body,
       LocalDateTime createdAt,
       boolean mine,
-      boolean deletable) {}
+      boolean deletable,
+      boolean hidden) {}
+
+  // ───────── 운영자 커뮤니티 관리 ─────────
+
+  /** 운영자 목록의 글 한 줄입니다. status는 VISIBLE·HIDDEN·DELETED 중 하나입니다. */
+  public record AdminPostSummary(
+      Long id,
+      String board,
+      String category,
+      String title,
+      String preview,
+      Long authorMemberId,
+      String authorName,
+      int viewCount,
+      int commentCount,
+      long hiddenCommentCount,
+      String status,
+      LocalDateTime hiddenAt,
+      LocalDateTime createdAt) {}
+
+  /** 운영자 목록 한 페이지입니다. */
+  public record AdminPostPage(List<AdminPostSummary> items, int page, int totalPages, long total) {}
+
+  /** 운영자에게 보이는 댓글입니다. 가린 댓글·지운 댓글도 원문 그대로 보여 줍니다. */
+  public record AdminComment(
+      Long id,
+      Long authorMemberId,
+      String authorName,
+      String body,
+      String status,
+      LocalDateTime hiddenAt,
+      LocalDateTime createdAt) {}
+
+  /** 운영자에게 보이는 글 상세입니다. */
+  public record AdminPostDetail(AdminPostSummary post, String body, List<AdminComment> comments) {}
+
+  /** 가리기·다시 보이기 요청입니다. note는 작성자 알림과 감사 기록에 남깁니다. */
+  public record VisibilityRequest(boolean hidden, @Size(max = 300) String note) {}
 
   /** 글 상세입니다. */
   public record PostDetail(

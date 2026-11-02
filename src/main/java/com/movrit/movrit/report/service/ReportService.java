@@ -208,15 +208,12 @@ public class ReportService {
     Long id = report.getTargetId();
     switch (report.getTargetType()) {
       case "COMMUNITY_POST" -> postRepository.findById(id).ifPresent(CommunityPost::hideByAdmin);
+      // 댓글은 지우지 않고 가립니다. 운영자가 커뮤니티 관리 화면에서 다시 보이게 할 수 있습니다.
       case "COMMUNITY_COMMENT" ->
           commentRepository
               .findById(id)
               .filter(comment -> comment.getDeletedAt() == null)
-              .ifPresent(
-                  comment -> {
-                    comment.delete();
-                    comment.getPost().commentRemoved();
-                  });
+              .ifPresent(CommunityComment::hideByAdmin);
       case "CHAT_MESSAGE" -> chatService.hideMessage(id);
       default -> {
         if (required) throw conflict("캠페인 콘텐츠는 외부 게시물이라 가릴 수 없습니다. 경고 또는 이용 정지를 골라 주세요.");
@@ -238,7 +235,11 @@ public class ReportService {
         CommunityComment comment =
             commentRepository
                 .findById(id)
-                .filter(value -> value.getDeletedAt() == null && value.getPost().visible())
+                .filter(
+                    value ->
+                        value.getDeletedAt() == null
+                            && !value.isHidden()
+                            && value.getPost().visible())
                 .orElseThrow(this::notFound);
         yield new Target(
             comment.getAuthor() == null ? null : comment.getAuthor().getId(),

@@ -201,15 +201,20 @@ public class CommunityService {
         comments);
   }
 
+  /** 운영자가 가린 댓글 자리에 보여 줄 문구입니다. */
+  static final String HIDDEN_COMMENT_TEXT = "운영 정책에 따라 운영자가 가린 댓글입니다.";
+
   private static CommunityDtos.Comment comment(CommunityComment comment, Member viewer) {
     boolean mine = isAuthor(comment.getAuthor(), viewer);
+    boolean hidden = comment.isHidden();
     return new CommunityDtos.Comment(
         comment.getId(),
         authorName(comment.getAuthor()),
-        comment.getBody(),
+        hidden ? HIDDEN_COMMENT_TEXT : comment.getBody(),
         comment.getCreatedAt(),
         mine,
-        mine || (viewer != null && viewer.isAdmin()));
+        mine || (viewer != null && viewer.isAdmin()),
+        hidden);
   }
 
   private static CommunityDtos.PostSummary summary(CommunityPost post) {

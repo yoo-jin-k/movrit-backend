@@ -10,4 +10,11 @@ public interface CommunityCommentRepository extends JpaRepository<CommunityComme
 
   @EntityGraph(attributePaths = "author")
   List<CommunityComment> findAllByPostIdAndDeletedAtIsNullOrderByIdAsc(Long postId);
+
+  /** 운영자 상세용: 지운 댓글까지 모두 가져옵니다. */
+  @EntityGraph(attributePaths = "author")
+  List<CommunityComment> findAllByPostIdOrderByIdAsc(Long postId);
+
+  /** 운영자 목록에서 글마다 가린 댓글 수를 보여 줍니다. */
+  long countByPostIdAndHiddenTrueAndDeletedAtIsNull(Long postId);
 }
