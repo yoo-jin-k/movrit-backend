@@ -1,5 +1,6 @@
 package com.movrit.movrit.common.config;
 
+import jakarta.servlet.DispatcherType;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import javax.crypto.SecretKey;
@@ -41,7 +42,10 @@ public class SecurityConfig {
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers(
+                // 실시간 채팅(SSE) 응답을 이어 보내는 비동기 처리 단계는 이미 인증된 요청이므로 다시 막지 않습니다.
+                auth.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR)
+                    .permitAll()
+                    .requestMatchers(
                         "/api/members/signup",
                         "/api/auth/login",
                         "/api/auth/refresh",
@@ -60,6 +64,9 @@ public class SecurityConfig {
                         "/api/preorders/*",
                         "/api/products/*/variants",
                         "/api/collaborations/campaigns/open",
+                        // 커뮤니티 목록·상세는 로그인 없이 볼 수 있습니다.
+                        "/api/community/posts",
+                        "/api/community/posts/*",
                         // 게시된 공지는 로그인 없이 볼 수 있습니다.
                         "/api/notices",
                         "/api/notices/*",
