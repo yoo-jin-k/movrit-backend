@@ -48,6 +48,8 @@ public class SecurityConfig {
                         "/api/auth/logout",
                         "/api/auth/kakao/**",
                         "/api/auth/google/**",
+                        // 로그인 전 비밀번호 찾기·재설정
+                        "/api/auth/password/**",
                         "/uploads/**",
                         "/error")
                     .permitAll()
