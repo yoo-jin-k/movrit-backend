@@ -15,9 +15,16 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
   @EntityGraph(attributePaths = "sender")
   List<ChatMessage> findTop200ByRoomIdAndIdGreaterThanOrderByIdAsc(Long roomId, Long afterId);
 
-  /** 처음 열 때 보여줄 최근 메시지 200개입니다(최신순으로 가져와 화면에서 뒤집습니다). */
+  /** 처음 열 때 보여줄 최근 메시지 51개입니다(최신순, 50개를 보여주고 1개로 '이전 메시지 더 있음'을 판단합니다). */
   @EntityGraph(attributePaths = "sender")
-  List<ChatMessage> findTop200ByRoomIdOrderByIdDesc(Long roomId);
+  List<ChatMessage> findTop51ByRoomIdOrderByIdDesc(Long roomId);
+
+  /** 기준 번호보다 이전 메시지 51개입니다('이전 메시지 더 보기'). */
+  @EntityGraph(attributePaths = "sender")
+  List<ChatMessage> findTop51ByRoomIdAndIdLessThanOrderByIdDesc(Long roomId, Long beforeId);
+
+  /** 방 메시지 수입니다(운영자 문의 첫 메시지 알림 판단용). */
+  long countByRoomId(Long roomId);
 
   Optional<ChatMessage> findTopByRoomIdOrderByIdDesc(Long roomId);
 

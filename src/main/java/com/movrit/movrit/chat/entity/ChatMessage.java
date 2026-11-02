@@ -19,7 +19,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/** 채팅 메시지 하나입니다. 보낸 사람의 역할을 함께 남깁니다. 글은 2,000자까지입니다. */
+/**
+ * 채팅 메시지 하나입니다. 보낸 사람의 역할을 함께 남깁니다. 글은 2,000자까지입니다.
+ *
+ * <p>사진(JPG·PNG)이나 PDF를 첨부할 수 있습니다. 첨부만 보낼 때는 본문이 빈 문자열입니다. 첨부 파일은 대화방 참여자만 받을 수 있습니다.
+ */
 @Entity
 @Table(name = "chat_message")
 @Getter
@@ -45,4 +49,22 @@ public class ChatMessage extends BaseEntity {
 
   @Column(nullable = false, length = 2000)
   private String body;
+
+  /** 첨부 파일 저장 키입니다(공개 주소 없이 채팅 API로만 내려갑니다). */
+  @Column(name = "attachment_key", length = 100)
+  private String attachmentKey;
+
+  /** 사용자가 올린 원래 파일 이름입니다(내려받을 때 이름으로 씁니다). */
+  @Column(name = "attachment_name", length = 200)
+  private String attachmentName;
+
+  @Column(name = "attachment_type", length = 100)
+  private String attachmentType;
+
+  @Column(name = "attachment_size")
+  private Long attachmentSize;
+
+  public boolean hasAttachment() {
+    return attachmentKey != null;
+  }
 }

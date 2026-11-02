@@ -1,7 +1,10 @@
 package com.movrit.movrit.member.repository;
 
 import com.movrit.movrit.member.entity.Member;
+import com.movrit.movrit.member.entity.MemberRole;
+import com.movrit.movrit.member.entity.MemberStatus;
 import jakarta.persistence.LockModeType;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -22,6 +25,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
   /** 닉네임을 바꿀 때 본인을 제외하고 같은 닉네임이 있는지 확인합니다. */
   boolean existsByNicknameAndIdNot(String nickname, Long id);
+
+  /** 역할(운영자 등)과 상태로 회원 목록을 찾습니다. 운영자 알림 대상을 고를 때 씁니다. */
+  List<Member> findAllByRoleAndStatus(MemberRole role, MemberStatus status);
 
   /** 회원 행을 쓰기 잠금으로 조회합니다. 비밀번호·사진처럼 동시에 바뀌면 안 되는 정보를 수정할 때 사용합니다. */
   @Lock(LockModeType.PESSIMISTIC_WRITE)

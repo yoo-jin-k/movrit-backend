@@ -18,7 +18,9 @@ import com.movrit.movrit.chat.repository.ChatParticipantRepository;
 import com.movrit.movrit.chat.repository.ChatRoomRepository;
 import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.entity.MemberRole;
+import com.movrit.movrit.member.repository.MemberRepository;
 import com.movrit.movrit.member.service.MemberService;
+import com.movrit.movrit.notification.service.NotificationService;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -33,7 +35,16 @@ class ChatServiceTest {
       mock(CampaignApplicationRepository.class);
   private final MemberService members = mock(MemberService.class);
   private final ChatService service =
-      new ChatService(rooms, participants, messages, applications, members);
+      new ChatService(
+          rooms,
+          participants,
+          messages,
+          applications,
+          members,
+          mock(MemberRepository.class),
+          mock(NotificationService.class),
+          new ChatEventHub(),
+          mock(ChatAttachmentStorage.class));
 
   private final Member stranger = Member.builder().id(3L).role(MemberRole.USER).build();
   private final Member owner = Member.builder().id(1L).role(MemberRole.USER).build();
@@ -85,5 +96,14 @@ class ChatServiceTest {
         .isInstanceOfSatisfying(
             ResponseStatusException.class,
             e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+  }
+
+  @Test
+  void attachmentNameIsSanitizedAndPdfIsDetected() {
+    assertThat(ChatAttachmentStorage.safeName("../../etc/pass:wd.pdf"))
+        .isEqualTo("....etcpasswd.pdf");
+    assertThat(ChatAttachmentStorage.safeName("  ")).isEqualTo("첨부파일");
+    assertThat(ChatAttachmentStorage.isPdf("%PDF-1.7 ...".getBytes())).isTrue();
+    assertThat(ChatAttachmentStorage.isPdf("<html>".getBytes())).isFalse();
   }
 }
