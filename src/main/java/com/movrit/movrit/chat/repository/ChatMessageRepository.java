@@ -23,6 +23,22 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
   @EntityGraph(attributePaths = "sender")
   List<ChatMessage> findTop51ByRoomIdAndIdLessThanOrderByIdDesc(Long roomId, Long beforeId);
 
+  /**
+   * 방 안에서 글 내용이나 첨부 파일 이름에 검색어가 들어간 메시지를 최신순으로 찾습니다.
+   *
+   * <p>검색어 안의 %, _는 서비스에서 '\\'로 감싸 글자 그대로 찾게 합니다. 결과 개수는 Pageable로 제한합니다.
+   */
+  @EntityGraph(attributePaths = "sender")
+  @Query(
+      "select m from ChatMessage m where m.room.id = :roomId"
+          + " and (lower(m.body) like :pattern escape '\\'"
+          + " or lower(coalesce(m.attachmentName, '')) like :pattern escape '\\')"
+          + " order by m.id desc")
+  List<ChatMessage> search(
+      @Param("roomId") Long roomId,
+      @Param("pattern") String pattern,
+      org.springframework.data.domain.Pageable pageable);
+
   /** 방 메시지 수입니다(운영자 문의 첫 메시지 알림 판단용). */
   long countByRoomId(Long roomId);
 

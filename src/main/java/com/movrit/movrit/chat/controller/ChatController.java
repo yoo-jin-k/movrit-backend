@@ -40,9 +40,11 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  *   <li>GET /api/chats/{roomId}/messages?after=: 메시지 받기(after 다음 것만 받으면 새 메시지 확인)
  *   <li>POST /api/chats/{roomId}/messages: 메시지 보내기
  *   <li>GET /api/chats/{roomId}/messages?before=: 이전 메시지 50개
- *   <li>POST /api/chats/{roomId}/attachments: 사진·PDF 첨부 보내기(multipart: file, body 선택)
+ *   <li>POST /api/chats/{roomId}/attachments: 사진·PDF·영상 첨부 보내기(multipart: file, body 선택)
+ *   <li>GET /api/chats/{roomId}/search?q=: 방 안 메시지 검색(최신순 30개)
+ *   <li>POST /api/chats/{roomId}/typing: '입력 중' 신호 보내기(저장하지 않음, 204)
  *   <li>GET /api/chats/{roomId}/attachments/{messageId}: 첨부 파일 받기(그 방에 들어갈 수 있는 사람만)
- *   <li>GET /api/chats/stream: 실시간 이벤트(SSE) 연결 — message·read 이벤트로 새 메시지·읽음 변화를 알립니다
+ *   <li>GET /api/chats/stream: 실시간 이벤트(SSE) 연결 — message·read·typing 이벤트로 새 메시지·읽음·입력 중을 알립니다
  * </ul>
  */
 @RestController
@@ -112,6 +114,20 @@ public class ChatController {
                 .build()
                 .toString())
         .body(new FileSystemResource(file.path()));
+  }
+
+  @GetMapping("/{roomId}/search")
+  public List<ChatDtos.Message> search(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long roomId,
+      @RequestParam(name = "q", required = false) String query) {
+    return service.search(JwtMemberId.from(jwt), roomId, query);
+  }
+
+  @PostMapping("/{roomId}/typing")
+  public ResponseEntity<Void> typing(@AuthenticationPrincipal Jwt jwt, @PathVariable Long roomId) {
+    service.typing(JwtMemberId.from(jwt), roomId);
+    return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/{roomId}/messages")

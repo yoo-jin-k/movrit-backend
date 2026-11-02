@@ -105,5 +105,28 @@ class ChatServiceTest {
     assertThat(ChatAttachmentStorage.safeName("  ")).isEqualTo("첨부파일");
     assertThat(ChatAttachmentStorage.isPdf("%PDF-1.7 ...".getBytes())).isTrue();
     assertThat(ChatAttachmentStorage.isPdf("<html>".getBytes())).isFalse();
+    // 영상 형식은 파일 앞부분 표식으로 구분하고, 같은 구조인 HEIC 사진은 영상으로 보지 않습니다.
+    assertThat(ChatAttachmentStorage.videoType(box("isom"))).isEqualTo("video/mp4");
+    assertThat(ChatAttachmentStorage.videoType(box("qt  "))).isEqualTo("video/quicktime");
+    assertThat(ChatAttachmentStorage.videoType(box("heic"))).isNull();
+    assertThat(
+            ChatAttachmentStorage.videoType(
+                new byte[] {0x1a, 0x45, (byte) 0xdf, (byte) 0xa3, 0, 0, 0, 0}))
+        .isEqualTo("video/webm");
+    assertThat(ChatAttachmentStorage.videoType("<html>hello</html>".getBytes())).isNull();
+    assertThat(ChatAttachmentStorage.isJpegOrPng("GIF89a....".getBytes())).isFalse();
+    assertThat(
+            ChatAttachmentStorage.isJpegOrPng(
+                new byte[] {(byte) 0x89, 'P', 'N', 'G', 13, 10, 26, 10, 0}))
+        .isTrue();
+  }
+
+  /** 'ftyp' 상자 머리(크기 4바이트 + 'ftyp' + 브랜드 4바이트)를 만듭니다. */
+  private static byte[] box(String brand) {
+    byte[] bytes = new byte[16];
+    bytes[3] = 0x18;
+    System.arraycopy("ftyp".getBytes(), 0, bytes, 4, 4);
+    System.arraycopy(brand.getBytes(), 0, bytes, 8, 4);
+    return bytes;
   }
 }

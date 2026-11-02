@@ -248,6 +248,68 @@ public class ChatService {
     }
   }
 
+  /** 검색 결과 최대 개수입니다. */
+  private static final int SEARCH_LIMIT = 30;
+
+  /**
+   * 방 안에서 메시지를 검색합니다. 글 내용과 첨부 파일 이름에서 찾고, 최신순으로 30개까지 돌려줍니다.
+   *
+   * <p>검색어는 앞뒤 공백을 지운 1~50자만 받습니다. 검색만으로는 읽음 위치를 바꾸지 않습니다.
+   *
+   * @throws ResponseStatusException 방이 없거나 권한이 없으면 404, 검색어가 비었거나 너무 길면 400
+   */
+  @Transactional(readOnly = true)
+  public List<ChatDtos.Message> search(Long memberId, Long roomId, String query) {
+    Member me = memberService.getMember(memberId);
+    accessibleRoom(me, roomId);
+    String keyword = query == null ? "" : query.strip();
+    if (keyword.isEmpty() || keyword.length() > 50) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "검색어를 1~50자로 입력해 주세요.");
+    }
+    // %, _, \ 를 글자 그대로 찾도록 감쌉니다.
+    String escaped =
+        keyword
+            .toLowerCase(java.util.Locale.ROOT)
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_");
+    return messageRepository
+        .search(
+            roomId,
+            "%" + escaped + "%",
+            org.springframework.data.domain.PageRequest.of(0, SEARCH_LIMIT))
+        .stream()
+        .map(message -> view(message, me))
+        .toList();
+  }
+
+  /**
+   * '입력 중' 신호를 방의 다른 참여자 화면에 보냅니다. 저장하지 않는 일회성 신호입니다.
+   *
+   * <p>화면은 글자를 입력하는 동안 3초에 한 번 정도만 보내고, 받는 쪽은 5초 동안 신호가 없으면 표시를 지웁니다.
+   *
+   * @throws ResponseStatusException 방이 없거나 권한이 없으면 404
+   */
+  @Transactional(readOnly = true)
+  public void typing(Long memberId, Long roomId) {
+    Member me = memberService.getMember(memberId);
+    ChatRoom room = accessibleRoom(me, roomId);
+    // 입력 신호만으로 운영자를 방 참여자로 추가하지 않도록, 참여 기록이 없으면 운영자로 표시합니다.
+    ChatRole role =
+        participantRepository
+            .findByRoomIdAndMemberId(room.getId(), me.getId())
+            .map(ChatParticipant::getRole)
+            .orElse(ChatRole.ADMIN);
+    eventHub.publish(
+        participantRepository.findAllByRoomId(room.getId()).stream()
+            .map(p -> p.getMember().getId())
+            .filter(id -> !id.equals(me.getId()))
+            .toList(),
+        false,
+        "typing",
+        Map.of("roomId", room.getId(), "memberId", me.getId(), "name", senderName(room, role, me)));
+  }
+
   /** 첨부 파일 정보입니다(내려받기 응답용). */
   public record AttachmentFile(java.nio.file.Path path, String name, String contentType) {}
 
