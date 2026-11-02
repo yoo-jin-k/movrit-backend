@@ -332,6 +332,11 @@ public class Campaign extends BaseEntity {
     open = false;
   }
 
+  /** 운영자가 숨긴(마감한) 캠페인을 다시 사용자 목록에 공개합니다(open = true). 모집 기간은 바꾸지 않습니다. */
+  public void reopen() {
+    open = true;
+  }
+
   /** 방문형 캠페인의 방문 장소 이름과 주소를 바꿉니다. */
   public void updatePresentation(String visitPlaceName, String visitAddress) {
     this.visitPlaceName = visitPlaceName;

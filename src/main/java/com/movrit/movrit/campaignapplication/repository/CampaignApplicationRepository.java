@@ -110,6 +110,20 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
   /** 캠페인에서 특정 상태들에 해당하는 신청 수를 셉니다. 선정 시 모집 인원을 넘지 않는지 확인할 때 사용합니다. */
   long countByCampaignIdAndStatusIn(Long campaignId, List<CampaignApplicationStatus> statuses);
 
+  /** 캠페인·상태별 신청 수입니다(운영자 캠페인 관리 목록용, 한 번에 집계합니다). */
+  interface CampaignStatusCount {
+    Long getCampaignId();
+
+    CampaignApplicationStatus getStatus();
+
+    Long getTotal();
+  }
+
+  @Query(
+      "select a.campaign.id as campaignId, a.status as status, count(a) as total"
+          + " from CampaignApplication a group by a.campaign.id, a.status")
+  List<CampaignStatusCount> countAllByCampaignAndStatus();
+
   @Query(
       value =
           """
