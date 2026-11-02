@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.movrit.movrit.collaboration.controller.CampaignManagementController;
 import com.movrit.movrit.collaboration.controller.CollaborationController;
 import com.movrit.movrit.collaboration.service.CampaignManagementService;
+import com.movrit.movrit.collaboration.service.CampaignSearchService;
 import com.movrit.movrit.collaboration.service.CollaborationService;
 import com.movrit.movrit.memberavatar.controller.MemberAvatarController;
 import com.movrit.movrit.memberavatar.service.MemberAvatarService;
@@ -39,6 +40,8 @@ class SecurityConfigTest {
 
   @MockitoBean private CampaignManagementService campaignManagementService;
 
+  @MockitoBean private CampaignSearchService campaignSearchService;
+
   @MockitoBean private MemberAvatarService memberAvatarService;
 
   @Test
@@ -46,6 +49,13 @@ class SecurityConfigTest {
     mockMvc
         .perform(get("/api/collaborations/campaigns/seller"))
         .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void campaignSearchIsPublic() throws Exception {
+    mockMvc
+        .perform(get("/api/collaborations/campaigns/search").param("q", "앰플"))
+        .andExpect(status().isOk());
   }
 
   @Test

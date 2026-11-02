@@ -1,6 +1,7 @@
 package com.movrit.movrit.collaboration.controller;
 
 import com.movrit.movrit.collaboration.dto.CollaborationDtos;
+import com.movrit.movrit.collaboration.service.CampaignSearchService;
 import com.movrit.movrit.collaboration.service.CollaborationService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** 캠페인 및 협업의 HTTP 요청을 서비스로 연결합니다. 인증 주체는 토큰에서 읽고, 업무 권한과 상태 검증은 호출한 서비스의 정책을 따릅니다. */
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/collaborations")
 public class CollaborationController {
   private final CollaborationService s;
+  private final CampaignSearchService search;
 
   /** 기존 캠페인 생성 경로를 처리합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping("/campaigns")
@@ -35,6 +38,28 @@ public class CollaborationController {
   @GetMapping("/campaigns/open")
   public List<CollaborationDtos.CampaignResponse> open() {
     return s.openCampaigns();
+  }
+
+  /**
+   * 사용자 캠페인 목록·검색입니다. 서버에서 조건으로 거르고 정렬해 페이지로 나눠 줍니다.
+   *
+   * <p>예: /campaigns/search?q=앰플&type=PRODUCT&channel=INSTAGRAM&sort=closing&page=0&size=20
+   */
+  @GetMapping("/campaigns/search")
+  public CollaborationDtos.CampaignPage search(
+      @RequestParam(required = false) String q,
+      @RequestParam(required = false) String type,
+      @RequestParam(required = false) String category,
+      @RequestParam(required = false) String region,
+      @RequestParam(required = false) String channel,
+      @RequestParam(defaultValue = "false") boolean premier,
+      @RequestParam(defaultValue = "false") boolean openedToday,
+      @RequestParam(defaultValue = "latest") String sort,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    return search.search(
+        new CampaignSearchService.Query(
+            q, type, category, region, channel, premier, openedToday, sort, page, size));
   }
 
   /** 업체가 관리하는 캠페인 목록을 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */

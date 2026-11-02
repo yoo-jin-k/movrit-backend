@@ -64,6 +64,8 @@ public class SecurityConfig {
                         "/api/preorders/*",
                         "/api/products/*/variants",
                         "/api/collaborations/campaigns/open",
+                        // 캠페인 목록 검색·페이지(로그인 없이 볼 수 있습니다).
+                        "/api/collaborations/campaigns/search",
                         // 커뮤니티 목록·상세는 로그인 없이 볼 수 있습니다.
                         "/api/community/posts",
                         "/api/community/posts/*",

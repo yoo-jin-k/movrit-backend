@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /** 캠페인 및 협업 API에서 주고받는 요청·응답 형식을 모아 둔 클래스입니다. */
 public final class CollaborationDtos {
@@ -256,4 +257,13 @@ public final class CollaborationDtos {
       long paidQuantity,
       java.math.BigDecimal gmv,
       double conversionRate) {}
+
+  /**
+   * 캠페인 목록 검색 결과 한 페이지입니다.
+   *
+   * @param page 0부터 시작하는 페이지 번호
+   * @param total 조건에 맞는 전체 캠페인 수
+   */
+  public record CampaignPage(
+      List<CampaignResponse> items, int page, int size, int totalPages, long total) {}
 }
