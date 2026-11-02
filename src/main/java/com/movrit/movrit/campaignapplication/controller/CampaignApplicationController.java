@@ -30,6 +30,8 @@ public class CampaignApplicationController {
   private final CampaignApplicationService service;
   private final CampaignApplicationFormService forms;
   private final CampaignParticipantPortfolioService participantPortfolioService;
+  private final com.movrit.movrit.campaignapplication.service.CampaignApplicationBulkService
+      bulkService;
 
   /** 캠페인 신청서의 질문·동의·참여 방식을 저장합니다. 요청한 회원은 로그인 토큰으로 확인합니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PutMapping("/{campaignId}/application-form")
@@ -111,6 +113,23 @@ public class CampaignApplicationController {
       @PathVariable Long applicationId,
       @Valid @RequestBody CampaignApplicationDtos.ManageRequest request) {
     return service.manage(memberId(jwt), applicationId, request.action(), request.reason());
+  }
+
+  /** 업체가 여러 신청을 한 번에 선정(select)·미선정(reject)합니다. 건별로 처리해 성공·실패 사유를 함께 돌려줍니다(최대 50건). */
+  @PatchMapping("/applications/bulk")
+  public CampaignApplicationDtos.BulkResponse bulk(
+      @AuthenticationPrincipal Jwt jwt,
+      @Valid @RequestBody CampaignApplicationDtos.BulkRequest request) {
+    return bulkService.process(memberId(jwt), request);
+  }
+
+  /** 참여자가 선정 전(접수) 신청의 메시지·배송지·질문 답변을 고칩니다. */
+  @PutMapping("/applications/{applicationId}")
+  public CampaignApplicationDtos.Response revise(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long applicationId,
+      @Valid @RequestBody CampaignApplicationDtos.ReviseRequest request) {
+    return service.revise(memberId(jwt), applicationId, request);
   }
 
   /** 반려 처리를 요청합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */

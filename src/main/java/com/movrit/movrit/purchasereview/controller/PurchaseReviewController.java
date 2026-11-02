@@ -36,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
  *       204)
  *   <li>GET /api/campaigns/applications/{applicationId}/purchase-proof/evidence: 주문 내역 캡처
  *   <li>PATCH /api/campaigns/applications/{applicationId}/payback: 환급 완료 기록(캠페인 업체)
+ *   <li>GET /api/campaigns/purchase-paybacks: 업체 환급 관리 목록
  * </ul>
  */
 @RestController
@@ -86,6 +87,12 @@ public class PurchaseReviewController {
         .cacheControl(CacheControl.noStore())
         .contentType(MediaType.parseMediaType(PurchaseReviewService.evidenceType(path)))
         .body(new FileSystemResource(path));
+  }
+
+  /** 업체 '환급 관리' 목록입니다(구매평 캠페인 참여자별 구매 인증·환급 상태). */
+  @GetMapping("/api/campaigns/purchase-paybacks")
+  public java.util.List<PurchaseReviewDtos.PaybackRow> paybacks(@AuthenticationPrincipal Jwt jwt) {
+    return service.sellerPaybacks(JwtMemberId.from(jwt));
   }
 
   @PatchMapping("/api/campaigns/applications/{applicationId}/payback")

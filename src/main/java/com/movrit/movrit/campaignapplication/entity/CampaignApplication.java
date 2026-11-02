@@ -233,6 +233,31 @@ public class CampaignApplication extends BaseEntity {
     status = CampaignApplicationStatus.COMPLETED;
   }
 
+  /**
+   * 선정 전(접수) 신청의 내용을 고칩니다. 신청 메시지·배송지·질문 답변만 바꾸고, 참여 방식과 동의 기록은 그대로 둡니다.
+   *
+   * <p>검사는 서비스가 먼저 하며, 선정·미선정·취소 뒤에는 고칠 수 없습니다.
+   */
+  public void revise(
+      String message,
+      String recipientName,
+      String recipientPhone,
+      String postalCode,
+      String address1,
+      String address2,
+      String answersJson,
+      Long formVersion) {
+    requireStatus(CampaignApplicationStatus.SUBMITTED, "선정 전(접수) 신청만 고칠 수 있습니다.");
+    this.message = message;
+    this.recipientName = recipientName;
+    this.recipientPhone = recipientPhone;
+    this.postalCode = postalCode;
+    this.address1 = address1;
+    this.address2 = address2;
+    this.answersJson = answersJson;
+    this.formVersion = formVersion;
+  }
+
   private void requireStatus(CampaignApplicationStatus expected, String message) {
     if (status != expected) throw new IllegalStateException(message);
   }

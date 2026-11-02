@@ -79,6 +79,17 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
   /** 같은 회원이 이미 이 캠페인에 신청했는지 확인합니다(중복 신청 방지). */
   boolean existsByCampaignIdAndCreatorMemberId(Long campaignId, Long memberId);
 
+  /** 콘텐츠 마감이 (now, until] 사이에 있는 진행 중 신청입니다(마감 알림용). */
+  @org.springframework.data.jpa.repository.Query(
+      "select a from CampaignApplication a join fetch a.campaign c join fetch a.creator cr"
+          + " join fetch cr.member where a.status in :statuses"
+          + " and c.contentSubmissionEndAt > :now and c.contentSubmissionEndAt <= :until")
+  List<CampaignApplication> findContentDeadlineDue(
+      @org.springframework.data.repository.query.Param("statuses")
+          java.util.Collection<CampaignApplicationStatus> statuses,
+      @org.springframework.data.repository.query.Param("now") java.time.LocalDateTime now,
+      @org.springframework.data.repository.query.Param("until") java.time.LocalDateTime until);
+
   /** 캠페인에 신청 이력이 하나라도 있는지 확인합니다. 신청 이력이 생긴 뒤에는 선정 방식을 바꿀 수 없습니다. */
   boolean existsByCampaignId(Long campaignId);
 

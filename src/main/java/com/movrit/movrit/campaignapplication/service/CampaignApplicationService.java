@@ -67,6 +67,7 @@ public class CampaignApplicationService {
   private final AuditLogService auditLogService;
   private final com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService visitEvidence;
   private final CampaignContentService campaignContentService;
+  private final com.movrit.movrit.participation.service.ActivityService activityService;
 
   /**
    * 로그인한 회원이 이 캠페인에 지금 신청할 수 있는지 판정합니다.
@@ -122,6 +123,8 @@ public class CampaignApplicationService {
     Campaign campaign = getOpenCampaign(campaignId);
     CampaignApplicationForm form = forms.getFormEntity(campaignId);
     Member member = memberService.getMember(memberId);
+    // 미제출·노쇼 패널티로 신청이 제한된 회원은 막습니다(제한이 끝나는 날짜를 안내).
+    activityService.requireCanApply(memberId);
 
     if (!form.getVersion().equals(request.expectedFormVersion())) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "신청 조건이 변경되었습니다. 최신 신청서를 다시 확인해 주세요.");
@@ -185,6 +188,59 @@ public class CampaignApplicationService {
     } catch (DataIntegrityViolationException exception) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 이 캠페인에 신청하셨습니다.");
     }
+  }
+
+  /**
+   * 참여자가 선정 전(접수) 신청의 내용을 고칩니다. 신청 메시지·배송지·질문 답변을 바꿀 수 있고, 업체에 알림을 보냅니다.
+   *
+   * @throws ResponseStatusException 본인 신청이 아니면 404, 접수 상태가 아니거나 신청서가 바뀌었으면 409, 입력 오류는 400
+   */
+  @Transactional
+  public CampaignApplicationDtos.Response revise(
+      Long memberId, Long applicationId, CampaignApplicationDtos.ReviseRequest request) {
+    CampaignApplication application =
+        applicationRepository
+            .findByIdAndCreatorMemberId(applicationId, memberId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
+    if (application.getStatus() != CampaignApplicationStatus.SUBMITTED) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "선정 결과가 나온 신청은 고칠 수 없습니다.");
+    }
+    CampaignApplicationForm form = forms.getFormEntity(application.getCampaign().getId());
+    if (!form.getVersion().equals(request.expectedFormVersion())) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "신청서가 바뀌었습니다. 최신 신청서를 다시 확인해 주세요.");
+    }
+    validator.validateRevision(form, application.getFulfillmentType(), request);
+    CampaignApplicationDtos.ShippingContact contact = request.shippingContact();
+    CampaignApplicationDtos.Response response =
+        transition(
+            application,
+            value ->
+                value.revise(
+                    request.message().trim(),
+                    contact == null ? null : normalize(contact.recipientName()),
+                    contact == null ? null : normalize(contact.recipientPhone()),
+                    contact == null ? null : normalize(contact.postalCode()),
+                    contact == null ? null : normalize(contact.address1()),
+                    contact == null ? null : normalize(contact.address2()),
+                    json.write(request.answers()),
+                    form.getVersion()));
+    notificationService.send(
+        application.getCampaign().getBrand().getSeller().getMember().getId(),
+        "CAMPAIGN_APPLICATION",
+        "신청 내용이 수정되었습니다.",
+        application.getCreator().getNickname() + "님이 신청 내용을 고쳤습니다.",
+        "CAMPAIGN_APPLICATION",
+        application.getId());
+    auditLogService.record(
+        memberId,
+        "CAMPAIGN_APPLICATION_REVISED",
+        "CAMPAIGN_APPLICATION",
+        application.getId(),
+        null,
+        "{\"revised\":true}",
+        null);
+    return response;
   }
 
   /** 로그인한 참여자의 신청 목록을 최신순으로 조회합니다. */

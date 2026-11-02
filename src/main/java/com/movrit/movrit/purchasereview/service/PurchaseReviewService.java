@@ -242,6 +242,54 @@ public class PurchaseReviewService {
     return PurchaseReviewDtos.Proof.from(proof);
   }
 
+  /** 업체의 구매평 캠페인 참여자별 구매 인증·환급 현황입니다(최신 신청 먼저). 접수·미선정·취소된 신청은 뺍니다. */
+  @Transactional(readOnly = true)
+  public java.util.List<PurchaseReviewDtos.PaybackRow> sellerPaybacks(Long sellerMemberId) {
+    java.util.Set<CampaignApplicationStatus> skipped =
+        java.util.Set.of(
+            CampaignApplicationStatus.SUBMITTED,
+            CampaignApplicationStatus.REJECTED,
+            CampaignApplicationStatus.CANCELLED);
+    java.util.Map<Long, Integer> paybackByCampaign = new java.util.HashMap<>();
+    return applicationRepository
+        .findAllByCampaignBrandSellerMemberIdOrderByIdDesc(sellerMemberId)
+        .stream()
+        .filter(application -> application.getFulfillmentType() == FulfillmentType.PURCHASE)
+        .filter(application -> !skipped.contains(application.getStatus()))
+        .map(
+            application -> {
+              Long campaignId = application.getCampaign().getId();
+              Integer payback =
+                  paybackByCampaign.computeIfAbsent(
+                      campaignId,
+                      id ->
+                          reviewRepository
+                              .findById(id)
+                              .map(CampaignPurchaseReview::getPaybackAmount)
+                              .orElse(null));
+              CampaignPurchaseProof proof =
+                  proofRepository.findById(application.getId()).orElse(null);
+              String status = proof == null ? "NO_PROOF" : proof.getPaybackStatus();
+              return new PurchaseReviewDtos.PaybackRow(
+                  application.getId(),
+                  campaignId,
+                  application.getCampaign().getTitle(),
+                  application.getCreator().getNickname(),
+                  application.getStatus().name(),
+                  proof == null ? null : proof.getOrderNumber(),
+                  proof == null ? null : proof.getPaidAmount(),
+                  proof == null ? null : proof.getSubmittedAt(),
+                  payback,
+                  status,
+                  proof == null ? null : proof.getPaybackPaidAt(),
+                  proof == null ? null : proof.getPaybackNote(),
+                  proof != null
+                      && !proof.isPaid()
+                      && application.getStatus() == CampaignApplicationStatus.COMPLETED);
+            })
+        .toList();
+  }
+
   /** 참여자 본인·캠페인 업체·운영자만 통과시킵니다. 그 밖에는 신청이 있는지도 알리지 않도록 404입니다. */
   private CampaignApplication readableApplication(Long memberId, Long applicationId) {
     CampaignApplication application = getApplication(applicationId);

@@ -126,7 +126,8 @@ class CampaignApplicationEligibilityTest {
             mock(NotificationService.class),
             mock(AuditLogService.class),
             mock(com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService.class),
-            mock(CampaignContentService.class));
+            mock(CampaignContentService.class),
+            mock(com.movrit.movrit.participation.service.ActivityService.class));
     CampaignApplicationDtos.CreateRequest request =
         new CampaignApplicationDtos.CreateRequest(
             "신청합니다.",
@@ -218,7 +219,8 @@ class CampaignApplicationEligibilityTest {
         mock(NotificationService.class),
         mock(AuditLogService.class),
         mock(com.movrit.movrit.campaignmedia.service.CampaignVisitEvidenceService.class),
-        mock(CampaignContentService.class));
+        mock(CampaignContentService.class),
+        mock(com.movrit.movrit.participation.service.ActivityService.class));
   }
 
   private Creator activeCreator(Member member) {

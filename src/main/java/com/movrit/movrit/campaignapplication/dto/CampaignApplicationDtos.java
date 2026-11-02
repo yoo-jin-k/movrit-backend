@@ -254,6 +254,34 @@ public final class CampaignApplicationDtos {
       LocalDateTime experienceConfirmedAt,
       Long completedCampaignCount) {}
 
+  /**
+   * 선정 전 신청 내용 수정 요청입니다. 참여 방식과 동의는 바꿀 수 없습니다.
+   *
+   * @param expectedFormVersion 화면이 본 신청서 버전입니다. 업체가 신청서를 바꿨다면 409로 다시 확인하게 합니다.
+   */
+  public record ReviseRequest(
+      @NotBlank @jakarta.validation.constraints.Size(max = 2000) String message,
+      @NotNull Long expectedFormVersion,
+      @Valid ShippingContact shippingContact,
+      @NotNull List<@Valid Answer> answers) {}
+
+  /**
+   * 여러 신청을 한 번에 선정·미선정하는 요청입니다(최대 50건).
+   *
+   * @param action select(선정) 또는 reject(미선정)
+   */
+  public record BulkRequest(
+      @jakarta.validation.constraints.NotEmpty @jakarta.validation.constraints.Size(max = 50)
+          List<@NotNull Long> applicationIds,
+      @NotBlank String action) {}
+
+  /** 일괄 처리 결과 한 건입니다. 실패하면 message에 사유가 담깁니다. */
+  public record BulkItemResult(
+      Long applicationId, boolean success, String status, String message) {}
+
+  /** 일괄 처리 결과입니다. */
+  public record BulkResponse(int successCount, int failureCount, List<BulkItemResult> results) {}
+
   /** 마이페이지에서 신청·일정·안내·연락처·콘텐츠 검수 상태를 함께 표시하는 읽기 전용 응답입니다. */
   public record WorkspaceResponse(
       Response application,

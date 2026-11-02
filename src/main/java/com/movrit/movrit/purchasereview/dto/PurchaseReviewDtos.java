@@ -79,6 +79,27 @@ public final class PurchaseReviewDtos {
     }
   }
 
+  /**
+   * 업체 '환급 관리' 목록 한 건입니다.
+   *
+   * @param paybackStatus NO_PROOF(구매 인증 전)·PENDING(환급 대기)·PAID(환급 완료)
+   * @param payable 지금 환급 완료를 기록할 수 있는지(구매평 승인 완료 + 환급 대기)
+   */
+  public record PaybackRow(
+      Long applicationId,
+      Long campaignId,
+      String campaignTitle,
+      String creatorNickname,
+      String applicationStatus,
+      String orderNumber,
+      Integer paidAmount,
+      LocalDateTime proofSubmittedAt,
+      Integer paybackAmount,
+      String paybackStatus,
+      LocalDateTime paybackPaidAt,
+      String paybackNote,
+      boolean payable) {}
+
   /** 환급 완료 기록 요청입니다. 메모는 선택이며 200자까지 받습니다. */
   public record PaybackRequest(@Size(max = 200) String note) {}
 }

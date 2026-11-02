@@ -35,6 +35,24 @@ class CampaignApplicationValidator {
     validateAgreements(forms.agreements(form), request.agreementAcceptances());
   }
 
+  /** 선정 전 신청 수정 내용을 검사합니다. 동의는 신청할 때 이미 받았으므로 다시 검사하지 않습니다. */
+  void validateRevision(
+      CampaignApplicationForm form,
+      FulfillmentType fulfillmentType,
+      CampaignApplicationDtos.ReviseRequest request) {
+    validateShippingContact(
+        new CampaignApplicationDtos.CreateRequest(
+            request.message(),
+            form.getVersion(),
+            null,
+            null,
+            fulfillmentType,
+            request.shippingContact(),
+            request.answers(),
+            List.of()));
+    validateAnswers(forms.questions(form), request.answers());
+  }
+
   /** 배송형은 수령인·연락처·우편번호·주소를 모두 요구하고, 방문형·구매형은 배송 주소를 받지 않습니다. */
   private void validateShippingContact(CampaignApplicationDtos.CreateRequest request) {
     CampaignApplicationDtos.ShippingContact contact = request.shippingContact();
