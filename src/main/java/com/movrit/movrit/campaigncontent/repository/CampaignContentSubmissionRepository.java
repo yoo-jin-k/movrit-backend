@@ -21,6 +21,10 @@ public interface CampaignContentSubmissionRepository
   List<CampaignContentSubmission> findAllByApplicationCampaignBrandSellerMemberIdOrderByIdDesc(
       Long memberId);
 
+  /** 캠페인 한 개에 제출된 콘텐츠를 제출 순서대로 조회합니다(콘텐츠 성과 요약). */
+  @EntityGraph(attributePaths = {"application", "application.creator"})
+  List<CampaignContentSubmission> findAllByApplicationCampaignIdOrderByIdAsc(Long campaignId);
+
   /** 운영자 검토 화면용으로 전체 제출 기록을 최신순으로 조회합니다. */
   List<CampaignContentSubmission> findAllByOrderByIdDesc();
 
