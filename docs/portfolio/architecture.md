@@ -35,7 +35,7 @@ flowchart LR
 | 백엔드 | Spring Boot 4.1, Spring Security(JWT·OAuth2 Resource Server), Spring Data JPA, Lombok |
 | DB | PostgreSQL 18, Flyway(이력 테이블 `movrit_schema_history`), JPA `validate` |
 | API 문서 | springdoc-openapi(Swagger UI, /swagger-ui.html). 컨트롤러 Javadoc을 설명으로 사용, 서비스·운영자·이전 기능 그룹으로 나눔 |
-| 품질 | 백엔드 테스트 182개(JUnit 5·Mockito), 프론트 단위 테스트 188개(node:test), Spotless, ESLint·Prettier, Playwright 화면 점검 17종 |
+| 품질 | 백엔드 테스트 182개(JUnit 5·Mockito), 프론트 단위 테스트 195개(node:test), Spotless, ESLint·Prettier, Playwright 화면 점검 17종 |
 
 ## 2. 패키지와 책임
 
