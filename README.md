@@ -168,6 +168,12 @@ scripts/integration.sh stop
 - 업로드 파일은 `~/.movrit/integration-uploads`에 저장됩니다.
 - 메일 서버 없이도 가입할 수 있도록, 통합 환경에서는 인증번호를 메일 대신 화면에 보여 줍니다(`local-preview`). 실제 발송은 `EMAIL_DELIVERY=smtp`와 메일 계정 설정이 필요합니다.
 
+### 비밀값 관리
+
+- DB 비밀번호, JWT 서명 키, 소셜 로그인·SNS 연결 키는 `application.properties`에 `${환경 변수}`로만 적혀 있고 값은 저장소 밖의 환경 파일에서 받습니다. 예시 파일(`scripts/integration.env.example`)은 이름만 있고 값은 비어 있습니다.
+- `.env`, `*.env`, 키·인증서 파일(`*.pem`, `*.key`, `*.p12` 등)은 `.gitignore`로 막아 두었습니다.
+- 커밋 전 검사: 저장소를 받은 뒤 한 번 `git config core.hooksPath .githooks`를 실행하면, 커밋할 때마다 `.githooks/check-secrets.py`가 올릴 내용에서 키·토큰·비밀번호처럼 보이는 값과 환경 파일을 찾아 커밋을 멈춥니다. 찾은 값은 화면에 출력하지 않습니다.
+
 ### 시연 데이터
 
 시연 계정과 캠페인 5개(배송형·방문형·구매평·클립·숙박)는 프론트 저장소의 스크립트가 실제 API를 호출해 만듭니다. 여러 번 실행해도 결과가 같습니다.

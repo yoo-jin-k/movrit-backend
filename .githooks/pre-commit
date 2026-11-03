@@ -1,0 +1,4 @@
+#!/bin/sh
+# 커밋 전에 올릴 내용에 비밀값이 섞였는지 확인합니다.
+# 한 번만 설정: git config core.hooksPath .githooks
+exec python3 "$(git rev-parse --show-toplevel)/.githooks/check-secrets.py"
