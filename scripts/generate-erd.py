@@ -45,10 +45,11 @@ DOMAINS = [
     ]),
     ("06_운영_공통", "알림·문의·감사·공지", [
         "notice", "notification", "inquiry", "audit_log"]),
-    ("07_참여_운영", "배송·구매평·방문 예약·패널티·평가", [
+    ("07_참여_운영", "배송·구매평·방문 예약·패널티·평가·참여 조정", [
         "campaign_shipment", "campaign_purchase_review", "campaign_purchase_proof",
         "campaign_visit_reservation", "campaign_deadline_reminder", "campaign_participant_rating",
-        "member_penalty",
+        "member_penalty", "member_cancel_count", "campaign_cancel_request",
+        "campaign_extension_request", "campaign_unselected_record",
     ]),
     ("08_소통_신고", "채팅·커뮤니티·신고", [
         "chat_room", "chat_participant", "chat_message", "community_post", "community_comment",

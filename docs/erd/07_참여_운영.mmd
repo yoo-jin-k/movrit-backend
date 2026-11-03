@@ -1,4 +1,4 @@
-%% 배송·구매평·방문 예약·패널티·평가 — scripts/generate-erd.py로 생성
+%% 배송·구매평·방문 예약·패널티·평가·참여 조정 — scripts/generate-erd.py로 생성
 erDiagram
   campaign_shipment {
     bigint application_id PK
@@ -62,14 +62,63 @@ erDiagram
     bigint revoked_by_member_id FK
     varchar revoke_reason
   }
+  member_cancel_count {
+    bigint id PK
+    bigint member_id FK
+    bigint application_id FK
+    varchar reason_type
+    timestamp created_at
+    bigint penalty_id FK
+  }
+  campaign_cancel_request {
+    bigint id PK
+    bigint application_id FK
+    bigint member_id FK
+    varchar reason
+    varchar evidence_key
+    varchar status
+    varchar decision_note
+    bigint decided_by_member_id FK
+    timestamp decided_at
+    timestamp created_at
+  }
+  campaign_extension_request {
+    bigint application_id PK
+    bigint member_id FK
+    integer days
+    varchar reason
+    timestamp previous_deadline
+    varchar status
+    varchar decision_note
+    bigint decided_by_member_id FK
+    timestamp decided_at
+    timestamp created_at
+  }
+  campaign_unselected_record {
+    bigint campaign_id PK
+    bigint seller_member_id FK
+    integer application_count
+    timestamp recorded_at
+  }
+  campaign_application ||--o{ campaign_cancel_request : "application_id"
+  member ||--o{ campaign_cancel_request : "decided_by_member_id"
+  member ||--o{ campaign_cancel_request : "member_id"
   campaign_application ||--o{ campaign_deadline_reminder : "application_id"
+  campaign_application ||--o{ campaign_extension_request : "application_id"
+  member ||--o{ campaign_extension_request : "decided_by_member_id"
+  member ||--o{ campaign_extension_request : "member_id"
   campaign_application ||--o{ campaign_participant_rating : "application_id"
   member ||--o{ campaign_participant_rating : "member_id"
   member ||--o{ campaign_participant_rating : "rated_by_member_id"
   campaign_application ||--o{ campaign_purchase_proof : "application_id"
   collaboration_campaign ||--o{ campaign_purchase_review : "campaign_id"
   campaign_application ||--o{ campaign_shipment : "application_id"
+  collaboration_campaign ||--o{ campaign_unselected_record : "campaign_id"
+  member ||--o{ campaign_unselected_record : "seller_member_id"
   campaign_application ||--o{ campaign_visit_reservation : "application_id"
+  campaign_application ||--o{ member_cancel_count : "application_id"
+  member ||--o{ member_cancel_count : "member_id"
+  member_penalty ||--o{ member_cancel_count : "penalty_id"
   campaign_application ||--o{ member_penalty : "application_id"
   member ||--o{ member_penalty : "created_by_member_id"
   member ||--o{ member_penalty : "member_id"

@@ -135,6 +135,16 @@ public class CampaignApplicationService {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 이 캠페인에 신청하셨습니다.");
     }
     validator.validateApplication(form, request);
+    // 선착순 캠페인은 방문형으로만 받고, 모집 인원이 찼으면 신청 자체를 받지 않습니다(캠페인 행을 잠근 상태라 동시에 신청해도 넘치지 않습니다).
+    boolean firstCome = campaign.getSelectionMode() == CampaignSelectionMode.FIRST_COME;
+    if (firstCome) {
+      if (request.fulfillmentType() != FulfillmentType.VISIT) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "선착순 캠페인은 방문형으로만 신청할 수 있습니다.");
+      }
+      if (countSelected(campaignId) >= campaign.getRecruitmentCount()) {
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "선착순 모집 인원이 모두 찼습니다.");
+      }
+    }
     Creator creator = creatorService.getOrCreateCandidate(memberId);
 
     CampaignApplication application =
@@ -168,21 +178,32 @@ public class CampaignApplicationService {
     try {
       CampaignApplication saved = applicationRepository.saveAndFlush(application);
       visitEvidence.capture(saved);
+      // 선착순이면 신청과 동시에 선정(진행 중)으로 바꿉니다.
+      if (firstCome) saved.select();
       Long sellerMemberId = campaign.getBrand().getSeller().getMember().getId();
       notificationService.send(
           sellerMemberId,
           "CAMPAIGN_APPLICATION",
-          "새 캠페인 신청이 접수되었습니다.",
+          firstCome ? "선착순 신청으로 참여자가 선정되었습니다." : "새 캠페인 신청이 접수되었습니다.",
           creator.getNickname() + "님이 캠페인에 신청하셨습니다.",
           "CAMPAIGN_APPLICATION",
           saved.getId());
+      if (firstCome) {
+        notificationService.send(
+            memberId,
+            "CAMPAIGN_APPLICATION",
+            "선착순으로 바로 선정되었습니다. 방문 일정을 잡아 주세요.",
+            campaign.getTitle(),
+            "CAMPAIGN_APPLICATION",
+            saved.getId());
+      }
       auditLogService.record(
           memberId,
-          "CAMPAIGN_APPLICATION_SUBMITTED",
+          firstCome ? "CAMPAIGN_APPLICATION_FIRST_COME_SELECTED" : "CAMPAIGN_APPLICATION_SUBMITTED",
           "CAMPAIGN_APPLICATION",
           saved.getId(),
           null,
-          "{\"status\":\"SUBMITTED\"}",
+          "{\"status\":\"" + saved.getStatus() + "\"}",
           null);
       return responses.response(saved);
     } catch (DataIntegrityViolationException exception) {
@@ -377,16 +398,7 @@ public class CampaignApplicationService {
             .findByIdForUpdate(application.getCampaign().getId())
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "캠페인을 찾을 수 없습니다."));
-    long selectedCount =
-        applicationRepository.countByCampaignIdAndStatusIn(
-            lockedCampaign.getId(),
-            List.of(
-                CampaignApplicationStatus.SELECTED,
-                CampaignApplicationStatus.ACTIVE,
-                CampaignApplicationStatus.CONTENT_SUBMITTED,
-                CampaignApplicationStatus.REVISION_REQUESTED,
-                CampaignApplicationStatus.COMPLETED));
-    if (selectedCount >= lockedCampaign.getRecruitmentCount()) {
+    if (countSelected(lockedCampaign.getId()) >= lockedCampaign.getRecruitmentCount()) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "캠페인 모집 인원이 모두 선정되었습니다.");
     }
     CampaignApplicationDtos.Response response =
@@ -575,10 +587,10 @@ public class CampaignApplicationService {
   }
 
   /**
-   * 참여자 본인 취소 요청을 거절합니다.
+   * 예전 참여자 취소 주소입니다. 상태를 바꾸지 않고 409로 새 기능을 안내합니다.
    *
-   * <p>캠페인 신청은 한 번 하면 본인이 취소할 수 없습니다. 참여가 어려운 사정이 생기면 업체에 문의하고, 업체가 선정 편집의 '참여 취소'로 처리합니다. 이전 화면이나
-   * 외부 호출이 이 주소를 부르더라도 상태가 바뀌지 않도록 409로 안내합니다.
+   * <p>참여자 취소는 참여 조정 API(신청 철회·참여 취소·협의 취소, {@code ParticipationChangeController})로 옮겼습니다. 이전 화면이나
+   * 외부 호출이 이 주소를 부르더라도 취소 횟수 규칙을 건너뛰지 않도록 막아 둡니다.
    *
    * @throws ResponseStatusException 본인 신청이 아니면 404, 본인 신청이면 항상 409
    */
@@ -589,7 +601,7 @@ public class CampaignApplicationService {
         .findByIdAndCreatorMemberId(applicationId, memberId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신청 내역을 찾을 수 없습니다."));
     throw new ResponseStatusException(
-        HttpStatus.CONFLICT, "캠페인 신청은 직접 취소할 수 없습니다. 참여가 어려우면 업체 담당자에게 문의해 주세요.");
+        HttpStatus.CONFLICT, "내 캠페인 화면의 '신청 철회' 또는 '참여 취소'를 이용해 주세요.");
   }
 
   /**
@@ -684,6 +696,18 @@ public class CampaignApplicationService {
   /** 활동 프로필에 SNS 주소가 등록되어 있는지 확인합니다. */
   private boolean hasChannel(Creator creator) {
     return creator.getSnsUrl() != null && !creator.getSnsUrl().isBlank();
+  }
+
+  /** 이미 선정되어 진행 중이거나 끝난 인원을 셉니다(모집 인원 비교용). 취소·미선정은 세지 않습니다. */
+  private long countSelected(Long campaignId) {
+    return applicationRepository.countByCampaignIdAndStatusIn(
+        campaignId,
+        List.of(
+            CampaignApplicationStatus.SELECTED,
+            CampaignApplicationStatus.ACTIVE,
+            CampaignApplicationStatus.CONTENT_SUBMITTED,
+            CampaignApplicationStatus.REVISION_REQUESTED,
+            CampaignApplicationStatus.COMPLETED));
   }
 
   /** 공개 중이고 모집 기간 안에 있는 캠페인만 돌려줍니다. 마감 시각은 포함하지 않습니다. */

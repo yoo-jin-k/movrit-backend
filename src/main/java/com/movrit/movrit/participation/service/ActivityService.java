@@ -42,6 +42,7 @@ public class ActivityService {
   static final int PENALTY_LIMIT = 2;
   static final int RESTRICT_DAYS = 30;
 
+  private final CancelCountService cancelCountService;
   private final CampaignApplicationRepository applicationRepository;
   private final MemberPenaltyRepository penaltyRepository;
   private final ParticipantRatingRepository ratingRepository;
@@ -86,7 +87,7 @@ public class ActivityService {
         restrictedUntil(penaltyRepository.findAllByMemberIdOrderByCreatedAtDesc(memberId));
     if (until != null) {
       throw new ResponseStatusException(
-          HttpStatus.CONFLICT, "미제출·노쇼 패널티가 쌓여 " + until.toLocalDate() + "까지 새 캠페인에 신청할 수 없습니다.");
+          HttpStatus.CONFLICT, "패널티가 쌓여 " + until.toLocalDate() + "까지 새 캠페인에 신청할 수 없습니다.");
     }
   }
 
@@ -111,7 +112,7 @@ public class ActivityService {
       boolean inProgress =
           application.getStatus() == CampaignApplicationStatus.ACTIVE
               || application.getStatus() == CampaignApplicationStatus.REVISION_REQUESTED;
-      LocalDateTime deadline = application.getCampaign().getContentSubmissionEndAt();
+      LocalDateTime deadline = application.contentDeadline();
       if (!inProgress || deadline == null || !now.isAfter(deadline)) {
         throw conflict("콘텐츠 제출 마감이 지났는데 제출하지 않은 참여자에게만 미제출을 기록할 수 있습니다.");
       }
@@ -258,7 +259,9 @@ public class ActivityService {
         restrictedUntil(penalties),
         average,
         ratings.size(),
-        penalties.stream().map(this::view).toList());
+        penalties.stream().map(this::view).toList(),
+        cancelCountService.activeCount(memberId),
+        CancelCountService.PENALTY_EVERY);
   }
 
   /** 최근 90일 유효 패널티가 2회 이상이면 마지막 패널티일 + 30일까지 제한합니다. 제한이 끝났거나 없으면 null입니다. */

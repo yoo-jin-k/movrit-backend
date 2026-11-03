@@ -79,6 +79,7 @@ erDiagram
     boolean email_verified
     text eligibility_requirement_snapshot_json
     bigint eligibility_requirement_version
+    timestamp content_deadline_extended_until
   }
   campaign_eligibility_requirement {
     bigint id PK
@@ -196,6 +197,7 @@ erDiagram
   collaboration_campaign ||--o{ campaign_application : "campaign_id"
   influencer_profile ||--o{ campaign_application : "creator_id"
   collaboration_campaign ||--o{ campaign_application_form : "campaign_id"
+  campaign_application ||--o{ campaign_cancel_request : "application_id"
   campaign_content_submission ||--o{ campaign_content_link : "submission_id"
   member ||--o{ campaign_content_metric : "recorded_by_member_id"
   campaign_content_submission ||--o{ campaign_content_metric : "submission_id"
@@ -203,6 +205,7 @@ erDiagram
   campaign_application ||--o{ campaign_deadline_reminder : "application_id"
   collaboration_campaign ||--o{ campaign_detail_image : "campaign_id"
   collaboration_campaign ||--o{ campaign_eligibility_requirement : "campaign_id"
+  campaign_application ||--o{ campaign_extension_request : "application_id"
   collaboration_campaign ||--o{ campaign_favorite : "campaign_id"
   member ||--o{ campaign_favorite : "member_id"
   collaboration_campaign ||--o{ campaign_image_asset : "campaign_id"
@@ -211,6 +214,7 @@ erDiagram
   campaign_application ||--o{ campaign_purchase_proof : "application_id"
   collaboration_campaign ||--o{ campaign_purchase_review : "campaign_id"
   campaign_application ||--o{ campaign_shipment : "application_id"
+  collaboration_campaign ||--o{ campaign_unselected_record : "campaign_id"
   collaboration_campaign ||--o{ campaign_visit_history : "campaign_id"
   campaign_application ||--o{ campaign_visit_reservation : "application_id"
   campaign_application ||--o{ campaign_visit_snapshot : "application_id"
@@ -221,6 +225,7 @@ erDiagram
   preorder ||--o{ collaboration : "preorder_id"
   brand ||--o{ collaboration_campaign : "brand_id"
   preorder ||--o{ collaboration_campaign : "preorder_id"
+  campaign_application ||--o{ member_cancel_count : "application_id"
   campaign_application ||--o{ member_penalty : "application_id"
   attribution ||--o{ orders : "attribution_id"
   collaboration ||--o{ referral_click : "collaboration_id"

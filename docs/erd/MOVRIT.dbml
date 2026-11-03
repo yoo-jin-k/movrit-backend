@@ -67,6 +67,7 @@ Table campaign_application {
   email_verified "boolean"
   eligibility_requirement_snapshot_json "text"
   eligibility_requirement_version "bigint"
+  content_deadline_extended_until "timestamp"
   indexes {
     (campaign_id, creator_id) [unique]
   }
@@ -81,6 +82,19 @@ Table campaign_application_form {
   version "bigint" [not null]
   created_at "timestamp" [not null]
   updated_at "timestamp" [not null]
+}
+
+Table campaign_cancel_request {
+  id "bigint" [pk]
+  application_id "bigint" [not null]
+  member_id "bigint" [not null]
+  reason "varchar(500)" [not null]
+  evidence_key "varchar(100)" [not null]
+  status "varchar(20)" [not null]
+  decision_note "varchar(500)"
+  decided_by_member_id "bigint"
+  decided_at "timestamp"
+  created_at "timestamp" [not null]
 }
 
 Table campaign_content_link {
@@ -160,6 +174,19 @@ Table campaign_eligibility_requirement {
   version "bigint"
 }
 
+Table campaign_extension_request {
+  application_id "bigint" [pk]
+  member_id "bigint" [not null]
+  days "integer" [not null]
+  reason "varchar(500)" [not null]
+  previous_deadline "timestamp" [not null]
+  status "varchar(20)" [not null]
+  decision_note "varchar(500)"
+  decided_by_member_id "bigint"
+  decided_at "timestamp"
+  created_at "timestamp" [not null]
+}
+
 Table campaign_favorite {
   id "bigint" [pk]
   member_id "bigint" [not null]
@@ -233,6 +260,13 @@ Table campaign_shipment {
   tracking_number "varchar(30)" [not null]
   shipped_at "timestamp" [not null]
   updated_at "timestamp" [not null]
+}
+
+Table campaign_unselected_record {
+  campaign_id "bigint" [pk]
+  seller_member_id "bigint" [not null]
+  application_count "integer" [not null]
+  recorded_at "timestamp" [not null]
 }
 
 Table campaign_visit_history {
@@ -546,6 +580,15 @@ Table member_address {
   is_default "boolean"
   created_at "timestamp"
   updated_at "timestamp"
+}
+
+Table member_cancel_count {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  application_id "bigint" [unique, not null]
+  reason_type "varchar(20)" [not null]
+  created_at "timestamp" [not null]
+  penalty_id "bigint"
 }
 
 Table member_channel_connection {
@@ -975,6 +1018,9 @@ Ref: brand.seller_id > seller_profile.id
 Ref: campaign_application.campaign_id > collaboration_campaign.id
 Ref: campaign_application.creator_id > influencer_profile.id
 Ref: campaign_application_form.campaign_id > collaboration_campaign.id
+Ref: campaign_cancel_request.application_id > campaign_application.id
+Ref: campaign_cancel_request.decided_by_member_id > member.id
+Ref: campaign_cancel_request.member_id > member.id
 Ref: campaign_content_link.submission_id > campaign_content_submission.id
 Ref: campaign_content_metric.recorded_by_member_id > member.id
 Ref: campaign_content_metric.submission_id > campaign_content_submission.id
@@ -982,6 +1028,9 @@ Ref: campaign_content_submission.application_id > campaign_application.id
 Ref: campaign_deadline_reminder.application_id > campaign_application.id
 Ref: campaign_detail_image.campaign_id > collaboration_campaign.id
 Ref: campaign_eligibility_requirement.campaign_id > collaboration_campaign.id
+Ref: campaign_extension_request.application_id > campaign_application.id
+Ref: campaign_extension_request.decided_by_member_id > member.id
+Ref: campaign_extension_request.member_id > member.id
 Ref: campaign_favorite.campaign_id > collaboration_campaign.id
 Ref: campaign_favorite.member_id > member.id
 Ref: campaign_image_asset.campaign_id > collaboration_campaign.id
@@ -994,6 +1043,8 @@ Ref: campaign_participant_rating.rated_by_member_id > member.id
 Ref: campaign_purchase_proof.application_id > campaign_application.id
 Ref: campaign_purchase_review.campaign_id > collaboration_campaign.id
 Ref: campaign_shipment.application_id > campaign_application.id
+Ref: campaign_unselected_record.campaign_id > collaboration_campaign.id
+Ref: campaign_unselected_record.seller_member_id > member.id
 Ref: campaign_visit_history.actor_member_id > member.id
 Ref: campaign_visit_history.campaign_id > collaboration_campaign.id
 Ref: campaign_visit_reservation.application_id > campaign_application.id
@@ -1025,6 +1076,9 @@ Ref: inquiry.answered_by_member_id > member.id
 Ref: inquiry.member_id > member.id
 Ref: inquiry.preorder_id > preorder.id
 Ref: member_address.member_id > member.id
+Ref: member_cancel_count.application_id > campaign_application.id
+Ref: member_cancel_count.member_id > member.id
+Ref: member_cancel_count.penalty_id > member_penalty.id
 Ref: member_channel_connection.member_id > member.id
 Ref: member_channel_connection.reviewed_by_member_id > member.id
 Ref: member_channel_metric.member_id > member.id

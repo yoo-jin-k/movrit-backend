@@ -118,7 +118,8 @@ class CampaignApplicationResponses {
         application.getCancelledAt(),
         application.getCancellationReason(),
         application.getExperienceConfirmedAt(),
-        completedCampaignCount);
+        completedCampaignCount,
+        application.getContentDeadlineExtendedUntil());
   }
 
   /** 지표 집계 행을 화면용 응답으로 바꾸고, 지표 종류 코드를 한국어 이름으로 바꿉니다. */

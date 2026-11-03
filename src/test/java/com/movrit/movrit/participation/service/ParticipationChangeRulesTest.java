@@ -1,0 +1,153 @@
+package com.movrit.movrit.participation.service;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.movrit.movrit.campaignapplication.entity.CampaignApplication;
+import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
+import com.movrit.movrit.collaboration.entity.Campaign;
+import com.movrit.movrit.notification.service.NotificationService;
+import com.movrit.movrit.participation.entity.CampaignExtensionRequest;
+import com.movrit.movrit.participation.entity.MemberCancelCount;
+import com.movrit.movrit.participation.entity.MemberPenalty;
+import com.movrit.movrit.participation.repository.MemberCancelCountRepository;
+import com.movrit.movrit.participation.repository.MemberPenaltyRepository;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
+
+/** 참여 조정(신청 철회·참여 취소·기간 연장·취소 횟수)의 규칙을 확인합니다. */
+class ParticipationChangeRulesTest {
+
+  @Test
+  void withdrawOnlyBeforeAnnouncement() {
+    CampaignApplication application =
+        application(CampaignApplicationStatus.SUBMITTED, LocalDateTime.now().plusDays(1));
+    assertThat(ParticipationChangeService.canWithdraw(application, LocalDateTime.now())).isTrue();
+    // 선정 발표 시각이 지나면 철회할 수 없습니다.
+    assertThat(ParticipationChangeService.canWithdraw(application, LocalDateTime.now().plusDays(2)))
+        .isFalse();
+    application.withdraw("일정이 맞지 않습니다.");
+    assertThat(application.getStatus()).isEqualTo(CampaignApplicationStatus.CANCELLED);
+    assertThat(application.getCancellationReason()).startsWith("[신청 철회]");
+    // 선정된 뒤에는 철회가 아니라 참여 취소를 써야 합니다.
+    CampaignApplication selected =
+        application(CampaignApplicationStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+    assertThatThrownBy(() -> selected.withdraw("사정")).isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void participantCancelOnlyBeforeSubmission() {
+    CampaignApplication active = application(CampaignApplicationStatus.ACTIVE, null);
+    active.cancelForParticipant("참여자 취소", "개인 사정");
+    assertThat(active.getStatus()).isEqualTo(CampaignApplicationStatus.CANCELLED);
+    assertThat(active.getCancellationReason()).isEqualTo("[참여자 취소] 개인 사정");
+    CampaignApplication submitted = application(CampaignApplicationStatus.CONTENT_SUBMITTED, null);
+    assertThatThrownBy(() -> submitted.cancelForParticipant("참여자 취소", "사정"))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
+  void extensionMovesOnlyThisApplicationsDeadline() {
+    CampaignApplication application = application(CampaignApplicationStatus.ACTIVE, null);
+    LocalDateTime campaignDeadline = application.getCampaign().getContentSubmissionEndAt();
+    assertThat(application.contentDeadline()).isEqualTo(campaignDeadline);
+    assertThat(ParticipationChangeService.canRequestExtension(application, LocalDateTime.now()))
+        .isTrue();
+
+    CampaignExtensionRequest request =
+        new CampaignExtensionRequest(1L, 7L, 7, "촬영 일정 조율", application.contentDeadline());
+    request.decide(true, 2L, null);
+    application.extendContentDeadline(request.extendedDeadline());
+    assertThat(application.contentDeadline()).isEqualTo(campaignDeadline.plusDays(7));
+    // 캠페인 마감 자체는 그대로입니다.
+    assertThat(application.getCampaign().getContentSubmissionEndAt()).isEqualTo(campaignDeadline);
+    // 한 번 처리한 요청은 다시 처리할 수 없고, 마감보다 앞당길 수도 없습니다.
+    assertThatThrownBy(() -> request.decide(false, 2L, "중복"))
+        .isInstanceOf(IllegalStateException.class);
+    assertThatThrownBy(() -> application.extendContentDeadline(campaignDeadline))
+        .isInstanceOf(IllegalStateException.class);
+    // 연장은 7일·14일만 됩니다.
+    assertThatThrownBy(() -> new CampaignExtensionRequest(1L, 7L, 3, "사유", campaignDeadline))
+        .isInstanceOf(IllegalArgumentException.class);
+    // 마감이 지난 뒤에는 연장을 요청할 수 없습니다.
+    assertThat(
+            ParticipationChangeService.canRequestExtension(
+                application, application.contentDeadline().plusMinutes(1)))
+        .isFalse();
+  }
+
+  @Test
+  void cancelCountExpiresAfterOneYear() {
+    MemberCancelCount recent = new MemberCancelCount(7L, 1L, MemberCancelCount.SELF_CANCEL);
+    MemberCancelCount old = new MemberCancelCount(7L, 2L, MemberCancelCount.SELF_CANCEL);
+    ReflectionTestUtils.setField(old, "createdAt", LocalDateTime.now().minusDays(400));
+    LocalDateTime now = LocalDateTime.now();
+    assertThat(recent.isCounting(now, CancelCountService.VALID_DAYS)).isTrue();
+    assertThat(old.isCounting(now, CancelCountService.VALID_DAYS)).isFalse();
+    recent.convertTo(99L);
+    assertThat(recent.isCounting(now, CancelCountService.VALID_DAYS)).isFalse();
+  }
+
+  @Test
+  void fiveCancelsBecomeOnePenalty() {
+    MemberCancelCountRepository counts = mock(MemberCancelCountRepository.class);
+    MemberPenaltyRepository penalties = mock(MemberPenaltyRepository.class);
+    NotificationService notifications = mock(NotificationService.class);
+    List<MemberCancelCount> saved = new ArrayList<>();
+    when(counts.save(any()))
+        .thenAnswer(
+            invocation -> {
+              saved.add(invocation.getArgument(0));
+              return invocation.getArgument(0);
+            });
+    when(counts.findAllByMemberIdOrderByCreatedAtAsc(7L)).thenAnswer(invocation -> saved);
+    when(penalties.save(any()))
+        .thenAnswer(
+            invocation -> {
+              MemberPenalty penalty = invocation.getArgument(0);
+              ReflectionTestUtils.setField(penalty, "id", 500L);
+              return penalty;
+            });
+    CancelCountService service = new CancelCountService(counts, penalties, notifications);
+
+    for (long applicationId = 1; applicationId <= 4; applicationId++) {
+      assertThat(service.record(7L, applicationId, MemberCancelCount.SELF_CANCEL)).isFalse();
+    }
+    verify(penalties, never()).save(any());
+    assertThat(service.activeCount(7L)).isEqualTo(4);
+
+    assertThat(service.record(7L, 5L, MemberCancelCount.MISSED_DEADLINE)).isTrue();
+    verify(penalties).save(any(MemberPenalty.class));
+    verify(notifications)
+        .send(eq(7L), eq("CAMPAIGN_PENALTY"), anyString(), anyString(), anyString(), anyLong());
+    // 패널티로 바뀐 5회는 다시 세지 않습니다.
+    assertThat(service.activeCount(7L)).isZero();
+  }
+
+  private static CampaignApplication application(
+      CampaignApplicationStatus status, LocalDateTime selectionAnnouncedAt) {
+    Campaign campaign =
+        Campaign.builder()
+            .title("점검 캠페인")
+            .recruitmentCount(3)
+            .startAt(LocalDateTime.now().minusDays(3))
+            .endAt(LocalDateTime.now().plusDays(1))
+            .open(true)
+            .build();
+    ReflectionTestUtils.setField(campaign, "selectionAnnouncedAt", selectionAnnouncedAt);
+    ReflectionTestUtils.setField(
+        campaign, "contentSubmissionEndAt", LocalDateTime.now().plusDays(10).withNano(0));
+    return CampaignApplication.builder().campaign(campaign).status(status).build();
+  }
+}

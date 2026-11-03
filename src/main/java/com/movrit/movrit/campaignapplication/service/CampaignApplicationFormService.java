@@ -132,7 +132,7 @@ public class CampaignApplicationFormService {
   }
 
   /**
-   * 구매평 캠페인은 '구매형'만, 다른 캠페인은 배송형·방문형만 허용합니다.
+   * 구매평 캠페인은 '구매형'만, 다른 캠페인은 배송형·방문형만, 선착순 캠페인은 방문형만 허용합니다.
    *
    * <p>구매형은 배송 주소를 받지 않고 구매 인증으로 진행하므로, 다른 유형과 섞이면 진행 단계가 맞지 않습니다.
    */
@@ -148,6 +148,13 @@ public class CampaignApplicationFormService {
     }
     if (!purchaseCampaign && hasPurchase) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "'직접 구매' 방식은 구매평 캠페인에서만 쓸 수 있습니다.");
+    }
+    // 선착순은 신청과 동시에 선정되어 바로 방문 일정을 잡는 방식이라 방문형에서만 씁니다.
+    boolean firstCome =
+        campaign.getSelectionMode()
+            == com.movrit.movrit.collaboration.entity.CampaignSelectionMode.FIRST_COME;
+    if (firstCome && !types.stream().allMatch(type -> type == FulfillmentType.VISIT)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "선착순 캠페인은 '방문형' 방식만 고를 수 있습니다.");
     }
   }
 

@@ -102,7 +102,10 @@ public final class ParticipationDtos {
       LocalDateTime restrictedUntil,
       Double ratingAverage,
       long ratingCount,
-      List<Penalty> penalties) {}
+      List<Penalty> penalties,
+      // 지금 세는 취소 횟수(1년 안)와 패널티로 바뀌는 횟수입니다.
+      long cancelCount,
+      int cancelLimit) {}
 
   /** 업체 참여자 상세에서 보는 활동 정보와 이 신청에 남긴 내 평가입니다. */
   public record ParticipantActivity(Activity activity, Integer myRating, String myMemo) {}

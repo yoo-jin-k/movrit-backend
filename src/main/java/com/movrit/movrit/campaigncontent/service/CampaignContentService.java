@@ -387,7 +387,8 @@ public class CampaignContentService {
     if (submission != null && submission.getStatus() == ContentSubmissionStatus.REVISION_REQUESTED)
       return;
     LocalDateTime start = application.getCampaign().getContentSubmissionStartAt();
-    LocalDateTime end = application.getCampaign().getContentSubmissionEndAt();
+    // 기간 연장이 승인된 신청은 연장된 마감까지 처음 제출할 수 있습니다.
+    LocalDateTime end = application.contentDeadline();
     LocalDateTime now = LocalDateTime.now();
     if ((start != null && now.isBefore(start)) || (end != null && now.isAfter(end))) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "현재 콘텐츠 제출 기간이 아닙니다.");

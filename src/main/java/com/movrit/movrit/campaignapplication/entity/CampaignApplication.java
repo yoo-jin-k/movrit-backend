@@ -126,6 +126,10 @@ public class CampaignApplication extends BaseEntity {
   @Column(name = "experience_confirmed_at")
   private LocalDateTime experienceConfirmedAt;
 
+  /** 기간 연장이 승인된 경우의 콘텐츠 제출 마감입니다. 비어 있으면 캠페인 마감을 그대로 씁니다. */
+  @Column(name = "content_deadline_extended_until")
+  private LocalDateTime contentDeadlineExtendedUntil;
+
   /**
    * 신청을 선정합니다. 접수(SUBMITTED) 상태에서만 가능합니다.
    *
@@ -256,6 +260,53 @@ public class CampaignApplication extends BaseEntity {
     this.address2 = address2;
     this.answersJson = answersJson;
     this.formVersion = formVersion;
+  }
+
+  /** 이 신청의 콘텐츠 제출 마감입니다. 연장이 승인되었으면 연장된 마감, 아니면 캠페인 마감입니다. */
+  public LocalDateTime contentDeadline() {
+    return contentDeadlineExtendedUntil != null
+        ? contentDeadlineExtendedUntil
+        : campaign.getContentSubmissionEndAt();
+  }
+
+  /** 아직 콘텐츠를 내기 전인 선정·진행 중 신청인지 확인합니다. 참여 취소·기간 연장은 이 상태에서만 할 수 있습니다. */
+  public boolean isInProgressBeforeSubmission() {
+    return status == CampaignApplicationStatus.SELECTED
+        || status == CampaignApplicationStatus.ACTIVE;
+  }
+
+  /** 콘텐츠 제출 마감을 늦춥니다(기간 연장 승인). 선정·진행 중 신청만, 지금 마감보다 뒤로만 바꿀 수 있습니다. */
+  public void extendContentDeadline(LocalDateTime until) {
+    if (!isInProgressBeforeSubmission()) {
+      throw new IllegalStateException("콘텐츠를 내기 전인 진행 중 신청만 기간을 연장할 수 있습니다.");
+    }
+    LocalDateTime current = contentDeadline();
+    if (until == null || (current != null && !until.isAfter(current))) {
+      throw new IllegalStateException("연장한 마감은 지금 마감보다 늦어야 합니다.");
+    }
+    contentDeadlineExtendedUntil = until;
+  }
+
+  /** 참여자가 선정 발표 전에 신청을 거둬들입니다(신청 철회). 접수(SUBMITTED) 상태에서만 가능하며 취소 횟수는 세지 않습니다. */
+  public void withdraw(String reason) {
+    requireStatus(CampaignApplicationStatus.SUBMITTED, "선정 결과가 나오기 전인 신청만 철회할 수 있습니다.");
+    status = CampaignApplicationStatus.CANCELLED;
+    cancellationReason = "[신청 철회] " + reason;
+    cancelledAt = LocalDateTime.now();
+  }
+
+  /**
+   * 선정·진행 중 참여를 참여자 쪽 사유로 취소합니다.
+   *
+   * @param label 사유 앞에 붙일 구분입니다(예: 참여자 취소, 협의 취소, 제출 마감 지남).
+   */
+  public void cancelForParticipant(String label, String reason) {
+    if (!isInProgressBeforeSubmission()) {
+      throw new IllegalStateException("콘텐츠를 내기 전인 선정·진행 중 참여만 취소할 수 있습니다.");
+    }
+    status = CampaignApplicationStatus.CANCELLED;
+    cancellationReason = "[" + label + "] " + reason;
+    cancelledAt = LocalDateTime.now();
   }
 
   private void requireStatus(CampaignApplicationStatus expected, String message) {

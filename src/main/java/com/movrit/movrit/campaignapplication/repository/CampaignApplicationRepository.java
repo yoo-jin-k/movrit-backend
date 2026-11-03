@@ -83,12 +83,43 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
   @org.springframework.data.jpa.repository.Query(
       "select a from CampaignApplication a join fetch a.campaign c join fetch a.creator cr"
           + " join fetch cr.member where a.status in :statuses"
-          + " and c.contentSubmissionEndAt > :now and c.contentSubmissionEndAt <= :until")
+          + " and coalesce(a.contentDeadlineExtendedUntil, c.contentSubmissionEndAt) > :now"
+          + " and coalesce(a.contentDeadlineExtendedUntil, c.contentSubmissionEndAt) <= :until")
   List<CampaignApplication> findContentDeadlineDue(
       @org.springframework.data.repository.query.Param("statuses")
           java.util.Collection<CampaignApplicationStatus> statuses,
       @org.springframework.data.repository.query.Param("now") java.time.LocalDateTime now,
       @org.springframework.data.repository.query.Param("until") java.time.LocalDateTime until);
+
+  /**
+   * 콘텐츠 제출 마감(연장 반영)이 from 이후 now 이전에 지난 신청을 찾습니다. 마감 미제출 자동 처리에 씁니다.
+   *
+   * <p>from을 두어 기능을 켜기 전에 이미 오래 지난 신청(보존 중인 점검 데이터 등)은 건드리지 않습니다.
+   */
+  @org.springframework.data.jpa.repository.Query(
+      "select a from CampaignApplication a join fetch a.campaign c join fetch a.creator cr"
+          + " join fetch cr.member where a.status in :statuses"
+          + " and coalesce(a.contentDeadlineExtendedUntil, c.contentSubmissionEndAt) > :from"
+          + " and coalesce(a.contentDeadlineExtendedUntil, c.contentSubmissionEndAt) <= :now")
+  List<CampaignApplication> findContentDeadlinePassed(
+      @org.springframework.data.repository.query.Param("statuses")
+          java.util.Collection<CampaignApplicationStatus> statuses,
+      @org.springframework.data.repository.query.Param("from") java.time.LocalDateTime from,
+      @org.springframework.data.repository.query.Param("now") java.time.LocalDateTime now);
+
+  /** 캠페인 신청 수(취소·미선정 포함)입니다. */
+  long countByCampaignId(Long campaignId);
+
+  /**
+   * 업체가 한 번이라도 선정한 신청 수입니다. 선정하면 응답 시각이 남고, 선정 취소하면 지워지므로 미선정(REJECTED)만 빼고 셉니다. 선정 뒤 취소된 참여도
+   * 포함합니다.
+   */
+  @org.springframework.data.jpa.repository.Query(
+      "select count(a) from CampaignApplication a where a.campaign.id = :campaignId"
+          + " and a.respondedAt is not null and a.status <> com.movrit.movrit.campaignapplication"
+          + ".entity.CampaignApplicationStatus.REJECTED")
+  long countEverSelected(
+      @org.springframework.data.repository.query.Param("campaignId") Long campaignId);
 
   /** 캠페인에 신청 이력이 하나라도 있는지 확인합니다. 신청 이력이 생긴 뒤에는 선정 방식을 바꿀 수 없습니다. */
   boolean existsByCampaignId(Long campaignId);

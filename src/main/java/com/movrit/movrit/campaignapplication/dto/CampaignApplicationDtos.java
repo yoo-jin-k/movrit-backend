@@ -222,6 +222,7 @@ public final class CampaignApplicationDtos {
    * @param cancelledAt 취소 시각입니다.
    * @param cancellationReason 취소 사유입니다.
    * @param experienceConfirmedAt 체험 확인 시각입니다.
+   * @param contentDeadlineExtendedUntil 기간 연장이 승인된 경우 이 신청의 새 콘텐츠 마감입니다(없으면 캠페인 마감).
    */
   public record Response(
       Long id,
@@ -252,7 +253,8 @@ public final class CampaignApplicationDtos {
       LocalDateTime cancelledAt,
       String cancellationReason,
       LocalDateTime experienceConfirmedAt,
-      Long completedCampaignCount) {}
+      Long completedCampaignCount,
+      LocalDateTime contentDeadlineExtendedUntil) {}
 
   /**
    * 선정 전 신청 내용 수정 요청입니다. 참여 방식과 동의는 바꿀 수 없습니다.

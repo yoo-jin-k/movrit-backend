@@ -23,6 +23,7 @@
 | 15 | `V15__campaign_shipment.sql` | 배송형 캠페인 송장(campaign_shipment). 신청 한 건에 하나, 택배사·송장번호·발송 시각 |
 | 16 | `V16__community_comment_hidden.sql` | 커뮤니티 댓글 가림 표시(hidden)와 글·댓글 가린 시각(hidden_at). 운영자가 지우지 않고 가렸다가 되돌릴 수 있음 |
 | 17 | `V17__campaign_content_metric.sql` | 콘텐츠 성과 기록(campaign_content_metric). (제출 건, 게시물 주소, 날짜)마다 한 줄, 조회수·좋아요·댓글과 입력한 사람 |
+| 18 | `V18__participation_changes.sql` | 참여 조정. 신청별 연장 마감(content_deadline_extended_until), 선정 방식 `FIRST_COME`, 패널티 종류 `CANCEL_LIMIT`, 마감 알림 단계 `XD3`·`XD1`, 취소 횟수(member_cancel_count), 협의 취소 요청과 증빙(campaign_cancel_request), 기간 연장 요청(campaign_extension_request), 업체 미선정 기록(campaign_unselected_record) |
 
 - 적용 이력 테이블: `movrit_schema_history`
   - 8월 실험 때 남은 `flyway_schema_history` 와는 별개입니다. 기존 표는 사용하지 않으며 지우지 않았습니다.

@@ -22,6 +22,15 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
   @Query("select campaign from Campaign campaign where campaign.id = :id")
   Optional<Campaign> findByIdForUpdate(@Param("id") Long id);
 
+  /** 업체 직접 선정 캠페인 중 선정 마감(선정 발표일, 없으면 모집 마감)이 from 이후 now 이전에 지난 것을 찾습니다. 업체 미선정 기록에 씁니다. */
+  @Query(
+      "select c from Campaign c join fetch c.brand b join fetch b.seller s join fetch s.member"
+          + " where c.selectionMode = com.movrit.movrit.collaboration.entity.CampaignSelectionMode"
+          + ".BRAND_DIRECT and coalesce(c.selectionAnnouncedAt, c.endAt) > :from"
+          + " and coalesce(c.selectionAnnouncedAt, c.endAt) <= :now")
+  List<Campaign> findBrandSelectionDue(
+      @Param("from") LocalDateTime from, @Param("now") LocalDateTime now);
+
   /** 공개(open) 상태인 캠페인을 최신순으로 조회합니다. 모집 기간 필터는 서비스에서 적용합니다. */
   List<Campaign> findAllByOpenTrueOrderByIdDesc();
 
