@@ -58,9 +58,10 @@ class ParticipationChangeRulesTest {
   }
 
   @Test
-  void extensionMovesOnlyThisApplicationsDeadline() {
+  void extensionMovesThisApplicationsExperienceAndDeadline() {
     CampaignApplication application = application(CampaignApplicationStatus.ACTIVE, null);
     LocalDateTime campaignDeadline = application.getCampaign().getContentSubmissionEndAt();
+    LocalDateTime campaignExperienceEnd = application.getCampaign().getExperienceEndAt();
     assertThat(application.contentDeadline()).isEqualTo(campaignDeadline);
     assertThat(ParticipationChangeService.canRequestExtension(application, LocalDateTime.now()))
         .isTrue();
@@ -68,10 +69,13 @@ class ParticipationChangeRulesTest {
     CampaignExtensionRequest request =
         new CampaignExtensionRequest(1L, 7L, 7, "촬영 일정 조율", application.contentDeadline());
     request.decide(true, 2L, null);
-    application.extendContentDeadline(request.extendedDeadline());
+    application.extendPeriod(request.getDays(), request.extendedDeadline());
+    // 체험 기간과 콘텐츠 마감이 함께 7일 늘어납니다.
     assertThat(application.contentDeadline()).isEqualTo(campaignDeadline.plusDays(7));
-    // 캠페인 마감 자체는 그대로입니다.
+    assertThat(application.experienceEnd()).isEqualTo(campaignExperienceEnd.plusDays(7));
+    // 캠페인 일정 자체는 그대로입니다.
     assertThat(application.getCampaign().getContentSubmissionEndAt()).isEqualTo(campaignDeadline);
+    assertThat(application.getCampaign().getExperienceEndAt()).isEqualTo(campaignExperienceEnd);
     // 한 번 처리한 요청은 다시 처리할 수 없고, 마감보다 앞당길 수도 없습니다.
     assertThatThrownBy(() -> request.decide(false, 2L, "중복"))
         .isInstanceOf(IllegalStateException.class);
@@ -148,6 +152,8 @@ class ParticipationChangeRulesTest {
     ReflectionTestUtils.setField(campaign, "selectionAnnouncedAt", selectionAnnouncedAt);
     ReflectionTestUtils.setField(
         campaign, "contentSubmissionEndAt", LocalDateTime.now().plusDays(10).withNano(0));
+    ReflectionTestUtils.setField(
+        campaign, "experienceEndAt", LocalDateTime.now().plusDays(6).withNano(0));
     return CampaignApplication.builder().campaign(campaign).status(status).build();
   }
 }

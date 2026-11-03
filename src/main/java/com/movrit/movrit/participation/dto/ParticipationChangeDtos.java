@@ -31,6 +31,7 @@ public final class ParticipationChangeDtos {
    * @param canRequestExtension 기간 연장을 요청할 수 있는지(신청당 1회, 마감 전)
    * @param contentDeadline 이 신청의 콘텐츠 제출 마감(연장 반영)
    * @param extendedUntil 연장이 승인된 경우의 새 마감
+   * @param experienceExtendedUntil 연장이 승인된 경우의 새 체험 종료(캠페인에 체험 종료가 없으면 비어 있음)
    * @param cancelCount 지금 세는 취소 횟수(1년 안)
    * @param cancelLimit 패널티로 바뀌는 취소 횟수
    */
@@ -42,6 +43,7 @@ public final class ParticipationChangeDtos {
       boolean canRequestExtension,
       LocalDateTime contentDeadline,
       LocalDateTime extendedUntil,
+      LocalDateTime experienceExtendedUntil,
       Extension extension,
       CancelRequest cancelRequest,
       long cancelCount,

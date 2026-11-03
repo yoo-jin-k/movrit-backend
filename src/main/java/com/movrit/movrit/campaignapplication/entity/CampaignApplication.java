@@ -130,6 +130,10 @@ public class CampaignApplication extends BaseEntity {
   @Column(name = "content_deadline_extended_until")
   private LocalDateTime contentDeadlineExtendedUntil;
 
+  /** 기간 연장이 승인된 경우의 체험 종료 시각입니다. 비어 있으면 캠페인 체험 종료를 그대로 씁니다. */
+  @Column(name = "experience_extended_until")
+  private LocalDateTime experienceExtendedUntil;
+
   /**
    * 신청을 선정합니다. 접수(SUBMITTED) 상태에서만 가능합니다.
    *
@@ -267,6 +271,23 @@ public class CampaignApplication extends BaseEntity {
     return contentDeadlineExtendedUntil != null
         ? contentDeadlineExtendedUntil
         : campaign.getContentSubmissionEndAt();
+  }
+
+  /** 이 신청의 체험 종료 시각입니다. 연장이 승인되었으면 연장된 시각, 아니면 캠페인 체험 종료입니다. */
+  public LocalDateTime experienceEnd() {
+    return experienceExtendedUntil != null
+        ? experienceExtendedUntil
+        : campaign.getExperienceEndAt();
+  }
+
+  /**
+   * 기간 연장을 반영합니다. 콘텐츠 제출 마감을 contentUntil로 늦추고, 체험 종료가 정해져 있으면 그 시각도 days일 늦춥니다. 이 신청만 바뀌며 캠페인 일정은
+   * 그대로입니다.
+   */
+  public void extendPeriod(int days, LocalDateTime contentUntil) {
+    LocalDateTime experience = experienceEnd();
+    extendContentDeadline(contentUntil);
+    if (experience != null) experienceExtendedUntil = experience.plusDays(days);
   }
 
   /** 아직 콘텐츠를 내기 전인 선정·진행 중 신청인지 확인합니다. 참여 취소·기간 연장은 이 상태에서만 할 수 있습니다. */

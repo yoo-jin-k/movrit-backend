@@ -65,7 +65,9 @@ public class VisitReservationService {
         && visitAt.toLocalDate().isBefore(campaign.getExperienceStartAt().toLocalDate())) {
       throw badRequest("체험 기간이 시작된 뒤의 일시를 골라 주세요.");
     }
-    if (campaign.getExperienceEndAt() != null && visitAt.isAfter(campaign.getExperienceEndAt())) {
+    // 기간 연장이 승인된 신청은 늘어난 체험 기간까지 방문할 수 있습니다.
+    LocalDateTime experienceEnd = application.experienceEnd();
+    if (experienceEnd != null && visitAt.isAfter(experienceEnd)) {
       throw badRequest("체험 기간 안의 일시를 골라 주세요.");
     }
     VisitReservation reservation =

@@ -68,6 +68,7 @@ Table campaign_application {
   eligibility_requirement_snapshot_json "text"
   eligibility_requirement_version "bigint"
   content_deadline_extended_until "timestamp"
+  experience_extended_until "timestamp"
   indexes {
     (campaign_id, creator_id) [unique]
   }

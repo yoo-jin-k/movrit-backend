@@ -259,14 +259,17 @@ public class ParticipationChangeService {
     }
     try {
       request.decide(approve, deciderMemberId, note);
-      if (approve) application.extendContentDeadline(request.extendedDeadline());
+      // 체험 기간과 콘텐츠 제출 마감을 함께 늘립니다(이 신청만).
+      if (approve) application.extendPeriod(request.getDays(), request.extendedDeadline());
     } catch (IllegalStateException exception) {
       throw conflict(exception.getMessage());
     }
     notificationService.send(
         application.getCreator().getMember().getId(),
         "CAMPAIGN_EXTENSION",
-        approve ? "기간 연장이 승인되었습니다(" + request.getDays() + "일)." : "기간 연장이 반려되었습니다.",
+        approve
+            ? "기간 연장이 승인되었습니다(" + request.getDays() + "일). 체험 기간과 콘텐츠 마감이 함께 늘어났습니다."
+            : "기간 연장이 반려되었습니다.",
         application.getCampaign().getTitle() + (note == null ? "" : " · " + note),
         "CAMPAIGN_APPLICATION",
         applicationId);
@@ -312,6 +315,7 @@ public class ParticipationChangeService {
         extension == null && canRequestExtension(application, now),
         application.contentDeadline(),
         application.getContentDeadlineExtendedUntil(),
+        application.getExperienceExtendedUntil(),
         extension,
         cancelRequest,
         cancelCountService.activeCount(memberId),
