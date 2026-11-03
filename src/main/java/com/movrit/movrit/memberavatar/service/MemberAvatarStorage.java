@@ -37,8 +37,11 @@ public class MemberAvatarStorage {
 
   private final Path root;
 
-  /** 업로드 폴더 아래 프로필 사진 전용 위치를 저장 기준으로 정합니다. */
-  public MemberAvatarStorage(@Value("${app.upload-dir:uploads}") String uploadDir) {
+  /**
+   * 비공개 업로드 위치(app.private-upload-dir) 아래 프로필 사진 전용 폴더를 저장 기준으로 정합니다. 사진은 /api/members/{id}/avatar
+   * 로만 내려갑니다.
+   */
+  public MemberAvatarStorage(@Value("${app.private-upload-dir:uploads-private}") String uploadDir) {
     root = Path.of(uploadDir).toAbsolutePath().normalize().resolve(DIRECTORY).normalize();
   }
 

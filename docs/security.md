@@ -34,10 +34,58 @@
 
 ## 4. 파일
 
-- 업로드 폴더 중 공개 이미지(`campaigns`, `brands`, `products`)만 `/uploads`로 내려줌.
-- 구매 인증·취소 증빙·채팅 첨부·채널 확인 자료·프로필 사진은 `/uploads`로 열리지 않고(401), 권한을 확인하는 API로만 내려감.
-  - 2026-11-04 점검 전에는 이 파일들도 주소만 알면 로그인 없이 열렸음(파일 이름이 무작위라 추측은 어려웠음). 지금은 막힘.
-- 이미지는 실제 내용을 읽어 JPEG·PNG인지 확인하고 다시 저장(기존).
+### 저장 위치
+
+| 위치 | 설정 | 들어 있는 파일 | 내려가는 방법 |
+|---|---|---|---|
+| 공개 | `app.upload-dir`(환경 변수 `UPLOAD_DIR`, 기본 `uploads`) | 캠페인 대표·상세 이미지(`campaigns`), 브랜드 로고·표지(`brands`), 상품 이미지(`products`) | `/uploads/{폴더}/...` 주소, 로그인 없이 |
+| 비공개 | `app.private-upload-dir`(환경 변수 `PRIVATE_UPLOAD_DIR`, 기본 `{공개 위치}-private`) | 구매 인증(`purchase-proof`), 협의 취소 증빙(`cancel-evidence`), 채팅 첨부(`chat-attachments`), 채널 확인 자료(`channel-evidence`), 프로필 사진(`member-avatars`) | 권한을 확인하는 API로만 |
+| 캠페인 비공개 이미지 | `{공개 위치}-campaign-private`(기존) | 공개 전 캠페인 이미지 자산 | 권한을 확인하는 API로만 |
+
+- 두 위치가 같거나 한쪽이 다른 쪽 안에 있으면 서버가 뜨지 않습니다(`UploadLocations`). 설정 실수로 비공개 파일이 공개 주소에 다시 연결되는 일을 막습니다.
+- `/uploads`에는 공개 폴더 세 개만 연결합니다(`WebMvcConfig.PUBLIC_FOLDERS`). 위치 분리와 함께 이중으로 막습니다.
+- 이미지는 실제 내용을 읽어 JPEG·PNG인지 확인하고 다시 저장합니다(기존).
+
+| 비공개 파일 | 내려가는 API | 볼 수 있는 사람 |
+|---|---|---|
+| 구매 인증 사진 | `GET /api/campaigns/applications/{id}/purchase-proof/evidence` | 본인, 해당 업체, 운영자 |
+| 협의 취소 증빙 | `GET /api/cancel-requests/{id}/evidence` | 본인, 해당 업체, 운영자 |
+| 채팅 첨부 | `GET /api/chats/{roomId}/attachments/{messageId}` | 그 대화방 참여자 |
+| 채널 확인 자료 | `GET /api/admin/channel-verifications/{id}/evidence` | 운영자 |
+| 프로필 사진 | `GET /api/members/{id}/avatar?v={버전}` | 공개(사진을 올린 회원의 프로필 표시용) |
+
+### 2026-11-04 비공개 파일 노출 문제와 조치
+
+**문제.** 업로드 폴더 전체를 `/uploads/**` 주소로 공개해 두었고, 비공개 파일도 같은 폴더 아래에 저장했습니다. 그래서 구매 인증·취소 증빙·채팅 첨부·채널 확인 자료·프로필 사진이 주소만 알면 로그인 없이 열렸습니다(실제 서버에서 200 확인). 파일 이름은 무작위라 추측은 어렵지만, 주소가 한 번 새면 막을 방법이 없었습니다. 서버는 로컬에서만 돌았고 배포한 적이 없어 외부 노출은 없었습니다.
+
+**1차 조치(백엔드 b07b318).** `/uploads`에는 공개 폴더 세 개만 연결하고, 로그인 없이 허용하는 주소도 그 세 폴더로 줄였습니다. 나머지 `/uploads` 주소는 401입니다.
+
+**2차 조치(위치 분리).** 설정이 다시 `/uploads/**`로 바뀌어도 비공개 파일이 열리지 않도록 저장 위치 자체를 나눴습니다.
+- 비공개 저장소 다섯 개(`PurchaseProofStorage`, `CancelEvidenceStorage`, `ChatAttachmentStorage`, `ChannelEvidenceStorage`, `MemberAvatarStorage`)가 `app.private-upload-dir` 아래에 저장합니다. 데이터베이스에는 파일 이름(키)만 있어 DB 변경은 없습니다.
+- 예전 파일 옮기기: 서버가 뜰 때 `UploadLocations`가 공개 위치에 남은 다섯 폴더의 파일을 같은 상대 경로로 비공개 위치에 옮깁니다. 지우지 않고 옮기기만 하며, 같은 이름이 이미 있으면 덮어쓰지 않고 남겨 둡니다. 로그에는 개수만 남기고 파일 이름은 남기지 않습니다. 옮긴 뒤 비어 있는 예전 폴더는 그대로 두며 `/uploads`에 연결되지 않습니다.
+
+**로컬 통합 환경에서 옮긴 결과(2026-11-04 00:56).**
+
+| 폴더 | 옮기기 전(공개 위치) | 옮긴 뒤(비공개 위치) |
+|---|---|---|
+| purchase-proof | 10 | 10 |
+| cancel-evidence | 5 | 5 |
+| chat-attachments | 28 | 28 |
+| channel-evidence | 1 | 1 |
+| member-avatars | 1 | 1 |
+
+- 서버 로그: "예전 비공개 업로드 파일을 비공개 위치로 옮겼습니다: 45건, 같은 이름이 있어 남겨 둔 파일 0건"
+- 옮기기 전후 45개 파일의 경로와 SHA-256 값을 비교해 모두 일치했습니다.
+
+**검증.**
+- 백엔드 테스트 198개 통과. `UploadLocationsTest`: 겹치는 위치 거절, 예전 파일 옮기기, 같은 이름은 덮어쓰지 않음, 공개 이미지는 그대로. `SecurityConfigTest`: 비공개 폴더 다섯 곳 `/uploads` 401.
+- 화면·API 점검: 구매 인증 사진 표시(purchase-review-check 24/24), 채팅 첨부(chat-extras-check 11/11), 협의 취소 증빙(participation-change-check 30/30), 남의 자료 접근(access-control-check 51/51), 채널 확인 자료(운영자 API 200, 이미지), 프로필 사진(API 200, 이미지).
+
+**배포·다른 PC에 반영할 때.**
+- 따로 할 일은 없습니다. 새 버전 서버를 띄우면 예전 파일이 자동으로 옮겨집니다.
+- 배포 환경에서는 `UPLOAD_DIR`, `PRIVATE_UPLOAD_DIR`을 서로 다른 영구 저장 폴더로 지정합니다(`scripts/production.env.example`).
+
+**되돌리기.** 이전 버전으로 돌아가야 하면, 비공개 위치의 다섯 폴더를 공개 위치 아래 같은 이름으로 다시 옮긴 뒤 이전 버전을 실행합니다. 다만 이전 버전은 비공개 파일이 주소로 열리는 문제가 있으므로 권하지 않습니다.
 
 ## 5. 남의 자료 접근(ID 바꿔 넣기)
 

@@ -32,7 +32,7 @@ public abstract class PrivateImageStorage {
   private final String label;
 
   /**
-   * @param uploadDir 업로드 최상위 폴더
+   * @param uploadDir 비공개 업로드 최상위 폴더(app.private-upload-dir). 공개 폴더(/uploads)와 떨어져 있어 주소로 열리지 않습니다
    * @param folder 이 기능의 하위 폴더 이름
    * @param label 안내 문구에 쓸 이미지 이름(예: "캡처 이미지", "증빙 이미지")
    */

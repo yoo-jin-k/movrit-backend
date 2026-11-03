@@ -7,6 +7,9 @@ build/
 
 # Development file uploads are runtime data, not source code.
 uploads/
+# 비공개 업로드 위치(구매 인증·채팅 첨부 등)와 캠페인 비공개 이미지 위치도 실행 데이터입니다.
+uploads-private/
+uploads-campaign-private/
 
 ### STS ###
 .apt_generated

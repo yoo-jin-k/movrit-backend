@@ -18,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * 채팅 첨부 파일을 저장합니다(uploads/chat-attachments).
+ * 채팅 첨부 파일을 저장합니다(비공개 위치 app.private-upload-dir 아래 chat-attachments).
  *
  * <ul>
  *   <li>사진(JPG·PNG)은 실제 이미지로 읽어 다시 저장해 숨은 정보(촬영 위치 등)를 지웁니다.
@@ -45,7 +45,8 @@ public class ChatAttachmentStorage {
 
   private final Path root;
 
-  public ChatAttachmentStorage(@Value("${app.upload-dir:uploads}") String uploadDir) {
+  public ChatAttachmentStorage(
+      @Value("${app.private-upload-dir:uploads-private}") String uploadDir) {
     root = Path.of(uploadDir).toAbsolutePath().normalize().resolve("chat-attachments").normalize();
   }
 

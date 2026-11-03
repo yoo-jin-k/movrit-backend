@@ -23,7 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
  *
  * <ul>
  *   <li>JPG·PNG만 받고, 실제 이미지로 읽어 다시 저장해 숨은 메타데이터(촬영 위치 등)를 지웁니다.
- *   <li>원래 파일 이름은 쓰지 않고 새 무작위 이름으로 저장합니다(uploads/channel-evidence).
+ *   <li>원래 파일 이름은 쓰지 않고 새 무작위 이름으로 저장합니다(비공개 위치 app.private-upload-dir 아래 channel-evidence).
  *   <li>캡처는 운영자 확인용이라 공개 주소로 열리지 않고, 운영자 API로만 내려갑니다.
  * </ul>
  */
@@ -36,7 +36,8 @@ public class ChannelEvidenceStorage {
 
   private final Path root;
 
-  public ChannelEvidenceStorage(@Value("${app.upload-dir:uploads}") String uploadDir) {
+  public ChannelEvidenceStorage(
+      @Value("${app.private-upload-dir:uploads-private}") String uploadDir) {
     root = Path.of(uploadDir).toAbsolutePath().normalize().resolve("channel-evidence").normalize();
   }
 
