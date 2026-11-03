@@ -35,7 +35,7 @@ flowchart LR
 | 백엔드 | Spring Boot 4.1, Spring Security(JWT·OAuth2 Resource Server), Spring Data JPA, Lombok |
 | DB | PostgreSQL 18, Flyway(이력 테이블 `movrit_schema_history`), JPA `validate` |
 | API 문서 | springdoc-openapi(Swagger UI, /swagger-ui.html). 컨트롤러 Javadoc을 설명으로 사용, 서비스·운영자·이전 기능 그룹으로 나눔 |
-| 품질 | 백엔드 테스트 187개(JUnit 5·Mockito), 프론트 단위 테스트 201개(node:test), Spotless, ESLint·Prettier, Playwright 화면 점검 18종 |
+| 품질 | 백엔드 테스트 196개(JUnit 5·Mockito), 프론트 단위 테스트 201개(node:test), Spotless, ESLint·Prettier, Playwright 화면 점검 19종 |
 
 ## 2. 패키지와 책임
 
@@ -104,6 +104,8 @@ stateDiagram-v2
 | 미제출·노쇼를 업체가 마음대로 기록할 수 있음 | 마감 경과·예약 일시 경과 같은 조건을 서버에서 검사, 신청당 한 번(유니크) | 90일 2건이면 30일 신청 제한, 운영자 취소 가능 |
 | 예약 작업이 겹치면 마감 알림이 두 번 감 | `(application_id, stage)` 유니크 키 | 재시작·중복 실행에도 한 번만 |
 | 실시간 채팅에 WebSocket이 과함 | 보내기는 POST, 받기만 SSE. 25초마다 빈 이벤트 | 구현·디버깅이 단순, 프록시 타임아웃 회피 |
+| 비공개 파일(구매 인증·취소 증빙·채팅 첨부)이 `/uploads` 주소로 로그인 없이 열림 | 공개 이미지 폴더만 `/uploads`에 연결, 나머지는 권한 확인 API로만. ID를 바꿔 넣는 자동 점검 51항목 | 주소가 새도 열리지 않음 |
+| 비밀번호 대입 공격, 정지 계정 상태 노출 | 이메일 15분 5회·접속 주소 30회 실패 시 429, 계정 상태는 비밀번호가 맞을 때만 | 계정 존재·상태를 알아낼 수 없음 |
 | 확장자만 바꾼 파일이 첨부됨 | ImageIO로 실제 내용을 읽어 JPEG·PNG 확인, 깨진 파일은 400 | 서버 500 대신 안내 메시지 |
 | 신고된 글을 작성자가 지우면 판단 근거가 사라짐 | 신고할 때 대상 내용을 스냅샷, 같은 대상 신고 수 집계 | 원문이 없어도 처리 가능 |
 | 배송지 엑셀 하나에 라이브러리가 큼 | zip + XML로 xlsx 직접 작성. 리포트용으로 여러 시트·숫자 칸을 더해 `common.excel`로 옮김 | 의존성 없이 배송지·운영 리포트 엑셀 |

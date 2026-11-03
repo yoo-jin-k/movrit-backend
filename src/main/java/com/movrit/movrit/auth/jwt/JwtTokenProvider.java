@@ -24,6 +24,7 @@ public class JwtTokenProvider {
   public JwtTokenProvider(
       @Value("${jwt.secret}") String secret,
       @Value("${jwt.access-token-expiration}") long accessTokenExpiration) {
+    com.movrit.movrit.common.config.SecurityConfig.requireStrongJwtSecret(secret);
     SecretKey secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
 
     this.jwtEncoder = NimbusJwtEncoder.withSecretKey(secretKey).build();

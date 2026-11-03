@@ -17,6 +17,7 @@ import com.movrit.movrit.member.entity.Member;
 import com.movrit.movrit.member.service.MemberService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -58,21 +59,25 @@ public class AuthController {
   @Value("${app.frontend-base-url}")
   private String frontendBaseUrl;
 
-  private static final Set<String> ALLOWED_FRONTEND_BASE_URLS =
-      Set.of("http://localhost:5173", "http://localhost:5174");
+  /** 로그인 토큰을 넘겨줄 수 있는 프론트 주소 목록입니다(CORS 허용 주소와 같은 설정). */
+  @Value("${movrit.security.allowed-origins}")
+  private List<String> allowedFrontendOrigins;
 
   /** OAuth 토큰이 승인되지 않은 주소로 전달되지 않도록 시작 시점에 확인합니다. */
   @PostConstruct
   void validateFrontendBaseUrl() {
-    if (!ALLOWED_FRONTEND_BASE_URLS.contains(frontendBaseUrl)) {
+    if (!Set.copyOf(allowedFrontendOrigins.stream().map(String::trim).toList())
+        .contains(frontendBaseUrl)) {
       throw new IllegalStateException("허용되지 않은 프론트 OAuth 리디렉션 주소입니다.");
     }
   }
 
   /** 이메일과 비밀번호로 로그인하고 접근 토큰을 받습니다. 필수값·길이 같은 입력 형식을 먼저 검사한 뒤 처리합니다. */
   @PostMapping("/login")
-  public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-    return ResponseEntity.ok(authService.login(request));
+  public ResponseEntity<LoginResponse> login(
+      @Valid @RequestBody LoginRequest request, HttpServletRequest servletRequest) {
+    // 접속 주소는 실패 횟수 제한에만 씁니다. 프록시 뒤에서는 server.forward-headers-strategy 설정으로 실제 주소가 들어옵니다.
+    return ResponseEntity.ok(authService.login(request, servletRequest.getRemoteAddr()));
   }
 
   /**

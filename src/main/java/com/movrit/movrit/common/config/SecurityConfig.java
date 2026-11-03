@@ -18,6 +18,7 @@ import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -54,7 +55,10 @@ public class SecurityConfig {
                         "/api/auth/google/**",
                         // 로그인 전 비밀번호 찾기·재설정
                         "/api/auth/password/**",
-                        "/uploads/**",
+                        // 공개 이미지 폴더만 엽니다. 비공개 파일은 권한을 확인하는 API로만 내려갑니다.
+                        "/uploads/campaigns/**",
+                        "/uploads/brands/**",
+                        "/uploads/products/**",
                         // API 문서(Swagger) 화면과 원본 JSON. 끄려면 API_DOCS_ENABLED=false로 실행합니다.
                         "/swagger-ui.html",
                         "/swagger-ui/**",
@@ -118,21 +122,38 @@ public class SecurityConfig {
                     .permitAll()
                     .anyRequest()
                     .authenticated())
-        .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+        .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+        // 보안 헤더: 다른 사이트의 iframe에 넣지 못하게, 내용 형식 추측 금지(기본값)에 더해
+        // HTTPS로 접속한 브라우저는 1년 동안 HTTPS로만 오게 하고, 다른 사이트로 넘어갈 때 주소 전체를 보내지 않습니다.
+        .headers(
+            headers ->
+                headers
+                    .frameOptions(frame -> frame.deny())
+                    .httpStrictTransportSecurity(
+                        hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
+                    .referrerPolicy(
+                        referrer ->
+                            referrer.policy(
+                                ReferrerPolicyHeaderWriter.ReferrerPolicy
+                                    .STRICT_ORIGIN_WHEN_CROSS_ORIGIN)));
 
     return http.build();
   }
 
-  /** 로컬 프론트 주소(5173·5174)에서 오는 /api 요청만 허용합니다. */
+  /**
+   * 허용한 프론트 주소에서 오는 /api 요청만 받습니다. 주소는 movrit.security.allowed-origins(환경 변수 CORS_ALLOWED_ORIGINS,
+   * 쉼표로 구분)에서 받으며, 기본값은 로컬 프론트(5173·5174)입니다. 모든 주소를 허용하는 '*'는 쓸 수 없습니다.
+   */
   @Bean
-  public CorsConfigurationSource corsConfigurationSource() {
+  public CorsConfigurationSource corsConfigurationSource(
+      @Value("${movrit.security.allowed-origins}") List<String> allowedOrigins) {
+    List<String> origins =
+        allowedOrigins.stream().map(String::trim).filter(o -> !o.isEmpty()).toList();
+    if (origins.isEmpty() || origins.contains("*")) {
+      throw new IllegalStateException("CORS 허용 주소를 정확히 지정해 주세요('*'는 쓸 수 없습니다).");
+    }
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(
-        List.of(
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://127.0.0.1:5173",
-            "http://127.0.0.1:5174"));
+    configuration.setAllowedOrigins(origins);
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("*"));
     configuration.setAllowCredentials(true);
@@ -145,7 +166,18 @@ public class SecurityConfig {
   /** 요청에 담긴 JWT를 서버 비밀키(HS256)로 검증합니다. 서명이 다르거나 만료된 토큰은 거절됩니다. */
   @Bean
   public JwtDecoder jwtDecoder(@Value("${jwt.secret}") String secret) {
+    requireStrongJwtSecret(secret);
     SecretKey secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
     return NimbusJwtDecoder.withSecretKey(secretKey).macAlgorithm(MacAlgorithm.HS256).build();
+  }
+
+  /**
+   * HS256 서명 키는 32바이트(256비트) 이상이어야 합니다. 짧은 키로는 서버를 띄우지 않습니다. 키 값은 오류 문구·로그에 남기지 않습니다. 새 키 만들기 예:
+   * openssl rand -hex 32
+   */
+  public static void requireStrongJwtSecret(String secret) {
+    if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+      throw new IllegalStateException("JWT_SECRET은 32바이트 이상이어야 합니다(예: openssl rand -hex 32).");
+    }
   }
 }

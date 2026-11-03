@@ -103,4 +103,45 @@ class SecurityConfigTest {
 
     mockMvc.perform(get("/api/members/1/avatar?v=2")).andExpect(status().isNotFound());
   }
+
+  @Test
+  void privateUploadFoldersAreNotPublic() throws Exception {
+    // 구매 인증·취소 증빙·채팅 첨부·채널 확인 자료·프로필 사진은 /uploads 로 열 수 없습니다.
+    for (String folder :
+        List.of(
+            "purchase-proof",
+            "cancel-evidence",
+            "chat-attachments",
+            "channel-evidence",
+            "member-avatars")) {
+      mockMvc.perform(get("/uploads/" + folder + "/a.png")).andExpect(status().isUnauthorized());
+    }
+  }
+
+  @Test
+  void unknownOriginIsRejected() throws Exception {
+    mockMvc
+        .perform(
+            options("/api/collaborations/campaigns/search")
+                .header("Origin", "https://evil.example")
+                .header("Access-Control-Request-Method", "GET"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void securityHeadersAreSent() throws Exception {
+    mockMvc
+        .perform(get("/api/collaborations/campaigns/search"))
+        .andExpect(header().string("X-Frame-Options", "DENY"))
+        .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+        .andExpect(header().string("Referrer-Policy", "strict-origin-when-cross-origin"));
+  }
+
+  @Test
+  void shortJwtSecretIsRejected() {
+    org.assertj.core.api.Assertions.assertThatThrownBy(
+            () -> SecurityConfig.requireStrongJwtSecret("short-secret"))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageNotContaining("short-secret");
+  }
 }

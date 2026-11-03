@@ -62,9 +62,54 @@ class AuthServiceLoginTest {
             org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
   }
 
+  @Test
+  void suspendedAccountRevealsStatusOnlyWithCorrectPassword() throws Exception {
+    MemberRepository members = mock(MemberRepository.class);
+    PasswordEncoder encoder = mock(PasswordEncoder.class);
+    AuthService service = service(members, encoder);
+    Member suspended =
+        Member.builder().passwordHash("stored-hash").status(MemberStatus.SUSPENDED).build();
+    when(members.findByEmail("stop@movrit.local")).thenReturn(Optional.of(suspended));
+    when(encoder.matches("Wrong1234", "stored-hash")).thenReturn(false);
+    when(encoder.matches("Right1234", "stored-hash")).thenReturn(true);
+
+    // 비밀번호가 틀리면 다른 계정과 같은 401이라 정지 여부를 알 수 없습니다.
+    assertThat(
+            unauthorized(() -> service.login(request("stop@movrit.local", "Wrong1234")))
+                .getStatusCode())
+        .isEqualTo(HttpStatus.UNAUTHORIZED);
+    assertThat(
+            unauthorized(() -> service.login(request("stop@movrit.local", "Right1234")))
+                .getStatusCode())
+        .isEqualTo(HttpStatus.FORBIDDEN);
+  }
+
+  @Test
+  void fiveFailuresBlockTheEmailEvenWithCorrectPassword() throws Exception {
+    MemberRepository members = mock(MemberRepository.class);
+    PasswordEncoder encoder = mock(PasswordEncoder.class);
+    AuthService service = service(members, encoder);
+    Member member =
+        Member.builder().passwordHash("stored-hash").status(MemberStatus.ACTIVE).build();
+    when(members.findByEmail("member@movrit.local")).thenReturn(Optional.of(member));
+    when(encoder.matches("Wrong1234", "stored-hash")).thenReturn(false);
+
+    for (int i = 0; i < 5; i++) {
+      unauthorized(() -> service.login(request("member@movrit.local", "Wrong1234"), "10.0.0.1"));
+    }
+    ResponseStatusException blocked =
+        unauthorized(() -> service.login(request("member@movrit.local", "Right1234"), "10.0.0.2"));
+    assertThat(blocked.getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+    verify(encoder, never()).matches("Right1234", "stored-hash");
+  }
+
   private static AuthService service(MemberRepository members, PasswordEncoder encoder) {
     return new AuthService(
-        members, encoder, mock(JwtTokenProvider.class), mock(RefreshTokenRepository.class));
+        members,
+        encoder,
+        mock(JwtTokenProvider.class),
+        mock(RefreshTokenRepository.class),
+        new LoginAttemptGuard());
   }
 
   private static LoginRequest request(String email, String password) throws Exception {

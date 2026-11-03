@@ -27,6 +27,11 @@ class AuthControllerRedirectTest {
   private AuthController controller(String frontendBaseUrl) {
     AuthController controller = new AuthController(null, null, null, null, null, null, null);
     ReflectionTestUtils.setField(controller, "frontendBaseUrl", frontendBaseUrl);
+    // 설정 기본값(application.properties의 movrit.security.allowed-origins)과 같은 허용 목록입니다.
+    ReflectionTestUtils.setField(
+        controller,
+        "allowedFrontendOrigins",
+        java.util.List.of("http://localhost:5173", "http://localhost:5174"));
     return controller;
   }
 }
