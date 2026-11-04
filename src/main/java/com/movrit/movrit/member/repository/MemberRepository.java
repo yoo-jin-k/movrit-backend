@@ -26,6 +26,9 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
   /** 닉네임을 바꿀 때 본인을 제외하고 같은 닉네임이 있는지 확인합니다. */
   boolean existsByNicknameAndIdNot(String nickname, Long id);
 
+  /** 다른 회원이 이미 인증한 휴대폰 번호인지 확인합니다(인증된 번호는 회원 한 명만 가집니다). */
+  boolean existsByPhoneAndPhoneVerifiedAtIsNotNullAndIdNot(String phone, Long id);
+
   /** 역할(운영자 등)과 상태로 회원 목록을 찾습니다. 운영자 알림 대상을 고를 때 씁니다. */
   List<Member> findAllByRoleAndStatus(MemberRole role, MemberStatus status);
 

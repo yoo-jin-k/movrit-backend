@@ -21,7 +21,7 @@ import sys
 DOMAINS = [
     ("01_회원_업체", "회원·인증·업체", [
         "member", "member_role", "member_social_account", "member_address", "member_channel_metric",
-        "refresh_token", "email_verification_challenge", "password_reset_token",
+        "refresh_token", "email_verification_challenge", "phone_verification_challenge", "password_reset_token",
         "member_channel_connection", "channel_bio_code", "seller_profile", "brand",
         "influencer_profile", "influencer_social_account",
     ]),

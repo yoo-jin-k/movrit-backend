@@ -63,6 +63,10 @@ public class Member extends BaseEntity {
   @Column(name = "email_verified_at")
   private LocalDateTime emailVerifiedAt;
 
+  /** 휴대폰 번호 인증을 마친 시각입니다. 연락처를 다른 번호로 바꾸면 비웁니다. */
+  @Column(name = "phone_verified_at")
+  private LocalDateTime phoneVerifiedAt;
+
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
@@ -76,11 +80,27 @@ public class Member extends BaseEntity {
   @Column(name = "avatar_version", nullable = false)
   private long avatarVersion;
 
-  /** 이름과 연락처를 바꿉니다. 닉네임은 값이 전달된 경우에만 바꿉니다. */
+  /** 이름과 연락처를 바꿉니다. 닉네임은 값이 전달된 경우에만 바꿉니다. 연락처 숫자가 바뀌면 휴대폰 인증을 다시 받아야 합니다. */
   public void updateProfile(String name, String phone, String nickname) {
     this.name = name;
+    if (!digits(phone).equals(digits(this.phone))) this.phoneVerifiedAt = null;
     this.phone = phone;
     if (nickname != null) this.nickname = nickname;
+  }
+
+  /** 휴대폰 번호 인증을 마쳤습니다. 인증한 번호(숫자만)를 연락처로 저장합니다. */
+  public void verifyPhone(String phoneDigits) {
+    this.phone = phoneDigits;
+    this.phoneVerifiedAt = LocalDateTime.now();
+  }
+
+  /** 휴대폰 번호 인증을 마쳤는지 확인합니다. */
+  public boolean isPhoneVerified() {
+    return phoneVerifiedAt != null;
+  }
+
+  private static String digits(String value) {
+    return value == null ? "" : value.replaceAll("\\D", "");
   }
 
   /** 새 비밀번호 해시로 교체합니다. 암호화는 서비스에서 끝낸 값을 받습니다. */
@@ -144,6 +164,7 @@ public class Member extends BaseEntity {
     this.nickname = "탈퇴회원" + id;
     this.name = "탈퇴한 회원";
     this.phone = null;
+    this.phoneVerifiedAt = null;
     this.passwordHash = null;
     this.emailVerifiedAt = null;
     this.avatarKey = null;

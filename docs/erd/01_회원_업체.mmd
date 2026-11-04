@@ -17,6 +17,7 @@ erDiagram
     varchar avatar_key
     varchar avatar_content_type
     bigint avatar_version
+    timestamp phone_verified_at
   }
   member_role {
     bigint id PK
@@ -69,6 +70,18 @@ erDiagram
     bigint id PK
     bigint member_id FK
     varchar email_snapshot
+    varchar code_hash
+    timestamp expires_at
+    timestamp consumed_at
+    timestamp invalidated_at
+    integer attempt_count
+    timestamp created_at
+    timestamp updated_at
+  }
+  phone_verification_challenge {
+    bigint id PK
+    bigint member_id FK
+    varchar phone
     varchar code_hash
     timestamp expires_at
     timestamp consumed_at
@@ -213,6 +226,7 @@ erDiagram
   member ||--o{ notification : "member_id"
   member ||--o{ orders : "member_id"
   member ||--o{ password_reset_token : "member_id"
+  member ||--o{ phone_verification_challenge : "member_id"
   member ||--o{ preorder_favorite : "member_id"
   member ||--o{ preorder_history : "changed_by_member_id"
   member ||--o{ preorder_interest : "member_id"

@@ -42,7 +42,9 @@ public final class AdminConsoleDtos {
       MemberRow member,
       String phoneMasked,
       List<String> brands,
-      List<ApplicationRow> recentApplications) {}
+      List<ApplicationRow> recentApplications,
+      // 휴대폰 번호 인증을 마친 시각입니다. 인증 전이면 null입니다.
+      LocalDateTime phoneVerifiedAt) {}
 
   /** 캠페인 신청 한 건의 요약입니다. */
   public record ApplicationRow(

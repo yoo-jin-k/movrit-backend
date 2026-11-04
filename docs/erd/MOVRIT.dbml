@@ -594,6 +594,7 @@ Table member {
   avatar_key "varchar(64)"
   avatar_content_type "varchar(20)"
   avatar_version "bigint"
+  phone_verified_at "timestamp"
 }
 
 Table member_address {
@@ -795,6 +796,19 @@ Table payment {
   failure_message "varchar(500)"
   created_at "timestamp"
   updated_at "timestamp"
+}
+
+Table phone_verification_challenge {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  phone "varchar(20)" [not null]
+  code_hash "varchar(100)" [not null]
+  expires_at "timestamp" [not null]
+  consumed_at "timestamp"
+  invalidated_at "timestamp"
+  attempt_count "integer"
+  created_at "timestamp" [not null]
+  updated_at "timestamp" [not null]
 }
 
 Table preorder {
@@ -1135,6 +1149,7 @@ Ref: orders.member_id > member.id
 Ref: orders.preorder_id > preorder.id
 Ref: password_reset_token.member_id > member.id
 Ref: payment.order_id > orders.id
+Ref: phone_verification_challenge.member_id > member.id
 Ref: preorder.product_id > product.id
 Ref: preorder_favorite.member_id > member.id
 Ref: preorder_favorite.preorder_id > preorder.id

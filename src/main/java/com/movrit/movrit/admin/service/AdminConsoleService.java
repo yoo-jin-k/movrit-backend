@@ -133,7 +133,8 @@ public class AdminConsoleService {
         applications.findAllByCreatorMemberIdOrderByIdDesc(memberId).stream()
             .limit(10)
             .map(this::applicationRow)
-            .toList());
+            .toList(),
+        member.getPhoneVerifiedAt());
   }
 
   // ───────────────────────── 업체 ─────────────────────────
