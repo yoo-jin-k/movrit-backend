@@ -1,0 +1,95 @@
+# 백엔드 자동 점검: 코드를 올리거나 PR을 열면 GitHub 서버에서 아래를 차례로 확인합니다.
+# 1) 올라온 변경에 비밀값이 섞였는지(.githooks/check-secrets.py, 값은 출력하지 않음)
+# 2) 코드 형식(Spotless)과 단위·통합 테스트 — 테스트용 PostgreSQL을 임시로 띄워 Flyway V1~최신을 처음부터 적용합니다
+# 3) 실행 파일(jar)과 Docker 이미지가 만들어지는지(이미지는 올리지 않고 빌드만 확인)
+# 비밀값은 저장소에 두지 않습니다. 테스트용 DB 비밀번호·JWT 키는 실행할 때마다 새로 만들고, 소셜 로그인 키는 빈 값으로 둡니다.
+name: Backend CI
+
+on:
+  push:
+    branches: [main, feature/brand]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: 비밀값 검사 · 형식 · 테스트
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: movrit
+          POSTGRES_USER: movrit_user
+          POSTGRES_PASSWORD: ci-${{ github.run_id }}
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U movrit_user -d movrit"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      DB_PASSWORD: ci-${{ github.run_id }}
+      KAKAO_CLIENT_ID: ''
+      GOOGLE_CLIENT_ID: ''
+      GOOGLE_CLIENT_SECRET: ''
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 올라온 변경의 비밀값 검사
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = "pull_request" ]; then
+            RANGE="origin/$BASE_REF...HEAD"
+          elif [ -n "$BEFORE" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            RANGE="$BEFORE..HEAD"
+          else
+            RANGE="HEAD~1..HEAD"
+          fi
+          echo "검사 범위: $RANGE"
+          python3 .githooks/check-secrets.py --diff "$RANGE"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: 테스트용 JWT 키 만들기(실행마다 새로, 로그에 가림)
+        run: |
+          KEY="$(openssl rand -hex 32)"
+          echo "::add-mask::$KEY"
+          echo "JWT_SECRET=$KEY" >> "$GITHUB_ENV"
+
+      - name: 형식 검사 · 테스트 · 실행 파일 만들기
+        run: ./gradlew --no-daemon spotlessCheck test bootJar
+
+      - name: 테스트 결과 보관(실패했을 때 원인 확인용)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-reports
+          path: build/reports/tests/test
+          retention-days: 7
+
+  docker:
+    name: Docker 이미지 빌드 확인
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: 이미지 빌드(올리지 않음)
+        run: docker build -t movrit-backend:ci .

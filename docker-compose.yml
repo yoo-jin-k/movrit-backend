@@ -1,0 +1,64 @@
+# MOVRIT 로컬 시연용 한 번에 실행하기(DB + 백엔드 + 화면).
+# 준비: 이 저장소(movrit-backend)와 movrit-frontend를 같은 폴더에 나란히 받고, docker.env.example을 .env로 복사해 비밀값을 직접 채웁니다.
+#   cp docker.env.example .env   # .env는 Git에 올라가지 않습니다
+#   docker compose up --build    # 처음엔 이미지를 만드느라 몇 분 걸립니다
+#   화면: http://localhost:8081  · API 문서: http://localhost:8080/swagger-ui/index.html
+# - 백엔드는 시연 설정(integration 프로필)으로 떠서 메일·문자 없이 인증번호를 화면에 보여 줍니다. 운영 배포용 설정이 아닙니다.
+# - DB는 비어 있는 상태로 시작하고, 첫 실행 때 Flyway가 V1~최신 구조를 만듭니다. 데이터는 db-data 볼륨에 남습니다.
+# - 끄기: docker compose down  · 데이터까지 지우기: docker compose down -v (되돌릴 수 없음)
+name: movrit
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: movrit
+      POSTGRES_USER: movrit_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD를 .env에 넣어 주세요}
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U movrit_user -d movrit']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: integration
+      INTEGRATION_DB_URL: jdbc:postgresql://db:5432/movrit
+      INTEGRATION_DB_USERNAME: movrit_user
+      INTEGRATION_DB_PASSWORD: ${DB_PASSWORD}
+      DB_PASSWORD: ${DB_PASSWORD}
+      INTEGRATION_SERVER_PORT: '8080'
+      INTEGRATION_UPLOAD_DIR: /data/uploads
+      PRIVATE_UPLOAD_DIR: /data/uploads-private
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET(32자 이상)을 .env에 넣어 주세요}
+      FRONTEND_BASE_URL: http://localhost:8081
+      CORS_ALLOWED_ORIGINS: http://localhost:8081
+      CHANNEL_CONNECT_REDIRECT_BASE: http://localhost:8081
+      GOOGLE_REDIRECT_URI: http://localhost:8081/api/auth/google/callback
+      KAKAO_REDIRECT_URI: http://localhost:8081/api/auth/kakao/callback
+      # 소셜 로그인 키는 선택입니다. 비워 두면 이메일 가입·로그인만 씁니다.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-}
+    volumes:
+      - upload-data:/data
+    ports:
+      - '8080:8080'
+
+  frontend:
+    build: ${FRONTEND_DIR:-../movrit-frontend}
+    depends_on:
+      - backend
+    ports:
+      - '8081:80'
+
+volumes:
+  db-data:
+  upload-data:

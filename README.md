@@ -206,6 +206,31 @@ MOVRIT_QA_PASSWORD=... node qa/portfolio/seed-portfolio.mjs
 
 비밀번호는 문서에 적지 않았습니다. 시연 순서는 [docs/portfolio/demo-scenario.md](docs/portfolio/demo-scenario.md)에 있습니다.
 
+## Docker로 한 번에 실행
+
+Java·Node·PostgreSQL을 따로 설치하지 않고 DB·백엔드·화면을 함께 띄웁니다. 이 저장소와 [movrit-frontend](https://github.com/yoo-jin-k/movrit-frontend)를 같은 폴더에 나란히 받습니다.
+
+```bash
+cp docker.env.example .env   # DB_PASSWORD, JWT_SECRET(32자 이상)을 직접 채웁니다. .env는 Git에 올라가지 않습니다
+docker compose up --build    # 처음엔 이미지를 만드느라 몇 분 걸립니다
+```
+
+- 화면 http://localhost:8081 · API 문서 http://localhost:8080/swagger-ui/index.html
+- 화면(nginx)이 `/api`·`/uploads` 요청을 백엔드로 넘겨, 화면과 API가 같은 주소를 씁니다.
+- 시연 설정(integration 프로필)이라 메일·문자 없이 인증번호를 화면에 보여 줍니다. 운영 배포 설정이 아닙니다.
+- DB는 빈 상태로 시작하고 Flyway가 V1~최신 구조를 만듭니다. 데이터는 볼륨에 남고, `docker compose down -v`는 데이터까지 지웁니다.
+- Apple Silicon 맥에서 colima를 쓰면 `colima start --arch aarch64 --vm-type vz`로 맥 칩에 맞는 가상 머신을 씁니다(인텔 흉내 모드는 느리고 Java 암호화 오류가 날 수 있습니다).
+
+## CI(자동 점검)
+
+GitHub Actions(`.github/workflows/backend-ci.yml`)가 `feature/brand`·`main`에 올리거나 PR을 열 때마다 GitHub 서버에서 돌립니다.
+
+1. 올라온 변경의 비밀값 검사(`.githooks/check-secrets.py --diff`, 값은 출력하지 않음)
+2. 형식(Spotless)과 테스트 전체 — 임시 PostgreSQL 18에 Flyway V1~최신을 처음부터 적용하고 앱 전체 구동까지 확인
+3. 실행 파일(jar)과 Docker 이미지 빌드 확인(이미지는 올리지 않음)
+
+테스트용 DB 비밀번호·JWT 키는 실행마다 새로 만들고, 소셜 로그인 키는 빈 값으로 둡니다. Dependabot(`.github/dependabot.yml`)이 매달 Gradle·Actions 버전을 확인해 `feature/brand`로 PR을 엽니다.
+
 ## API 문서
 
 서버를 켜면 http://localhost:18080/swagger-ui.html 에서 전체 API를 보고 직접 호출해 볼 수 있습니다.
@@ -236,4 +261,4 @@ MOVRIT_QA_PASSWORD=... node qa/portfolio/seed-portfolio.mjs
 
 - 실제 메일 발송(SMTP), 인스타그램·네이버 개발자 앱 등록 후 SNS 로그인 연결
 - SNS 공식 API로 콘텐츠 성과 자동 수집(지금은 직접 입력)
-- 배포(HTTPS, 업로드 파일 S3 이전, CI)
+- 배포(HTTPS, 업로드 파일 S3 이전). CI와 Docker 구성은 마쳤습니다

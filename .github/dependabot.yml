@@ -1,0 +1,21 @@
+# 의존성 업데이트 알림: 매달 한 번 Gradle 라이브러리와 GitHub Actions 버전을 확인해, 새 버전이 있으면 작업 브랜치(feature/brand)로 PR을 엽니다.
+# 보안 취약점이 알려진 라이브러리는 GitHub 저장소 설정의 Dependabot alerts로 따로 알려 줍니다.
+# PR은 CI(테스트)를 통과한 것만 확인 후 합칩니다. 한 번에 열리는 PR 수를 제한합니다.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    target-branch: feature/brand
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: '의존성'
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: feature/brand
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: 'CI'

@@ -6,6 +6,8 @@
 - 환경 파일(.env 등)과 인증서·키 파일은 이름만으로도 막습니다(값이 없는 예시 파일은 허용).
 - 테스트 코드의 'test'로 시작하는 가짜 값은 허용합니다.
 정말 비밀값이 아니라면 해당 줄 끝에 `secret-check: allow` 주석을 붙여 예외로 둘 수 있습니다.
+
+CI에서는 `--diff 이전커밋..지금커밋`으로 올라온 변경 전체를 같은 규칙으로 검사합니다.
 """
 import re
 import subprocess
@@ -40,14 +42,20 @@ def git(*args):
     return subprocess.run(["git", *args], capture_output=True, text=True, errors="replace").stdout
 
 
+# 기본은 커밋 직전(staged) 검사, CI는 --diff RANGE 로 커밋 범위를 검사합니다.
+if len(sys.argv) == 3 and sys.argv[1] == "--diff":
+    TARGET = [sys.argv[2]]
+else:
+    TARGET = ["--cached"]
+
 problems = []
-for path in git("diff", "--cached", "--name-only", "--diff-filter=ACMR").splitlines():
+for path in git("diff", *TARGET, "--name-only", "--diff-filter=ACMR").splitlines():
     if BLOCKED_FILE.search(path) and not ALLOWED_FILE.search(path):
         problems.append(f"{path}: 환경 파일·키 파일은 올릴 수 없습니다")
 
 file = ""
 line_no = 0
-for line in git("diff", "--cached", "--no-color", "--unified=0").splitlines():
+for line in git("diff", *TARGET, "--no-color", "--unified=0", "--diff-filter=ACMR").splitlines():
     if line.startswith("+++ "):
         file = line[6:] if line.startswith("+++ b/") else ""
         continue

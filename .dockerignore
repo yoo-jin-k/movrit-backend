@@ -1,0 +1,17 @@
+# 이미지에 넣지 않는 것: 빌드 산출물, 업로드 파일, 환경 파일(비밀값), 편집기·Git 기록
+.git
+.github
+.gradle
+.idea
+.vscode
+build
+out
+uploads
+uploads-private
+uploads-campaign-private
+docs
+qa
+*.env
+.env
+.env.*
+**/* 2.*
