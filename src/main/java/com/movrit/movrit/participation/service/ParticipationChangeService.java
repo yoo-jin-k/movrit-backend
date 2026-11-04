@@ -13,14 +13,17 @@ import com.movrit.movrit.notification.service.NotificationService;
 import com.movrit.movrit.participation.dto.ParticipationChangeDtos;
 import com.movrit.movrit.participation.entity.CampaignCancelRequest;
 import com.movrit.movrit.participation.entity.CampaignExtensionRequest;
+import com.movrit.movrit.participation.entity.CampaignPeriodExtension;
 import com.movrit.movrit.participation.entity.MemberCancelCount;
 import com.movrit.movrit.participation.repository.CampaignCancelRequestRepository;
 import com.movrit.movrit.participation.repository.CampaignExtensionRequestRepository;
+import com.movrit.movrit.participation.repository.CampaignPeriodExtensionRepository;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +37,9 @@ import org.springframework.web.server.ResponseStatusException;
  *   <li>신청 철회: 선정 발표 전 접수 상태에서 참여자가 바로 거둡니다. 취소 횟수를 남기지 않습니다(같은 캠페인에 다시 신청할 수는 없습니다).
  *   <li>참여 취소(단순 취소): 선정된 뒤 콘텐츠를 내기 전 참여자가 바로 취소합니다. 취소 횟수 1회가 남습니다.
  *   <li>협의 취소: 업체와 합의했거나 업체 사정일 때 사유와 증빙을 올리면 운영자가 확인합니다. 승인되면 취소 횟수 없이 취소합니다.
- *   <li>기간 연장: 참여자가 7·14일 연장을 요청하고 캠페인 업체(또는 운영자)가 승인하면 이 신청의 제출 마감만 늦춥니다. 신청당 1회입니다.
+ *   <li>기간 연장: 참여자가 7·14일 연장을 요청하고 캠페인 업체(또는 운영자)가 승인하면 이 신청의 체험 기간·제출 마감을 함께 늦춥니다. 신청당 1회입니다.
+ *   <li>직접 연장: 캠페인 업체나 운영자가 사정을 듣고 1~30일을 직접 늘립니다. 횟수 제한은 없습니다.
+ *   <li>모든 연장은 기록(campaign_period_extension)으로 남아 운영자 회원 상세에서 참여자의 연장 횟수로 보입니다.
  * </ul>
  */
 @Service
@@ -44,6 +49,7 @@ public class ParticipationChangeService {
   private final CampaignApplicationRepository applicationRepository;
   private final CampaignCancelRequestRepository cancelRequestRepository;
   private final CampaignExtensionRequestRepository extensionRepository;
+  private final CampaignPeriodExtensionRepository periodExtensionRepository;
   private final CancelCountService cancelCountService;
   private final CancelEvidenceStorage evidenceStorage;
   private final CampaignOwnershipService campaignOwnership;
@@ -259,10 +265,18 @@ public class ParticipationChangeService {
     }
     try {
       request.decide(approve, deciderMemberId, note);
-      // 체험 기간과 콘텐츠 제출 마감을 함께 늘립니다(이 신청만).
-      if (approve) application.extendPeriod(request.getDays(), request.extendedDeadline());
     } catch (IllegalStateException exception) {
       throw conflict(exception.getMessage());
+    }
+    // 체험 기간과 콘텐츠 제출 마감을 함께 늘리고(이 신청만) 연장 기록을 남깁니다.
+    if (approve) {
+      extendAndRecord(
+          application,
+          request.getDays(),
+          request.extendedDeadline(),
+          request.getReason(),
+          CampaignPeriodExtension.PARTICIPANT_REQUEST,
+          deciderMemberId);
     }
     notificationService.send(
         application.getCreator().getMember().getId(),
@@ -280,6 +294,191 @@ public class ParticipationChangeService {
         "ACTIVE",
         note);
     return view(request);
+  }
+
+  /**
+   * 캠페인 업체나 운영자가 참여자 한 명의 체험 기간·콘텐츠 마감을 직접 늘립니다(1~30일). 횟수 제한은 없지만 모두 기록되고, 참여자에게 사유와 함께 알립니다.
+   *
+   * @throws ResponseStatusException 권한이 없으면 403/404, 일수 오류는 400, 제출 뒤이거나 확인 중인 참여자 요청이 있으면 409
+   */
+  @Transactional
+  public ParticipationChangeDtos.ApplicationExtensions directExtend(
+      Long actorMemberId,
+      Long applicationId,
+      ParticipationChangeDtos.DirectExtensionRequest request) {
+    CampaignApplication application = getApplication(applicationId);
+    boolean admin = requireManager(actorMemberId, application);
+    int days = request.days();
+    if (days < CampaignPeriodExtension.MIN_DAYS || days > CampaignPeriodExtension.MAX_DAYS) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "연장 일수는 1일부터 30일까지 정할 수 있습니다.");
+    }
+    String blocked =
+        directExtensionBlock(
+            application, hasPendingRequest(applicationId), days, LocalDateTime.now());
+    if (blocked != null) throw conflict(blocked);
+    String reason = request.reason().trim();
+    extendAndRecord(
+        application,
+        days,
+        application.contentDeadline().plusDays(days),
+        reason,
+        admin ? CampaignPeriodExtension.ADMIN : CampaignPeriodExtension.SELLER,
+        actorMemberId);
+    notificationService.send(
+        participantId(application),
+        "CAMPAIGN_EXTENSION",
+        (admin ? "운영자가" : "업체가") + " 기간을 " + days + "일 늘렸습니다. 체험 기간과 콘텐츠 마감이 함께 늘어났습니다.",
+        application.getCampaign().getTitle() + " · " + reason,
+        "CAMPAIGN_APPLICATION",
+        applicationId);
+    audit(
+        actorMemberId,
+        "CAMPAIGN_PERIOD_EXTENDED",
+        application,
+        application.getStatus().name(),
+        days + "일 · " + reason);
+    return applicationExtensionsOf(application);
+  }
+
+  /** 신청 하나의 연장 현황·기록과 참여자의 연장 횟수입니다(캠페인 업체·운영자만). */
+  public ParticipationChangeDtos.ApplicationExtensions applicationExtensions(
+      Long viewerMemberId, Long applicationId) {
+    CampaignApplication application = getApplication(applicationId);
+    requireManager(viewerMemberId, application);
+    return applicationExtensionsOf(application);
+  }
+
+  /** 운영자용 전체 기간 연장 요청 목록입니다(확인 중인 요청 먼저, 최근 200건). */
+  public List<ParticipationChangeDtos.Extension> adminExtensions(Long adminMemberId) {
+    memberService.getAdmin(adminMemberId);
+    return extensionRepository.findAllForAdmin(PageRequest.of(0, 200)).stream()
+        .map(this::view)
+        .toList();
+  }
+
+  /** 운영자 회원 상세의 연장 횟수와 이력입니다(최근 50건). */
+  public ParticipationChangeDtos.MemberExtensionHistory memberExtensions(
+      Long adminMemberId, Long memberId) {
+    memberService.getAdmin(adminMemberId);
+    if (!memberRepository.existsById(memberId)) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다.");
+    }
+    List<CampaignPeriodExtension> logs =
+        periodExtensionRepository.findAllByMemberIdOrderByCreatedAtDesc(memberId);
+    long direct = logs.stream().filter(CampaignPeriodExtension::isDirect).count();
+    return new ParticipationChangeDtos.MemberExtensionHistory(
+        memberId,
+        logs.size(),
+        countSince(logs, LocalDateTime.now().minusDays(EXTENSION_COUNT_DAYS)),
+        logs.size() - direct,
+        direct,
+        extensionRepository.countByMemberIdAndStatus(memberId, CampaignExtensionRequest.REJECTED),
+        logs.stream().limit(50).map(this::log).toList());
+  }
+
+  /** 연장 횟수를 세는 기간(최근 1년)입니다. */
+  static final int EXTENSION_COUNT_DAYS = 365;
+
+  /**
+   * 업체·운영자 직접 연장을 막는 이유를 돌려줍니다. 막을 이유가 없으면 null입니다.
+   *
+   * <p>확인 중인 참여자 요청이 있으면 그 요청을 먼저 처리하게 합니다(승인할 때 마감 계산이 엇갈리지 않도록).
+   */
+  static String directExtensionBlock(
+      CampaignApplication application, boolean pendingRequest, int days, LocalDateTime now) {
+    if (!application.isInProgressBeforeSubmission()) {
+      return "콘텐츠를 내기 전인 선정·진행 중 참여만 기간을 늘릴 수 있습니다.";
+    }
+    LocalDateTime deadline = application.contentDeadline();
+    if (deadline == null) return "콘텐츠 제출 마감이 정해지지 않은 캠페인은 기간을 늘릴 수 없습니다.";
+    if (pendingRequest) return "참여자가 보낸 연장 요청을 먼저 승인하거나 반려해 주세요.";
+    if (!deadline.plusDays(days).isAfter(now)) return "늘린 마감도 이미 지난 시각입니다. 일수를 더 늘려 주세요.";
+    return null;
+  }
+
+  /** 기간을 늘리고 연장 기록 한 줄을 남깁니다. */
+  private void extendAndRecord(
+      CampaignApplication application,
+      int days,
+      LocalDateTime contentUntil,
+      String reason,
+      String source,
+      Long actorMemberId) {
+    LocalDateTime previousExperience = application.experienceEnd();
+    LocalDateTime previousDeadline = application.contentDeadline();
+    apply(application, value -> value.extendPeriod(days, contentUntil));
+    periodExtensionRepository.save(
+        new CampaignPeriodExtension(
+            application.getId(),
+            participantId(application),
+            days,
+            reason,
+            source,
+            actorMemberId,
+            previousExperience,
+            application.experienceEnd(),
+            previousDeadline,
+            application.contentDeadline()));
+  }
+
+  private ParticipationChangeDtos.ApplicationExtensions applicationExtensionsOf(
+      CampaignApplication application) {
+    Long id = application.getId();
+    List<CampaignPeriodExtension> participantLogs =
+        periodExtensionRepository.findAllByMemberIdOrderByCreatedAtDesc(participantId(application));
+    boolean pending = hasPendingRequest(id);
+    return new ParticipationChangeDtos.ApplicationExtensions(
+        id,
+        application.experienceEnd(),
+        application.contentDeadline(),
+        application.isInProgressBeforeSubmission()
+            && application.contentDeadline() != null
+            && !pending,
+        pending,
+        countSince(participantLogs, LocalDateTime.now().minusDays(EXTENSION_COUNT_DAYS)),
+        participantLogs.size(),
+        periodExtensionRepository.findAllByApplicationIdOrderByCreatedAtDesc(id).stream()
+            .map(this::log)
+            .toList());
+  }
+
+  private ParticipationChangeDtos.ExtensionLog log(CampaignPeriodExtension extension) {
+    CampaignApplication application = getApplication(extension.getApplicationId());
+    String byNickname =
+        extension.getExtendedByMemberId() == null
+            ? null
+            : memberRepository
+                .findById(extension.getExtendedByMemberId())
+                .map(member -> member.getNickname())
+                .orElse(null);
+    return new ParticipationChangeDtos.ExtensionLog(
+        extension.getId(),
+        extension.getApplicationId(),
+        application.getCampaign().getId(),
+        application.getCampaign().getTitle(),
+        application.getCampaign().getBrand().getName(),
+        extension.getDays(),
+        extension.getReason(),
+        extension.getSource(),
+        byNickname,
+        extension.getPreviousExperienceEnd(),
+        extension.getNewExperienceEnd(),
+        extension.getPreviousDeadline(),
+        extension.getNewDeadline(),
+        extension.getCreatedAt());
+  }
+
+  private static long countSince(List<CampaignPeriodExtension> logs, LocalDateTime since) {
+    return logs.stream().filter(log -> log.getCreatedAt().isAfter(since)).count();
+  }
+
+  private boolean hasPendingRequest(Long applicationId) {
+    return extensionRepository.existsByApplicationIdAndStatus(
+        applicationId, CampaignExtensionRequest.REQUESTED);
+  }
+
+  private static Long participantId(CampaignApplication application) {
+    return application.getCreator().getMember().getId();
   }
 
   /** 선정 발표 전 접수 상태인지 확인합니다. 선정 발표일이 없으면 접수 상태인 동안 철회할 수 있습니다. */
@@ -336,7 +535,9 @@ public class ParticipationChangeService {
         request.getStatus(),
         request.getDecisionNote(),
         request.getCreatedAt(),
-        request.getDecidedAt());
+        request.getDecidedAt(),
+        application.getCampaign().getBrand().getName(),
+        participantId(application));
   }
 
   private ParticipationChangeDtos.CancelRequest view(CampaignCancelRequest request) {
@@ -402,9 +603,11 @@ public class ParticipationChangeService {
     }
   }
 
-  private void requireManager(Long viewerId, CampaignApplication application) {
-    if (memberService.getMember(viewerId).isAdmin()) return;
+  /** 운영자이거나 캠페인 업체인지 확인합니다. 운영자면 true를 돌려줍니다. */
+  private boolean requireManager(Long viewerId, CampaignApplication application) {
+    if (memberService.getMember(viewerId).isAdmin()) return true;
     campaignOwnership.requireOwner(viewerId, application.getCampaign());
+    return false;
   }
 
   private CampaignApplication getOwnApplication(Long memberId, Long applicationId) {

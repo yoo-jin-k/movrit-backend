@@ -234,6 +234,21 @@ Table campaign_participant_rating {
   updated_at "timestamp" [not null]
 }
 
+Table campaign_period_extension {
+  id "bigint" [pk]
+  application_id "bigint" [not null]
+  member_id "bigint" [not null]
+  days "integer" [not null]
+  reason "varchar(500)" [not null]
+  source "varchar(30)" [not null]
+  extended_by_member_id "bigint"
+  previous_experience_end "timestamp"
+  new_experience_end "timestamp"
+  previous_deadline "timestamp" [not null]
+  new_deadline "timestamp" [not null]
+  created_at "timestamp" [not null]
+}
+
 Table campaign_purchase_proof {
   application_id "bigint" [pk]
   order_number "varchar(60)" [not null]
@@ -1041,6 +1056,9 @@ Ref: campaign_media_state.representative_asset_id > campaign_image_asset.id
 Ref: campaign_participant_rating.application_id > campaign_application.id
 Ref: campaign_participant_rating.member_id > member.id
 Ref: campaign_participant_rating.rated_by_member_id > member.id
+Ref: campaign_period_extension.application_id > campaign_application.id
+Ref: campaign_period_extension.extended_by_member_id > member.id
+Ref: campaign_period_extension.member_id > member.id
 Ref: campaign_purchase_proof.application_id > campaign_application.id
 Ref: campaign_purchase_review.campaign_id > collaboration_campaign.id
 Ref: campaign_shipment.application_id > campaign_application.id

@@ -94,6 +94,20 @@ erDiagram
     timestamp decided_at
     timestamp created_at
   }
+  campaign_period_extension {
+    bigint id PK
+    bigint application_id FK
+    bigint member_id FK
+    integer days
+    varchar reason
+    varchar source
+    bigint extended_by_member_id FK
+    timestamp previous_experience_end
+    timestamp new_experience_end
+    timestamp previous_deadline
+    timestamp new_deadline
+    timestamp created_at
+  }
   campaign_unselected_record {
     bigint campaign_id PK
     bigint seller_member_id FK
@@ -110,6 +124,9 @@ erDiagram
   campaign_application ||--o{ campaign_participant_rating : "application_id"
   member ||--o{ campaign_participant_rating : "member_id"
   member ||--o{ campaign_participant_rating : "rated_by_member_id"
+  campaign_application ||--o{ campaign_period_extension : "application_id"
+  member ||--o{ campaign_period_extension : "extended_by_member_id"
+  member ||--o{ campaign_period_extension : "member_id"
   campaign_application ||--o{ campaign_purchase_proof : "application_id"
   collaboration_campaign ||--o{ campaign_purchase_review : "campaign_id"
   campaign_application ||--o{ campaign_shipment : "application_id"

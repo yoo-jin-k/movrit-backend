@@ -121,6 +121,35 @@ public class ParticipationChangeController {
     return service.sellerExtensions(JwtMemberId.from(jwt));
   }
 
+  /** 캠페인 업체(또는 운영자)가 참여자 한 명의 체험 기간·콘텐츠 마감을 직접 늘립니다. 횟수 제한은 없고 모두 기록됩니다. */
+  @PostMapping("/api/campaigns/applications/{applicationId}/extensions")
+  public ParticipationChangeDtos.ApplicationExtensions directExtend(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable Long applicationId,
+      @Valid @RequestBody ParticipationChangeDtos.DirectExtensionRequest request) {
+    return service.directExtend(JwtMemberId.from(jwt), applicationId, request);
+  }
+
+  /** 신청 하나의 연장 현황과 기록, 참여자의 연장 횟수를 조회합니다(캠페인 업체·운영자). */
+  @GetMapping("/api/campaigns/applications/{applicationId}/extensions")
+  public ParticipationChangeDtos.ApplicationExtensions applicationExtensions(
+      @AuthenticationPrincipal Jwt jwt, @PathVariable Long applicationId) {
+    return service.applicationExtensions(JwtMemberId.from(jwt), applicationId);
+  }
+
+  /** 운영자가 전체 기간 연장 요청을 조회합니다(확인 중인 요청 먼저, 최근 200건). */
+  @GetMapping("/api/admin/extension-requests")
+  public List<ParticipationChangeDtos.Extension> adminExtensions(@AuthenticationPrincipal Jwt jwt) {
+    return service.adminExtensions(JwtMemberId.from(jwt));
+  }
+
+  /** 운영자가 회원 한 명의 기간 연장 횟수와 이력을 조회합니다. */
+  @GetMapping("/api/admin/members/{memberId}/extensions")
+  public ParticipationChangeDtos.MemberExtensionHistory memberExtensions(
+      @AuthenticationPrincipal Jwt jwt, @PathVariable Long memberId) {
+    return service.memberExtensions(JwtMemberId.from(jwt), memberId);
+  }
+
   /** 운영자가 협의 취소 요청 목록을 조회합니다(확인 중인 요청 먼저, 최근 200건). */
   @GetMapping("/api/admin/cancel-requests")
   public List<ParticipationChangeDtos.CancelRequest> adminCancelRequests(

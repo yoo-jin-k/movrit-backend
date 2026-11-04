@@ -212,6 +212,7 @@ erDiagram
   collaboration_campaign ||--o{ campaign_image_asset : "campaign_id"
   collaboration_campaign ||--o{ campaign_media_state : "campaign_id"
   campaign_application ||--o{ campaign_participant_rating : "application_id"
+  campaign_application ||--o{ campaign_period_extension : "application_id"
   campaign_application ||--o{ campaign_purchase_proof : "application_id"
   collaboration_campaign ||--o{ campaign_purchase_review : "campaign_id"
   campaign_application ||--o{ campaign_shipment : "application_id"

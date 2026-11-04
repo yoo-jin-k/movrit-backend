@@ -2,6 +2,7 @@ package com.movrit.movrit.participation.repository;
 
 import com.movrit.movrit.participation.entity.CampaignExtensionRequest;
 import java.util.List;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,4 +19,12 @@ public interface CampaignExtensionRequestRepository
           + " where a.id = e.applicationId and a.campaign.brand.seller.member.id = :sellerMemberId"
           + " order by case when e.status = 'REQUESTED' then 0 else 1 end, e.createdAt desc")
   List<CampaignExtensionRequest> findAllForSeller(@Param("sellerMemberId") Long sellerMemberId);
+
+  /** 운영자용 전체 연장 요청입니다. 확인 중인 요청을 먼저, 최근 순으로 보여 줍니다. */
+  @Query(
+      "select e from CampaignExtensionRequest e"
+          + " order by case when e.status = 'REQUESTED' then 0 else 1 end, e.createdAt desc")
+  List<CampaignExtensionRequest> findAllForAdmin(Pageable page);
+
+  long countByMemberIdAndStatus(Long memberId, String status);
 }

@@ -166,6 +166,8 @@ erDiagram
   member ||--o{ campaign_image_asset : "owner_member_id"
   member ||--o{ campaign_participant_rating : "member_id"
   member ||--o{ campaign_participant_rating : "rated_by_member_id"
+  member ||--o{ campaign_period_extension : "extended_by_member_id"
+  member ||--o{ campaign_period_extension : "member_id"
   member ||--o{ campaign_unselected_record : "seller_member_id"
   member ||--o{ campaign_visit_history : "actor_member_id"
   member ||--o{ chat_message : "sender_member_id"

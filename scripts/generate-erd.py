@@ -49,7 +49,7 @@ DOMAINS = [
         "campaign_shipment", "campaign_purchase_review", "campaign_purchase_proof",
         "campaign_visit_reservation", "campaign_deadline_reminder", "campaign_participant_rating",
         "member_penalty", "member_cancel_count", "campaign_cancel_request",
-        "campaign_extension_request", "campaign_unselected_record",
+        "campaign_extension_request", "campaign_period_extension", "campaign_unselected_record",
     ]),
     ("08_소통_신고", "채팅·커뮤니티·신고", [
         "chat_room", "chat_participant", "chat_message", "community_post", "community_comment",

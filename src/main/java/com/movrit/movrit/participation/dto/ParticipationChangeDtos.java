@@ -62,7 +62,9 @@ public final class ParticipationChangeDtos {
       String status,
       String decisionNote,
       LocalDateTime createdAt,
-      LocalDateTime decidedAt) {}
+      LocalDateTime decidedAt,
+      String brandName,
+      Long participantMemberId) {}
 
   /** 협의 취소 요청 한 건입니다. 증빙 이미지는 별도 주소로 내려받습니다. */
   public record CancelRequest(
@@ -91,4 +93,62 @@ public final class ParticipationChangeDtos {
 
   /** 예약 작업을 바로 실행한 결과입니다(운영자 점검용). */
   public record JobResult(int missedDeadlineCancelled, int unselectedRecorded) {}
+
+  /** 업체·운영자가 참여자 기간을 직접 늘리는 요청입니다. days는 1~30일이고 사유는 참여자에게도 보입니다. */
+  public record DirectExtensionRequest(
+      @NotNull Integer days, @NotBlank @Size(max = 500) String reason) {}
+
+  /**
+   * 기간 연장 기록 한 건입니다.
+   *
+   * @param source PARTICIPANT_REQUEST(참여자 요청 승인)·SELLER(업체 직접)·ADMIN(운영자 직접)
+   */
+  public record ExtensionLog(
+      Long id,
+      Long applicationId,
+      Long campaignId,
+      String campaignTitle,
+      String brandName,
+      int days,
+      String reason,
+      String source,
+      String extendedByNickname,
+      LocalDateTime previousExperienceEnd,
+      LocalDateTime newExperienceEnd,
+      LocalDateTime previousDeadline,
+      LocalDateTime newDeadline,
+      LocalDateTime createdAt) {}
+
+  /**
+   * 신청 하나의 연장 현황입니다(업체·운영자 참여자 상세).
+   *
+   * @param canExtend 지금 직접 연장할 수 있는지(콘텐츠 제출 전 진행 중, 확인 중인 참여자 요청 없음)
+   * @param participantYearCount 이 참여자가 최근 1년 동안 받은 연장 횟수(모든 캠페인)
+   */
+  public record ApplicationExtensions(
+      Long applicationId,
+      LocalDateTime experienceEnd,
+      LocalDateTime contentDeadline,
+      boolean canExtend,
+      boolean pendingRequest,
+      long participantYearCount,
+      long participantTotalCount,
+      List<ExtensionLog> logs) {}
+
+  /**
+   * 회원 한 명의 연장 이력입니다(운영자 회원 상세).
+   *
+   * @param yearCount 최근 1년 연장 횟수
+   * @param requestCount 참여자 요청으로 승인된 횟수
+   * @param directCount 업체·운영자가 직접 늘린 횟수
+   * @param rejectedRequestCount 반려된 참여자 요청 수
+   */
+  public record MemberExtensionHistory(
+      Long memberId,
+      long totalCount,
+      long yearCount,
+      long requestCount,
+      long directCount,
+      long rejectedRequestCount,
+      List<ExtensionLog> logs) {}
 }

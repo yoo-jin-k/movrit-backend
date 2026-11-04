@@ -16,6 +16,7 @@ import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.notification.service.NotificationService;
 import com.movrit.movrit.participation.entity.CampaignExtensionRequest;
+import com.movrit.movrit.participation.entity.CampaignPeriodExtension;
 import com.movrit.movrit.participation.entity.MemberCancelCount;
 import com.movrit.movrit.participation.entity.MemberPenalty;
 import com.movrit.movrit.participation.repository.MemberCancelCountRepository;
@@ -89,6 +90,62 @@ class ParticipationChangeRulesTest {
             ParticipationChangeService.canRequestExtension(
                 application, application.contentDeadline().plusMinutes(1)))
         .isFalse();
+  }
+
+  @Test
+  void directExtensionHasNoCountLimitButRespectsState() {
+    CampaignApplication application = application(CampaignApplicationStatus.ACTIVE, null);
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime deadline = application.contentDeadline();
+    // 업체·운영자 직접 연장은 몇 번이든 됩니다(두 번 연속 늘려도 막지 않습니다).
+    assertThat(ParticipationChangeService.directExtensionBlock(application, false, 3, now))
+        .isNull();
+    application.extendPeriod(3, deadline.plusDays(3));
+    assertThat(ParticipationChangeService.directExtensionBlock(application, false, 5, now))
+        .isNull();
+    application.extendPeriod(5, application.contentDeadline().plusDays(5));
+    assertThat(application.contentDeadline()).isEqualTo(deadline.plusDays(8));
+    // 확인 중인 참여자 요청이 있으면 먼저 처리해야 합니다.
+    assertThat(ParticipationChangeService.directExtensionBlock(application, true, 3, now))
+        .contains("먼저");
+    // 늘려도 마감이 이미 지난 시각이면 막습니다.
+    assertThat(
+            ParticipationChangeService.directExtensionBlock(
+                application, false, 1, application.contentDeadline().plusDays(2)))
+        .contains("지난");
+    // 콘텐츠를 낸 뒤나 취소된 참여는 늘릴 수 없습니다.
+    CampaignApplication cancelled = application(CampaignApplicationStatus.CANCELLED, null);
+    assertThat(ParticipationChangeService.directExtensionBlock(cancelled, false, 3, now))
+        .contains("진행 중");
+    // 기록 출처: 참여자 요청 승인은 직접 연장으로 세지 않습니다.
+    assertThat(
+            new CampaignPeriodExtension(
+                    1L,
+                    7L,
+                    7,
+                    "사유",
+                    CampaignPeriodExtension.PARTICIPANT_REQUEST,
+                    2L,
+                    null,
+                    null,
+                    deadline,
+                    deadline.plusDays(7))
+                .isDirect())
+        .isFalse();
+    assertThat(
+            new CampaignPeriodExtension(
+                    1L,
+                    7L,
+                    3,
+                    "사유",
+                    CampaignPeriodExtension.SELLER,
+                    2L,
+                    null,
+                    null,
+                    deadline,
+                    deadline.plusDays(3))
+                .isDirect())
+        .isTrue();
   }
 
   @Test
