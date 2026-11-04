@@ -103,6 +103,17 @@ erDiagram
     varchar review_note
     timestamp reviewed_at
     bigint reviewed_by_member_id FK
+    varchar verification_code
+  }
+  channel_bio_code {
+    bigint id PK
+    bigint member_id FK
+    varchar provider
+    varchar code
+    timestamp expires_at
+    integer check_count
+    timestamp used_at
+    timestamp created_at
   }
   seller_profile {
     bigint id PK
@@ -170,6 +181,7 @@ erDiagram
   member ||--o{ campaign_period_extension : "member_id"
   member ||--o{ campaign_unselected_record : "seller_member_id"
   member ||--o{ campaign_visit_history : "actor_member_id"
+  member ||--o{ channel_bio_code : "member_id"
   member ||--o{ chat_message : "sender_member_id"
   member ||--o{ chat_participant : "member_id"
   member ||--o{ chat_room : "owner_member_id"

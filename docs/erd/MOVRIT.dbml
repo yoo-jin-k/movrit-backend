@@ -322,6 +322,17 @@ Table campaign_visit_snapshot {
   captured_at "timestamp" [not null]
 }
 
+Table channel_bio_code {
+  id "bigint" [pk]
+  member_id "bigint" [not null]
+  provider "varchar(20)" [not null]
+  code "varchar(20)" [unique, not null]
+  expires_at "timestamp" [not null]
+  check_count "integer"
+  used_at "timestamp"
+  created_at "timestamp" [not null]
+}
+
 Table chat_message {
   id "bigint" [pk]
   room_id "bigint" [not null]
@@ -625,6 +636,7 @@ Table member_channel_connection {
   review_note "varchar(500)"
   reviewed_at "timestamp"
   reviewed_by_member_id "bigint"
+  verification_code "varchar(20)"
   indexes {
     (provider, external_id) [unique]
     (member_id, provider) [unique]
@@ -1074,6 +1086,7 @@ Ref: campaign_visit_history.campaign_id > collaboration_campaign.id
 Ref: campaign_visit_reservation.application_id > campaign_application.id
 Ref: campaign_visit_snapshot.application_id > campaign_application.id
 Ref: campaign_visit_snapshot.campaign_id > collaboration_campaign.id
+Ref: channel_bio_code.member_id > member.id
 Ref: chat_message.room_id > chat_room.id
 Ref: chat_message.sender_member_id > member.id
 Ref: chat_participant.member_id > member.id

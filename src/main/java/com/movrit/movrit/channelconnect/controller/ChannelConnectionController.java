@@ -1,6 +1,7 @@
 package com.movrit.movrit.channelconnect.controller;
 
 import com.movrit.movrit.channelconnect.dto.ChannelConnectDtos;
+import com.movrit.movrit.channelconnect.service.ChannelBioCodeService;
 import com.movrit.movrit.channelconnect.service.ChannelConnectionService;
 import com.movrit.movrit.common.security.JwtMemberId;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +31,8 @@ import org.springframework.web.multipart.MultipartFile;
  *   <li>POST /{provider}/start: SNS 로그인 주소 발급
  *   <li>POST /{provider}/complete: SNS에서 돌아온 인가 코드로 연결 완료
  *   <li>POST /{provider}/manual: 직접 등록(주소·팔로워 수·프로필 캡처, multipart). 운영자 확인 전까지 '확인 대기'
+ *   <li>GET·POST /{provider}/bio-code: 소개글 인증 코드 조회·받기(인스타그램·네이버 블로그)
+ *   <li>POST /{provider}/bio-code/verify: 소개글에서 코드 확인 → 확인됨(또는 운영자 확인 대기)
  *   <li>DELETE /{provider}: 연결 해제
  * </ul>
  */
@@ -39,6 +42,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/users/me/channel-connections")
 public class ChannelConnectionController {
   private final ChannelConnectionService service;
+  private final ChannelBioCodeService bioCodeService;
 
   /** 내 SNS 채널(인스타그램·유튜브·네이버 블로그)별 연결 상태를 조회합니다. */
   @GetMapping
@@ -72,6 +76,30 @@ public class ChannelConnectionController {
       @RequestPart("evidence") MultipartFile evidence) {
     return service.registerManually(
         JwtMemberId.from(jwt), provider, profileUrl, followerCount, evidence);
+  }
+
+  /** 지금 쓸 수 있는 소개글 인증 코드를 조회합니다. 없으면 204입니다. */
+  @GetMapping("/{provider}/bio-code")
+  public ResponseEntity<ChannelConnectDtos.BioCode> currentBioCode(
+      @AuthenticationPrincipal Jwt jwt, @PathVariable String provider) {
+    ChannelConnectDtos.BioCode code = bioCodeService.current(JwtMemberId.from(jwt), provider);
+    return code == null ? ResponseEntity.noContent().build() : ResponseEntity.ok(code);
+  }
+
+  /** 소개글 인증 코드를 받습니다. 쓸 수 있는 코드가 있으면 같은 코드를 돌려줍니다. */
+  @PostMapping("/{provider}/bio-code")
+  public ChannelConnectDtos.BioCode issueBioCode(
+      @AuthenticationPrincipal Jwt jwt, @PathVariable String provider) {
+    return bioCodeService.issue(JwtMemberId.from(jwt), provider);
+  }
+
+  /** 소개글에 넣은 인증 코드를 확인해 채널을 등록합니다. */
+  @PostMapping("/{provider}/bio-code/verify")
+  public ChannelConnectDtos.BioVerifyResult verifyBioCode(
+      @AuthenticationPrincipal Jwt jwt,
+      @PathVariable String provider,
+      @Valid @RequestBody ChannelConnectDtos.BioVerifyRequest request) {
+    return bioCodeService.verify(JwtMemberId.from(jwt), provider, request);
   }
 
   /** 내 SNS 채널 연결을 해제합니다. */

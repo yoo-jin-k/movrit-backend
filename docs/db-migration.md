@@ -27,6 +27,7 @@
 | 19 | `V19__experience_extension.sql` | 기간 연장이 승인된 신청의 체험 종료(experience_extended_until). 비어 있으면 캠페인 체험 종료를 씀 |
 | 20 | `V20__period_extension_log.sql` | 기간 연장 기록(campaign_period_extension). 참여자 요청 승인·업체 직접·운영자 직접 연장을 모두 한 줄씩 남겨 참여자 연장 횟수로 셈. 이미 승인된 요청은 옮겨 둠 |
 | 21 | `V21__extension_limit.sql` | 연장 횟수 기준: 연장 기록에 penalty_id, 패널티 종류에 EXTENSION_LIMIT 추가, 패널티 유일 조건을 신청·종류당 1건으로 변경 |
+| 22 | `V22__channel_bio_code.sql` | SNS 소개글 인증 코드(channel_bio_code: 회원·서비스별 코드, 24시간 유효, 확인 횟수·사용 시각), 연결 방법에 BIO_CODE 추가, 확인에 쓴 코드(verification_code) |
 
 - 적용 이력 테이블: `movrit_schema_history`
   - 8월 실험 때 남은 `flyway_schema_history` 와는 별개입니다. 기존 표는 사용하지 않으며 지우지 않았습니다.

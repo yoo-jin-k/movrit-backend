@@ -264,13 +264,22 @@ public class ChannelConnectionService {
 
   // ───────── 운영자 확인 ─────────
 
-  /** 운영자 '채널 확인' 목록입니다. 직접 등록한 채널만 보여주고, 확인 대기가 먼저 나옵니다. */
+  /**
+   * 운영자 '채널 확인' 목록입니다. 직접 등록한 채널과, 자동 확인이 안 되어 넘어온 소개글 코드 등록을 보여주고 확인 대기가 먼저 나옵니다. 소개글 코드로 자동 확인된
+   * 채널은 운영자가 볼 일이 없어 뺍니다.
+   */
   @Transactional(readOnly = true)
   public List<ChannelConnectDtos.ReviewItem> reviewList(Long adminMemberId) {
     memberService.getAdmin(adminMemberId);
     return repository
-        .findAllByConnectionMethodOrderByConnectedAtAsc(ChannelConnectionMethod.MANUAL)
+        .findAllByConnectionMethodInOrderByConnectedAtAsc(
+            List.of(ChannelConnectionMethod.MANUAL, ChannelConnectionMethod.BIO_CODE))
         .stream()
+        .filter(
+            value ->
+                value.getConnectionMethod() == ChannelConnectionMethod.MANUAL
+                    || value.getVerificationStatus() != ChannelVerificationStatus.VERIFIED
+                    || value.getReviewedByMemberId() != null)
         .sorted(
             java.util.Comparator.comparing(
                 (MemberChannelConnection value) ->
@@ -368,7 +377,7 @@ public class ChannelConnectionService {
   }
 
   /** 직접 등록한 수치를 채널 지표에 '미확인'으로 기록합니다. 수치가 없거나 지표가 없는 서비스면 건너뜁니다. */
-  private void recordMemberMetric(Long memberId, ChannelProvider provider, Long value) {
+  void recordMemberMetric(Long memberId, ChannelProvider provider, Long value) {
     if (provider.metricType() == null || value == null) return;
     LocalDateTime now = LocalDateTime.now();
     MemberChannelMetric metric =
@@ -390,7 +399,7 @@ public class ChannelConnectionService {
   }
 
   /** 계정 연결로 받은 팔로워·구독자 수를 채널 지표에 '확인됨'으로 기록합니다. 수치를 받지 못했으면 기록하지 않습니다. */
-  private void recordVerifiedMetric(Long memberId, ChannelProvider provider, Long value) {
+  void recordVerifiedMetric(Long memberId, ChannelProvider provider, Long value) {
     if (provider.metricType() == null || value == null) return;
     LocalDateTime now = LocalDateTime.now();
     MemberChannelMetric metric =

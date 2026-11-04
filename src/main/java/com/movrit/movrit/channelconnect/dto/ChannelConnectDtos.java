@@ -89,7 +89,9 @@ public final class ChannelConnectDtos {
       String reviewNote,
       LocalDateTime requestedAt,
       LocalDateTime reviewedAt,
-      boolean hasEvidence) {
+      boolean hasEvidence,
+      ChannelConnectionMethod method,
+      String verificationCode) {
     public static ReviewItem from(MemberChannelConnection value) {
       return new ReviewItem(
           value.getId(),
@@ -105,12 +107,33 @@ public final class ChannelConnectDtos {
           value.getReviewNote(),
           value.getConnectedAt(),
           value.getReviewedAt(),
-          value.getEvidenceKey() != null);
+          value.getEvidenceKey() != null,
+          value.getConnectionMethod(),
+          value.getVerificationCode());
     }
   }
 
   /** 운영자 반려 요청입니다. 사유는 회원에게 그대로 보여줍니다. */
   public record RejectRequest(@NotBlank @Size(max = 500) String reason) {}
+
+  /**
+   * 소개글 인증 코드입니다.
+   *
+   * @param checksLeft 이 코드로 남은 확인 횟수
+   * @param autoCheck 이 서비스를 지금 자동으로 확인할 수 있는지(인스타그램은 서버 키가 없으면 운영자 확인으로 넘어감)
+   */
+  public record BioCode(String code, LocalDateTime expiresAt, int checksLeft, boolean autoCheck) {}
+
+  /** 소개글 코드 확인 요청입니다. 팔로워 수는 운영자 확인으로 넘어갈 때(인스타그램 자동 확인 불가) 필요합니다. */
+  public record BioVerifyRequest(
+      @NotBlank @Size(max = 500) String profileUrl, Long followerCount) {}
+
+  /**
+   * 소개글 코드 확인 결과입니다.
+   *
+   * @param result VERIFIED(바로 확인됨) · PENDING_REVIEW(운영자 확인 대기)
+   */
+  public record BioVerifyResult(String result, String message, ProviderStatus status) {}
 
   /** 연결 시작 응답입니다. 화면은 이 주소로 이동해 SNS 로그인·동의를 진행합니다. */
   public record StartResponse(String authorizeUrl) {}

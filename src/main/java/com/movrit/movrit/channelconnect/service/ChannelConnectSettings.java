@@ -87,6 +87,28 @@ public class ChannelConnectSettings {
     return base + "/channel-connect/callback/" + provider.slug();
   }
 
+  /**
+   * 소개글 인증 코드를 인스타그램에서 자동으로 확인할 때 쓰는 우리 서비스의 인스타그램 비즈니스 계정 ID와 접근 토큰입니다(Business Discovery). 비어 있으면
+   * 인스타그램 소개글 코드는 운영자 확인으로 넘깁니다.
+   */
+  @Value("${movrit.channel-connect.instagram.discovery-account-id:}")
+  private String instagramDiscoveryAccountId;
+
+  @Value("${movrit.channel-connect.instagram.discovery-token:}")
+  private String instagramDiscoveryToken;
+
+  public boolean instagramDiscoveryConfigured() {
+    return notBlank(instagramDiscoveryAccountId) && notBlank(instagramDiscoveryToken);
+  }
+
+  public String instagramDiscoveryAccountId() {
+    return instagramDiscoveryAccountId;
+  }
+
+  public String instagramDiscoveryToken() {
+    return instagramDiscoveryToken;
+  }
+
   public String instagramGraphVersion() {
     return instagramGraphVersion;
   }

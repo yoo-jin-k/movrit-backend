@@ -27,6 +27,8 @@ import lombok.NoArgsConstructor;
  *   <li>로그인 연결(OAUTH): SNS가 알려준 계정 정보라 바로 '확인됨'입니다. 접근 토큰은 저장하지 않습니다.
  *   <li>직접 등록(MANUAL): 회원이 주소·팔로워 수·프로필 캡처를 올리고, 운영자가 확인하거나 반려합니다. 개인 인스타그램 계정처럼 로그인 연결이 안 되는 경우에
  *       씁니다.
+ *   <li>소개글 코드(BIO_CODE): 회원이 받은 코드를 소개글에 넣으면 서버가 확인해 바로 '확인됨'이 됩니다. 자동 확인이 안 되는 인스타그램 계정은 '확인 대기'로
+ *       두고 운영자가 소개글의 코드를 봅니다.
  * </ul>
  */
 @Entity
@@ -90,6 +92,10 @@ public class MemberChannelConnection extends BaseEntity {
   @Column(name = "reviewed_by_member_id")
   private Long reviewedByMemberId;
 
+  /** 소개글 코드로 등록했을 때 쓴 코드입니다. 운영자가 소개글과 대조할 때 보여줍니다. */
+  @Column(name = "verification_code", length = 20)
+  private String verificationCode;
+
   /** 로그인으로 (다시) 연결했을 때 최신 계정 정보로 바꾸고 '확인됨'으로 둡니다. 예전 직접 등록 캡처 키는 비웁니다. */
   public void refresh(
       String externalId, String accountName, String profileUrl, Long followerCount) {
@@ -101,6 +107,34 @@ public class MemberChannelConnection extends BaseEntity {
     this.connectionMethod = ChannelConnectionMethod.OAUTH;
     this.verificationStatus = ChannelVerificationStatus.VERIFIED;
     this.evidenceKey = null;
+    this.verificationCode = null;
+    clearReview();
+  }
+
+  /** 소개글에서 인증 코드를 확인했습니다. 바로 '확인됨'이고, 예전 직접 등록 캡처 키는 비웁니다. */
+  public void verifyByBioCode(
+      String externalId, String accountName, String profileUrl, Long followerCount, String code) {
+    applyBioCode(externalId, accountName, profileUrl, followerCount, code);
+    this.verificationStatus = ChannelVerificationStatus.VERIFIED;
+  }
+
+  /** 소개글을 자동으로 확인할 수 없어 운영자 확인을 요청합니다(인스타그램 개인 계정 등). */
+  public void requestBioCodeReview(
+      String externalId, String accountName, String profileUrl, Long followerCount, String code) {
+    applyBioCode(externalId, accountName, profileUrl, followerCount, code);
+    this.verificationStatus = ChannelVerificationStatus.PENDING;
+  }
+
+  private void applyBioCode(
+      String externalId, String accountName, String profileUrl, Long followerCount, String code) {
+    this.externalId = externalId;
+    this.accountName = accountName;
+    this.profileUrl = profileUrl;
+    this.followerCount = followerCount;
+    this.verificationCode = code;
+    this.evidenceKey = null;
+    this.connectedAt = LocalDateTime.now();
+    this.connectionMethod = ChannelConnectionMethod.BIO_CODE;
     clearReview();
   }
 
@@ -116,6 +150,7 @@ public class MemberChannelConnection extends BaseEntity {
     this.profileUrl = profileUrl;
     this.followerCount = followerCount;
     this.evidenceKey = evidenceKey;
+    this.verificationCode = null;
     this.connectedAt = LocalDateTime.now();
     this.connectionMethod = ChannelConnectionMethod.MANUAL;
     this.verificationStatus = ChannelVerificationStatus.PENDING;
@@ -141,7 +176,8 @@ public class MemberChannelConnection extends BaseEntity {
   }
 
   private void requirePendingManual() {
-    if (connectionMethod != ChannelConnectionMethod.MANUAL
+    // 직접 등록과, 자동 확인이 안 되어 넘어온 소개글 코드 등록만 운영자가 처리합니다.
+    if (connectionMethod == ChannelConnectionMethod.OAUTH
         || verificationStatus != ChannelVerificationStatus.PENDING) {
       throw new IllegalStateException("확인 대기 중인 직접 등록 채널만 처리할 수 있습니다.");
     }
