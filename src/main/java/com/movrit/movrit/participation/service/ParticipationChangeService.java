@@ -15,9 +15,11 @@ import com.movrit.movrit.participation.entity.CampaignCancelRequest;
 import com.movrit.movrit.participation.entity.CampaignExtensionRequest;
 import com.movrit.movrit.participation.entity.CampaignPeriodExtension;
 import com.movrit.movrit.participation.entity.MemberCancelCount;
+import com.movrit.movrit.participation.entity.MemberPenalty;
 import com.movrit.movrit.participation.repository.CampaignCancelRequestRepository;
 import com.movrit.movrit.participation.repository.CampaignExtensionRequestRepository;
 import com.movrit.movrit.participation.repository.CampaignPeriodExtensionRepository;
+import com.movrit.movrit.participation.repository.MemberPenaltyRepository;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,6 +42,7 @@ import org.springframework.web.server.ResponseStatusException;
  *   <li>기간 연장: 참여자가 7·14일 연장을 요청하고 캠페인 업체(또는 운영자)가 승인하면 이 신청의 체험 기간·제출 마감을 함께 늦춥니다. 신청당 1회입니다.
  *   <li>직접 연장: 캠페인 업체나 운영자가 사정을 듣고 1~30일을 직접 늘립니다. 횟수 제한은 없습니다.
  *   <li>모든 연장은 기록(campaign_period_extension)으로 남아 운영자 회원 상세에서 참여자의 연장 횟수로 보입니다.
+ *   <li>연장 횟수 기준: 1년 5회면 운영자 알림, 10회면 패널티와 30일 신청 제한({@link ExtensionCountService}).
  * </ul>
  */
 @Service
@@ -50,6 +53,8 @@ public class ParticipationChangeService {
   private final CampaignCancelRequestRepository cancelRequestRepository;
   private final CampaignExtensionRequestRepository extensionRepository;
   private final CampaignPeriodExtensionRepository periodExtensionRepository;
+  private final ExtensionCountService extensionCountService;
+  private final MemberPenaltyRepository penaltyRepository;
   private final CancelCountService cancelCountService;
   private final CancelEvidenceStorage evidenceStorage;
   private final CampaignOwnershipService campaignOwnership;
@@ -365,6 +370,8 @@ public class ParticipationChangeService {
     }
     List<CampaignPeriodExtension> logs =
         periodExtensionRepository.findAllByMemberIdOrderByCreatedAtDesc(memberId);
+    List<MemberPenalty> penalties =
+        penaltyRepository.findAllByMemberIdOrderByCreatedAtDesc(memberId);
     long direct = logs.stream().filter(CampaignPeriodExtension::isDirect).count();
     return new ParticipationChangeDtos.MemberExtensionHistory(
         memberId,
@@ -373,7 +380,14 @@ public class ParticipationChangeService {
         logs.size() - direct,
         direct,
         extensionRepository.countByMemberIdAndStatus(memberId, CampaignExtensionRequest.REJECTED),
-        logs.stream().limit(50).map(this::log).toList());
+        logs.stream().limit(50).map(this::log).toList(),
+        extensionCountService.countingCount(memberId),
+        ExtensionCountService.WARN_AT,
+        ExtensionCountService.LIMIT_AT,
+        penalties.stream()
+            .filter(p -> MemberPenalty.EXTENSION_LIMIT.equals(p.getPenaltyType()))
+            .count(),
+        ActivityService.restrictedUntil(penalties));
   }
 
   /** 연장 횟수를 세는 기간(최근 1년)입니다. */
@@ -419,13 +433,17 @@ public class ParticipationChangeService {
             application.experienceEnd(),
             previousDeadline,
             application.contentDeadline()));
+    // 연장 횟수 기준(5회 운영자 알림, 10회 패널티·신청 제한)을 적용합니다.
+    extensionCountService.afterExtension(
+        participantId(application), application.getId(), application.getCampaign().getTitle());
   }
 
   private ParticipationChangeDtos.ApplicationExtensions applicationExtensionsOf(
       CampaignApplication application) {
     Long id = application.getId();
+    Long participant = participantId(application);
     List<CampaignPeriodExtension> participantLogs =
-        periodExtensionRepository.findAllByMemberIdOrderByCreatedAtDesc(participantId(application));
+        periodExtensionRepository.findAllByMemberIdOrderByCreatedAtDesc(participant);
     boolean pending = hasPendingRequest(id);
     return new ParticipationChangeDtos.ApplicationExtensions(
         id,
@@ -439,7 +457,10 @@ public class ParticipationChangeService {
         participantLogs.size(),
         periodExtensionRepository.findAllByApplicationIdOrderByCreatedAtDesc(id).stream()
             .map(this::log)
-            .toList());
+            .toList(),
+        extensionCountService.countingCount(participant),
+        ExtensionCountService.WARN_AT,
+        ExtensionCountService.LIMIT_AT);
   }
 
   private ParticipationChangeDtos.ExtensionLog log(CampaignPeriodExtension extension) {

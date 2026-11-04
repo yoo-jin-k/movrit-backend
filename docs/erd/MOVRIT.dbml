@@ -247,6 +247,7 @@ Table campaign_period_extension {
   previous_deadline "timestamp" [not null]
   new_deadline "timestamp" [not null]
   created_at "timestamp" [not null]
+  penalty_id "bigint"
 }
 
 Table campaign_purchase_proof {
@@ -649,7 +650,7 @@ Table member_channel_metric {
 Table member_penalty {
   id "bigint" [pk]
   member_id "bigint" [not null]
-  application_id "bigint" [unique, not null]
+  application_id "bigint" [not null]
   penalty_type "varchar(20)" [not null]
   reason "varchar(500)" [not null]
   created_by_member_id "bigint" [not null]
@@ -657,6 +658,9 @@ Table member_penalty {
   revoked_at "timestamp"
   revoked_by_member_id "bigint"
   revoke_reason "varchar(500)"
+  indexes {
+    (application_id, penalty_type) [unique]
+  }
 }
 
 Table member_role {
@@ -1059,6 +1063,7 @@ Ref: campaign_participant_rating.rated_by_member_id > member.id
 Ref: campaign_period_extension.application_id > campaign_application.id
 Ref: campaign_period_extension.extended_by_member_id > member.id
 Ref: campaign_period_extension.member_id > member.id
+Ref: campaign_period_extension.penalty_id > member_penalty.id
 Ref: campaign_purchase_proof.application_id > campaign_application.id
 Ref: campaign_purchase_review.campaign_id > collaboration_campaign.id
 Ref: campaign_shipment.application_id > campaign_application.id

@@ -14,11 +14,13 @@ import static org.mockito.Mockito.when;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplication;
 import com.movrit.movrit.campaignapplication.entity.CampaignApplicationStatus;
 import com.movrit.movrit.collaboration.entity.Campaign;
+import com.movrit.movrit.member.repository.MemberRepository;
 import com.movrit.movrit.notification.service.NotificationService;
 import com.movrit.movrit.participation.entity.CampaignExtensionRequest;
 import com.movrit.movrit.participation.entity.CampaignPeriodExtension;
 import com.movrit.movrit.participation.entity.MemberCancelCount;
 import com.movrit.movrit.participation.entity.MemberPenalty;
+import com.movrit.movrit.participation.repository.CampaignPeriodExtensionRepository;
 import com.movrit.movrit.participation.repository.MemberCancelCountRepository;
 import com.movrit.movrit.participation.repository.MemberPenaltyRepository;
 import java.time.LocalDateTime;
@@ -194,6 +196,74 @@ class ParticipationChangeRulesTest {
         .send(eq(7L), eq("CAMPAIGN_PENALTY"), anyString(), anyString(), anyString(), anyLong());
     // 패널티로 바뀐 5회는 다시 세지 않습니다.
     assertThat(service.activeCount(7L)).isZero();
+  }
+
+  @Test
+  void extensionCountWarnsAtFiveAndLimitsAtTen() {
+    CampaignPeriodExtensionRepository logs = mock(CampaignPeriodExtensionRepository.class);
+    MemberPenaltyRepository penalties = mock(MemberPenaltyRepository.class);
+    MemberRepository members = mock(MemberRepository.class);
+    NotificationService notifications = mock(NotificationService.class);
+    List<CampaignPeriodExtension> saved = new ArrayList<>();
+    when(logs.findAllByMemberIdOrderByCreatedAtAsc(7L)).thenAnswer(invocation -> saved);
+    when(members.findAllByRoleAndStatus(any(), any())).thenReturn(List.of());
+    when(penalties.save(any()))
+        .thenAnswer(
+            invocation -> {
+              MemberPenalty penalty = invocation.getArgument(0);
+              ReflectionTestUtils.setField(penalty, "id", 700L);
+              return penalty;
+            });
+    ExtensionCountService service =
+        new ExtensionCountService(logs, penalties, members, notifications);
+    LocalDateTime deadline = LocalDateTime.now().plusDays(10);
+    List<ExtensionCountService.Outcome> outcomes = new ArrayList<>();
+    for (long i = 1; i <= 10; i++) {
+      saved.add(
+          new CampaignPeriodExtension(
+              i,
+              7L,
+              3,
+              "사유",
+              CampaignPeriodExtension.SELLER,
+              2L,
+              null,
+              null,
+              deadline,
+              deadline.plusDays(3)));
+      outcomes.add(service.afterExtension(7L, i, "캠페인"));
+    }
+    // 5회째에 알리고, 10회째에 패널티(신청 제한)로 바뀝니다. 나머지는 아무 일도 없습니다.
+    assertThat(outcomes.get(4)).isEqualTo(ExtensionCountService.Outcome.WARNED);
+    assertThat(outcomes.get(9)).isEqualTo(ExtensionCountService.Outcome.LIMITED);
+    assertThat(outcomes.stream().filter(o -> o == ExtensionCountService.Outcome.NONE).count())
+        .isEqualTo(8);
+    verify(penalties).save(any(MemberPenalty.class));
+    // 패널티로 바뀐 10회는 다시 세지 않습니다.
+    assertThat(service.countingCount(7L)).isZero();
+
+    // 연장 누적 패널티 하나만으로 30일 동안 신청을 막고, 운영자가 취소하면 풀립니다.
+    MemberPenalty limit = new MemberPenalty(7L, 10L, MemberPenalty.EXTENSION_LIMIT, "연장 10회", 7L);
+    LocalDateTime until = ActivityService.restrictedUntil(List.of(limit));
+    assertThat(until).isNotNull();
+    assertThat(until).isAfter(LocalDateTime.now().plusDays(29));
+    limit.revoke(1L, "확인 후 해제");
+    assertThat(ActivityService.restrictedUntil(List.of(limit))).isNull();
+    // 1년이 지난 연장은 세지 않습니다.
+    CampaignPeriodExtension old =
+        new CampaignPeriodExtension(
+            1L,
+            7L,
+            3,
+            "사유",
+            CampaignPeriodExtension.SELLER,
+            2L,
+            null,
+            null,
+            deadline,
+            deadline.plusDays(3));
+    ReflectionTestUtils.setField(old, "createdAt", LocalDateTime.now().minusDays(400));
+    assertThat(old.isCounting(LocalDateTime.now(), ExtensionCountService.VALID_DAYS)).isFalse();
   }
 
   private static CampaignApplication application(

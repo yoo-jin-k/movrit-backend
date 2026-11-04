@@ -26,6 +26,7 @@
 | 18 | `V18__participation_changes.sql` | 참여 조정. 신청별 연장 마감(content_deadline_extended_until), 선정 방식 `FIRST_COME`, 패널티 종류 `CANCEL_LIMIT`, 마감 알림 단계 `XD3`·`XD1`, 취소 횟수(member_cancel_count), 협의 취소 요청과 증빙(campaign_cancel_request), 기간 연장 요청(campaign_extension_request), 업체 미선정 기록(campaign_unselected_record) |
 | 19 | `V19__experience_extension.sql` | 기간 연장이 승인된 신청의 체험 종료(experience_extended_until). 비어 있으면 캠페인 체험 종료를 씀 |
 | 20 | `V20__period_extension_log.sql` | 기간 연장 기록(campaign_period_extension). 참여자 요청 승인·업체 직접·운영자 직접 연장을 모두 한 줄씩 남겨 참여자 연장 횟수로 셈. 이미 승인된 요청은 옮겨 둠 |
+| 21 | `V21__extension_limit.sql` | 연장 횟수 기준: 연장 기록에 penalty_id, 패널티 종류에 EXTENSION_LIMIT 추가, 패널티 유일 조건을 신청·종류당 1건으로 변경 |
 
 - 적용 이력 테이블: `movrit_schema_history`
   - 8월 실험 때 남은 `flyway_schema_history` 와는 별개입니다. 기존 표는 사용하지 않으며 지우지 않았습니다.

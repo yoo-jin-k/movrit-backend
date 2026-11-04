@@ -124,6 +124,9 @@ public final class ParticipationChangeDtos {
    *
    * @param canExtend 지금 직접 연장할 수 있는지(콘텐츠 제출 전 진행 중, 확인 중인 참여자 요청 없음)
    * @param participantYearCount 이 참여자가 최근 1년 동안 받은 연장 횟수(모든 캠페인)
+   * @param countingCount 횟수 기준으로 지금 세는 연장 수(1년 안, 패널티로 바뀌지 않은 것)
+   * @param warnAt 운영자에게 알리는 횟수(5)
+   * @param limitAt 패널티·신청 제한으로 바뀌는 횟수(10)
    */
   public record ApplicationExtensions(
       Long applicationId,
@@ -133,7 +136,10 @@ public final class ParticipationChangeDtos {
       boolean pendingRequest,
       long participantYearCount,
       long participantTotalCount,
-      List<ExtensionLog> logs) {}
+      List<ExtensionLog> logs,
+      long countingCount,
+      int warnAt,
+      int limitAt) {}
 
   /**
    * 회원 한 명의 연장 이력입니다(운영자 회원 상세).
@@ -142,6 +148,9 @@ public final class ParticipationChangeDtos {
    * @param requestCount 참여자 요청으로 승인된 횟수
    * @param directCount 업체·운영자가 직접 늘린 횟수
    * @param rejectedRequestCount 반려된 참여자 요청 수
+   * @param countingCount 횟수 기준으로 지금 세는 연장 수(1년 안, 패널티로 바뀌지 않은 것)
+   * @param limitPenaltyCount 지금까지 기록된 연장 누적 패널티 수(취소한 것 포함)
+   * @param restrictedUntil 신청 제한이 끝나는 시각(제한 중이 아니면 null)
    */
   public record MemberExtensionHistory(
       Long memberId,
@@ -150,5 +159,10 @@ public final class ParticipationChangeDtos {
       long requestCount,
       long directCount,
       long rejectedRequestCount,
-      List<ExtensionLog> logs) {}
+      List<ExtensionLog> logs,
+      long countingCount,
+      int warnAt,
+      int limitAt,
+      long limitPenaltyCount,
+      LocalDateTime restrictedUntil) {}
 }

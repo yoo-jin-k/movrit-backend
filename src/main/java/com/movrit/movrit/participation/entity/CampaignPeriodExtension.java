@@ -74,6 +74,10 @@ public class CampaignPeriodExtension {
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 
+  /** 이 연장이 포함되어 만들어진 연장 누적 패널티입니다. 비어 있으면 아직 패널티로 바뀌지 않았습니다. */
+  @Column(name = "penalty_id")
+  private Long penaltyId;
+
   public CampaignPeriodExtension(
       Long applicationId,
       Long memberId,
@@ -96,6 +100,16 @@ public class CampaignPeriodExtension {
     this.previousDeadline = previousDeadline;
     this.newDeadline = newDeadline;
     this.createdAt = LocalDateTime.now();
+  }
+
+  /** 연장 횟수 기준으로 세는 기록인지 확인합니다. 1년 안이고 아직 패널티로 바뀌지 않은 것만 셉니다. */
+  public boolean isCounting(LocalDateTime now, int validDays) {
+    return penaltyId == null && createdAt.isAfter(now.minusDays(validDays));
+  }
+
+  /** 연장 누적 패널티로 바뀌었음을 기록합니다. */
+  public void convertTo(Long penaltyId) {
+    this.penaltyId = penaltyId;
   }
 
   /** 업체·운영자가 직접 늘린 연장인지 확인합니다. */

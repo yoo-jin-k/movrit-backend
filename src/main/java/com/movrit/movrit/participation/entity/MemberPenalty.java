@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
  *   <li>NO_SUBMIT(미제출): 콘텐츠 제출 마감이 지났는데 제출하지 않은 경우
  *   <li>NO_SHOW(노쇼): 확정한 방문 예약 일시가 지났는데 방문하지 않은 경우
  *   <li>CANCEL_LIMIT(취소 누적): 1년 안의 취소 횟수가 5회 쌓인 경우(마지막 취소 신청에 남깁니다)
+ *   <li>EXTENSION_LIMIT(연장 누적): 1년 안의 기간 연장이 10회 쌓인 경우(마지막 연장 신청에 남기고, 30일 동안 신청을 막습니다)
  * </ul>
  *
  * <p>운영자가 취소(revoke)하면 등급·신청 제한 계산에서 빠집니다. 기록 자체는 지우지 않습니다.
@@ -32,6 +33,9 @@ public class MemberPenalty {
 
   /** 취소 횟수 5회가 쌓여 생긴 패널티입니다. */
   public static final String CANCEL_LIMIT = "CANCEL_LIMIT";
+
+  /** 기간 연장 10회가 쌓여 생긴 패널티입니다. 이 패널티 하나만으로 30일 동안 신청을 막습니다. */
+  public static final String EXTENSION_LIMIT = "EXTENSION_LIMIT";
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

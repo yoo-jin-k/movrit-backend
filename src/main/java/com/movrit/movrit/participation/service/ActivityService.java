@@ -32,6 +32,7 @@ import org.springframework.web.server.ResponseStatusException;
  *   <li>패널티: 업체가 미제출(콘텐츠 마감 경과)·노쇼(확정한 방문 일시 경과)를 기록하면 그 참여는 취소되고 참여자에게 알립니다.
  *   <li>신청 제한: 최근 90일 동안 유효한 패널티가 2회 이상이면 마지막 패널티일로부터 30일 동안 새 캠페인에 신청할 수 없습니다. 운영자가 패널티를 취소하면 계산에서
  *       빠집니다.
+ *   <li>연장 누적 패널티(기간 연장 1년 10회)는 이 패널티 하나만으로 기록일로부터 30일 동안 신청을 막습니다({@link ExtensionCountService}).
  *   <li>평가: 완료한 참여자에게 업체가 1~5점과 메모를 남깁니다. 점수 평균은 다른 업체에게 보이고, 메모는 남긴 업체만 봅니다.
  * </ul>
  */
@@ -87,7 +88,7 @@ public class ActivityService {
         restrictedUntil(penaltyRepository.findAllByMemberIdOrderByCreatedAtDesc(memberId));
     if (until != null) {
       throw new ResponseStatusException(
-          HttpStatus.CONFLICT, "패널티가 쌓여 " + until.toLocalDate() + "까지 새 캠페인에 신청할 수 없습니다.");
+          HttpStatus.CONFLICT, "패널티로 " + until.toLocalDate() + "까지 새 캠페인에 신청할 수 없습니다.");
     }
   }
 
@@ -133,7 +134,9 @@ public class ActivityService {
     } else {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "패널티 종류를 확인해 주세요.");
     }
-    if (penaltyRepository.existsByApplicationId(applicationId)) {
+    // 연장·취소 누적 패널티는 따로 세므로, 같은 신청의 미제출·노쇼 기록만 중복으로 막습니다.
+    if (penaltyRepository.existsByApplicationIdAndPenaltyTypeIn(
+        applicationId, List.of(MemberPenalty.NO_SUBMIT, MemberPenalty.NO_SHOW))) {
       throw conflict("이미 패널티를 기록한 참여입니다.");
     }
     String label = MemberPenalty.NO_SUBMIT.equals(type) ? "미제출" : "노쇼";
@@ -264,9 +267,33 @@ public class ActivityService {
         CancelCountService.PENALTY_EVERY);
   }
 
-  /** 최근 90일 유효 패널티가 2회 이상이면 마지막 패널티일 + 30일까지 제한합니다. 제한이 끝났거나 없으면 null입니다. */
+  /**
+   * 신청 제한이 끝나는 시각입니다. 제한이 끝났거나 없으면 null입니다.
+   *
+   * <ul>
+   *   <li>최근 90일 유효 패널티가 2회 이상이면 마지막 패널티일 + 30일까지
+   *   <li>유효한 연장 누적 패널티가 있으면 그 기록일 + 30일까지
+   * </ul>
+   *
+   * 둘 다 걸리면 늦은 쪽까지 막습니다.
+   */
   static LocalDateTime restrictedUntil(List<MemberPenalty> penalties) {
     LocalDateTime now = LocalDateTime.now();
+    LocalDateTime byCount = restrictedByCount(penalties, now);
+    LocalDateTime byExtension =
+        penalties.stream()
+            .filter(MemberPenalty::isActive)
+            .filter(p -> MemberPenalty.EXTENSION_LIMIT.equals(p.getPenaltyType()))
+            .map(p -> p.getCreatedAt().plusDays(ExtensionCountService.RESTRICT_DAYS))
+            .filter(now::isBefore)
+            .max(LocalDateTime::compareTo)
+            .orElse(null);
+    if (byCount == null) return byExtension;
+    if (byExtension == null) return byCount;
+    return byCount.isAfter(byExtension) ? byCount : byExtension;
+  }
+
+  private static LocalDateTime restrictedByCount(List<MemberPenalty> penalties, LocalDateTime now) {
     List<MemberPenalty> recent =
         penalties.stream()
             .filter(MemberPenalty::isActive)
