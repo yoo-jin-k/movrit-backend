@@ -132,6 +132,7 @@ class CampaignApplicationResponses {
         switch (metric.getMetricType()) {
           case "FOLLOWER_COUNT" -> "팔로워 수";
           case "AVERAGE_VISITORS" -> "평균 방문자 수";
+          case "DAILY_VISITORS" -> "일평균 방문자 수";
           case "SUBSCRIBER_COUNT" -> "구독자 수";
           default -> metric.getMetricType();
         },

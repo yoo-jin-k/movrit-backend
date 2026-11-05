@@ -112,4 +112,26 @@ public final class CampaignEligibilityDtos {
       MetricVerificationStatus verificationStatus,
       boolean satisfied,
       String reason) {}
+
+  /**
+   * 블로그 방문자 수 확인('지금 확인') 결과를 전달합니다. 본인에게만 돌려주는 응답입니다.
+   *
+   * @param averageVisitors 오늘을 뺀 최근 날짜들의 일평균 방문자 수(반올림)입니다.
+   * @param days 평균에 쓴 날짜 수입니다. 보통 4일입니다.
+   * @param dailyVisitors 평균에 쓴 날짜별 방문자 수입니다.
+   * @param measuredAt 서버가 확인한 시각입니다. 이 시각부터 하루 동안 신청 조건 판정에 씁니다.
+   */
+  public record VisitorCheckResponse(
+      Long averageVisitors,
+      int days,
+      List<DailyVisitors> dailyVisitors,
+      LocalDateTime measuredAt) {}
+
+  /**
+   * 날짜 하나의 방문자 수입니다.
+   *
+   * @param date 날짜입니다(한국 시간 기준).
+   * @param visitors 그날 방문자 수입니다.
+   */
+  public record DailyVisitors(java.time.LocalDate date, Long visitors) {}
 }

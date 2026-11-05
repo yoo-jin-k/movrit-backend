@@ -96,6 +96,14 @@ public class CampaignApplication extends BaseEntity {
   @Column(name = "eligibility_requirement_version")
   private Long eligibilityRequirementVersion;
 
+  /** 신청 당시 조건 지표 값입니다(예: 네이버 블로그 최근 일평균 방문자). 업체는 공개를 꺼리는 지표를 이 기록으로만 봅니다. */
+  @Column(name = "eligibility_metric_value")
+  private Long eligibilityMetricValue;
+
+  /** 신청 당시 조건 지표를 확인한 시각입니다. */
+  @Column(name = "eligibility_metric_measured_at")
+  private LocalDateTime eligibilityMetricMeasuredAt;
+
   @Column(name = "identity_verification_configured", nullable = false)
   private boolean identityVerificationConfigured;
 

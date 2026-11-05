@@ -8,8 +8,10 @@ import com.movrit.movrit.creator.repository.CreatorRepository;
 import com.movrit.movrit.member.service.MemberService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 /** 회원이 자기 채널 지표(팔로워 수 등)를 조회·입력하는 기능을 맡습니다. 본인 데이터만 다룹니다. */
 @Service
@@ -36,6 +38,11 @@ public class MemberChannelMetricService {
       Long memberId, CampaignEligibilityDtos.MetricSaveRequest request) {
     String channelType = request.channelType().trim().toUpperCase();
     String metricType = request.metricType().trim().toUpperCase();
+    if (CampaignEligibilityPolicyService.DAILY_VISITORS.equals(metricType)) {
+      // 방문자 수는 서버가 블로그 위젯에서 직접 읽은 값만 씁니다. 회원이 숫자를 직접 넣을 수 없습니다.
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "블로그 방문자 수는 신청 화면의 '지금 확인'으로만 기록됩니다.");
+    }
     MemberChannelMetric metric =
         repository
             .findByMemberIdAndChannelTypeAndMetricType(memberId, channelType, metricType)

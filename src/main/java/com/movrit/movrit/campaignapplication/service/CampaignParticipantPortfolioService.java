@@ -16,6 +16,7 @@ import com.movrit.movrit.campaigneligibility.dto.CampaignEligibilityDtos;
 import com.movrit.movrit.campaigneligibility.entity.MemberChannelMetric;
 import com.movrit.movrit.campaigneligibility.entity.MetricVerificationStatus;
 import com.movrit.movrit.campaigneligibility.repository.MemberChannelMetricRepository;
+import com.movrit.movrit.campaigneligibility.service.CampaignEligibilityPolicyService;
 import com.movrit.movrit.channelconnect.service.ChannelConnectionService;
 import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.creator.entity.Creator;
@@ -82,7 +83,13 @@ public class CampaignParticipantPortfolioService {
         application.getId(),
         application.getCampaign().getId(),
         profile(creator),
-        metrics.stream().map(this::metric).toList(),
+        // 블로그 방문자 수는 공개 범위를 좁히기 위해 지표 목록에서 빼고, 조건이 있던 신청에서만 신청 당시 값으로 보여줍니다.
+        metrics.stream()
+            .filter(
+                metric ->
+                    !CampaignEligibilityPolicyService.DAILY_VISITORS.equals(metric.getMetricType()))
+            .map(this::metric)
+            .toList(),
         answers(application),
         evaluate(application, metrics),
         completed.size(),
@@ -138,6 +145,21 @@ public class CampaignParticipantPortfolioService {
           knownNoRequirement
               ? "NO_REQUIREMENT_AT_APPLICATION"
               : "APPLICATION_SNAPSHOT_UNAVAILABLE");
+    }
+    if (CampaignEligibilityPolicyService.DAILY_VISITORS.equals(requirement.metricType())) {
+      // 방문자 수는 신청할 때 확인한 값만 업체에 보여줍니다. 회원의 현재 방문자 수는 읽지 않습니다.
+      Long atApplication = application.getEligibilityMetricValue();
+      String visitorReason =
+          atApplication == null
+              ? "CHANNEL_METRIC_REQUIRED"
+              : atApplication < requirement.minimumValue() ? "CHANNEL_METRIC_BELOW_MINIMUM" : null;
+      return new CampaignParticipantDtos.RequirementEvaluation(
+          requirement,
+          atApplication,
+          atApplication == null ? null : MetricVerificationStatus.VERIFIED,
+          visitorReason == null,
+          visitorReason,
+          "METRIC_AT_APPLICATION");
     }
     MemberChannelMetric actual =
         metrics.stream()
@@ -264,6 +286,7 @@ public class CampaignParticipantPortfolioService {
     return switch (metricType) {
       case "FOLLOWER_COUNT" -> "팔로워 수";
       case "AVERAGE_VISITORS" -> "평균 방문자 수";
+      case "DAILY_VISITORS" -> "일평균 방문자 수";
       case "SUBSCRIBER_COUNT" -> "구독자 수";
       default -> metricType;
     };

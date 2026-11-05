@@ -30,6 +30,7 @@
 | 22 | `V22__channel_bio_code.sql` | SNS 소개글 인증 코드(channel_bio_code: 회원·서비스별 코드, 24시간 유효, 확인 횟수·사용 시각), 연결 방법에 BIO_CODE 추가, 확인에 쓴 코드(verification_code) |
 | 23 | `V23__phone_verification.sql` | 휴대폰 번호 인증(phone_verification_challenge: 번호·인증번호 해시·만료·사용·무효화·틀린 횟수), member.phone_verified_at, 인증된 번호 회원 1명만(부분 유일 인덱스) |
 | 24 | `V24__campaign_admin_hidden.sql` | 운영자 숨김 표시(collaboration_campaign.admin_hidden_at): 숨긴 캠페인은 소유 업체·운영자·신청자만 상세를 볼 수 있음, 다시 공개하면 비움 |
+| 25 | `V25__application_metric_snapshot.sql` | 신청 당시 방문자 수 사본(campaign_application.eligibility_metric_value·eligibility_metric_measured_at): 블로그 일평균 방문자 조건이 있는 캠페인에 신청할 때 확인한 값을 남겨, 업체는 이 값만 보고 참여자는 신청 뒤 위젯을 다시 꺼도 됨 |
 
 - 적용 이력 테이블: `movrit_schema_history`
   - 8월 실험 때 남은 `flyway_schema_history` 와는 별개입니다. 기존 표는 사용하지 않으며 지우지 않았습니다.

@@ -158,6 +158,13 @@ public class ChannelConnectionService {
                         memberId, provider.channelType(), provider.metricType())
                     .ifPresent(MemberChannelMetric::markUnverified);
               }
+              if (provider == ChannelProvider.NAVER_BLOG) {
+                // 블로그를 해제하면 그 블로그로 확인한 방문자 수도 더는 판정에 쓰지 않습니다.
+                metricRepository
+                    .findByMemberIdAndChannelTypeAndMetricType(
+                        memberId, provider.channelType(), "DAILY_VISITORS")
+                    .ifPresent(MemberChannelMetric::markUnverified);
+              }
               auditLogService.record(
                   memberId,
                   "MEMBER_CHANNEL_DISCONNECTED",

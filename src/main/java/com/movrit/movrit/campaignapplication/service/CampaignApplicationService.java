@@ -174,6 +174,12 @@ public class CampaignApplicationService {
                 eligibility.requirement() == null ? null : json.write(eligibility.requirement()))
             .eligibilityRequirementVersion(
                 eligibility.requirement() == null ? null : eligibility.requirement().version())
+            // 조건이 있으면 신청 당시 지표 값과 확인 시각을 함께 남깁니다(업체는 이 기록만 봅니다).
+            .eligibilityMetricValue(
+                eligibility.metricEvaluation() == null
+                    ? null
+                    : eligibility.metricEvaluation().actualValue())
+            .eligibilityMetricMeasuredAt(eligibility.measuredAt())
             // 본인 인증 공급자가 정해지기 전에는 인증 완료로 간주하지 않습니다.
             .identityVerificationConfigured(false)
             .identityVerified(false)
@@ -662,6 +668,7 @@ public class CampaignApplicationService {
           case "CHANNEL_METRIC_REQUIRED" -> "캠페인 신청에 필요한 채널 지표를 먼저 등록해 주세요.";
           case "CHANNEL_METRIC_UNVERIFIED" -> "캠페인 신청에 필요한 채널 지표가 아직 확인되지 않았습니다.";
           case "CHANNEL_METRIC_BELOW_MINIMUM" -> "캠페인의 채널 지표 조건을 충족하지 못했습니다.";
+          case "CHANNEL_METRIC_STALE" -> "방문자 수를 확인한 지 하루가 지났습니다. 신청 영역에서 다시 확인해 주세요.";
           default -> "캠페인 신청 조건을 확인해 주세요.";
         };
     throw new ResponseStatusException(HttpStatus.CONFLICT, message);

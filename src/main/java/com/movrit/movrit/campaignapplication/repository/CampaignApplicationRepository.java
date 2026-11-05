@@ -202,10 +202,14 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
                  metric.verification_status AS verificationStatus
           FROM member_channel_metric metric
           WHERE metric.member_id IN (:memberIds)
+            AND metric.metric_type <> 'DAILY_VISITORS'
           ORDER BY metric.member_id, metric.id
           """,
       nativeQuery = true)
-  /** 여러 회원의 채널 지표를 한 번에 읽습니다. 참여자 목록에서 회원마다 따로 조회하지 않기 위해 사용합니다. */
+  /**
+   * 여러 회원의 채널 지표를 한 번에 읽습니다. 참여자 목록에서 회원마다 따로 조회하지 않기 위해 사용합니다. 블로그 방문자 수는 신청 당시 값만 상세에서 보여주므로 여기서
+   * 제외합니다.
+   */
   List<CreatorMetricSummary> findMetricSummariesByMemberIds(
       @Param("memberIds") Collection<Long> memberIds);
 }

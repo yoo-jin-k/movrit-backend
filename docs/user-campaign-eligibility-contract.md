@@ -51,13 +51,41 @@
 
 수정 요청에서 `applicationForm`을 보낼 때는 마지막 조회의 `expectedApplicationFormVersion`도 필수입니다. 다른 작업자가 먼저 신청서를 바꾸면 `409`를 반환하고 전체 수정 트랜잭션을 롤백합니다.
 
-현재 확정되어 지원하는 조합은 `INSTAGRAM` + `FOLLOWER_COUNT`입니다. 최소값은 브랜드가 캠페인마다 0 이상의 값으로 정하며 `500`은 테스트 예시일 뿐 기본값이나 플랫폼 공통 기준이 아닙니다. 네이버 방문자 조건은 집계기간 정책이 확정되기 전까지 저장을 거절합니다.
+지원하는 조합은 두 가지입니다. 최소값은 브랜드(또는 운영자)가 캠페인마다 0 이상의 값으로 정하며 `500`은 테스트 예시일 뿐 기본값이나 플랫폼 공통 기준이 아닙니다.
+
+| 조건 | channelType · metricType | measurementPeriod | 판정 값 |
+|---|---|---|---|
+| 인스타그램 팔로워 수 | `INSTAGRAM` · `FOLLOWER_COUNT` | 없음(입력하면 400) | 연결·확인된 팔로워 수 |
+| 네이버 블로그 일평균 방문자 | `NAVER_BLOG` · `DAILY_VISITORS` | `RECENT_4_DAYS`(비우면 서버가 채움) | 신청 직전에 확인한 최근 4일 평균(오늘 제외) |
+
+### 블로그 일평균 방문자 조건
+
+- 참여자는 평소 방문자 수를 공개하지 않아도 됩니다. 이 조건이 있는 캠페인에 신청할 때만 확인합니다.
+- 참여자가 신청 화면에서 '지금 확인'을 누르면 `POST /api/users/me/channel-profile/naver-blog-visitors`가 블로그 방문자 위젯의 공개 주소(`blog.naver.com/NVisitorgp4Ajax.nhn`)를 읽습니다. 오늘을 포함한 5일 치 중 아직 끝나지 않은 오늘(한국 시간)을 빼고 평균을 내어 반올림합니다.
+- 설정에서 네이버 블로그가 '확인됨'으로 연결되어 있어야 합니다(아니면 409). 위젯이 꺼져 있으면 409로 켜는 방법을 안내하고, 네이버 응답 실패는 503입니다.
+- 결과는 `member_channel_metric`(NAVER_BLOG · DAILY_VISITORS · RECENT_4_DAYS)에 `VERIFIED`로 남고, 확인 시각부터 24시간 동안만 판정에 씁니다. 지나면 `CHANNEL_METRIC_STALE`로 다시 확인을 요구합니다. 매일 자동으로 다시 읽지 않습니다.
+- 회원이 방문자 수를 직접 입력하는 저장(`PUT /api/users/me/channel-profile`)은 400으로 막습니다. 블로그 연결을 해제하면 방문자 수도 `UNVERIFIED`가 됩니다.
+- 신청이 접수되면 그 값과 확인 시각을 `campaign_application.eligibility_metric_value`·`eligibility_metric_measured_at`에 남깁니다. 신청 뒤 위젯을 꺼도 업체 판정은 바뀌지 않습니다.
+- 업체는 이 조건이 있던 신청의 상세에서만 신청 당시 값을 봅니다(`evaluationBasis = METRIC_AT_APPLICATION`). 참여자 목록·상세의 일반 지표 목록에는 방문자 수가 나오지 않습니다.
+
+### 운영자 조건 설정
+
+운영자는 `/admin/campaigns`에서 캠페인마다 조건을 정하거나 해제할 수 있습니다. 바꾸면 캠페인 업체에 알림을 보내고 바뀌기 전·후 조건을 감사 기록에 남깁니다. 버전 규칙은 업체와 같습니다.
+
+| 기능 | API |
+|---|---|
+| 조회 | `GET /api/admin/campaigns/{campaignId}/eligibility-requirement` |
+| 설정·수정 | `PUT /api/admin/campaigns/{campaignId}/eligibility-requirement` |
+| 해제 | `DELETE /api/admin/campaigns/{campaignId}/eligibility-requirement?expectedVersion=` |
+
+운영자 목록 응답(`GET /api/admin/campaigns`)의 각 줄에는 현재 조건(`requirement`, 없으면 `null`)이 함께 옵니다.
 
 조건 응답에는 `id`와 `version`이 포함됩니다. 수정 요청의 `requirement.expectedVersion`, 해제 요청의 `expectedRequirementVersion`이 최신 값과 다르면 `409`를 반환합니다. 삭제 후 재생성도 `id`가 달라지므로 신청 화면은 두 값을 함께 비교합니다.
 
 - 조건이 없으면 채널 프로필이나 지표 없이 신청할 수 있습니다.
 - 지표 조건은 `channelType`, `metricType`, `minimumValue`, 선택적 `measurementPeriod`로 구성합니다.
 - 조건이 있는데 대응 지표가 없으면 `CHANNEL_METRIC_REQUIRED`입니다.
+- 블로그 방문자 수를 확인한 지 24시간이 지났으면 `CHANNEL_METRIC_STALE`입니다.
 - 지표가 있지만 확인되지 않았으면 `CHANNEL_METRIC_UNVERIFIED`입니다.
 - 확인된 값이 최솟값보다 작으면 `CHANNEL_METRIC_BELOW_MINIMUM`입니다.
 - 모든 조건을 충족하면 해당 지표 때문에 차단하지 않습니다.

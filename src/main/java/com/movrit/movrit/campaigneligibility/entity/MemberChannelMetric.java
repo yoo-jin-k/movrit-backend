@@ -80,6 +80,17 @@ public class MemberChannelMetric extends BaseEntity {
     this.verificationStatus = MetricVerificationStatus.VERIFIED;
   }
 
+  /**
+   * 서버가 블로그 방문자 위젯에서 직접 읽은 방문자 평균을 기록합니다. 회원이 입력한 값이 아니므로 '확인됨(VERIFIED)'으로 두고, 집계 기간과 확인 시각을 함께
+   * 남깁니다.
+   */
+  public void recordVisitorCheck(Long value, String measurementPeriod, LocalDateTime measuredAt) {
+    this.value = value;
+    this.measurementPeriod = measurementPeriod;
+    this.measuredAt = measuredAt;
+    this.verificationStatus = MetricVerificationStatus.VERIFIED;
+  }
+
   /** 운영자가 직접 등록한 채널을 반려하면 그 수치도 '반려(REJECTED)'로 둡니다. */
   public void markRejected() {
     this.verificationStatus = MetricVerificationStatus.REJECTED;

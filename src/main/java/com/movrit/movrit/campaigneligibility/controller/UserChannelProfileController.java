@@ -2,6 +2,7 @@ package com.movrit.movrit.campaigneligibility.controller;
 
 import com.movrit.movrit.campaigneligibility.dto.CampaignEligibilityDtos;
 import com.movrit.movrit.campaigneligibility.service.MemberChannelMetricService;
+import com.movrit.movrit.channelconnect.service.NaverBlogVisitorService;
 import com.movrit.movrit.common.security.JwtMemberId;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/users/me/channel-profile")
 public class UserChannelProfileController {
   private final MemberChannelMetricService service;
+  private final NaverBlogVisitorService visitorService;
 
   /** 로그인 회원에게 연결된 정보를 조회합니다. 요청한 회원은 로그인 토큰으로 확인합니다. */
   @GetMapping
@@ -34,6 +37,16 @@ public class UserChannelProfileController {
       @AuthenticationPrincipal Jwt jwt,
       @Valid @RequestBody CampaignEligibilityDtos.MetricSaveRequest request) {
     return service.saveMine(memberId(jwt), request);
+  }
+
+  /**
+   * 연결한 네이버 블로그의 방문자 수를 지금 확인합니다. 방문자 조건이 있는 캠페인에 신청하기 전에 회원이 직접 누를 때만 호출합니다. 요청한 회원은 로그인 토큰으로
+   * 확인하며, 블로그 미연결·위젯 꺼짐은 409, 네이버 응답 실패는 503으로 돌려줍니다.
+   */
+  @PostMapping("/naver-blog-visitors")
+  public CampaignEligibilityDtos.VisitorCheckResponse checkNaverBlogVisitors(
+      @AuthenticationPrincipal Jwt jwt) {
+    return visitorService.checkMine(memberId(jwt));
   }
 
   /** 요청 본문의 회원 ID를 신뢰하지 않고 검증된 JWT subject를 업무 서비스의 회원 식별자로 변환합니다. */

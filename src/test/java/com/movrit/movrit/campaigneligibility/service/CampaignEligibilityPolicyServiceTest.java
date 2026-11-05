@@ -83,7 +83,7 @@ class CampaignEligibilityPolicyServiceTest {
 
     assertThatThrownBy(() -> service.save(1L, 10L, request))
         .isInstanceOf(ResponseStatusException.class)
-        .hasMessageContaining("현재 지원하는 캠페인 조건은 인스타그램 팔로워 수입니다");
+        .hasMessageContaining("지원하는 캠페인 조건은 인스타그램 팔로워 수와 네이버 블로그 일평균 방문자입니다");
   }
 
   @Test
@@ -107,6 +107,79 @@ class CampaignEligibilityPolicyServiceTest {
     assertThatThrownBy(() -> service.save(1L, 10L, request))
         .isInstanceOf(ResponseStatusException.class)
         .hasMessageContaining("캠페인 조건이 변경되었습니다");
+  }
+
+  @Test
+  void visitorConditionUsesRecentFourDayPeriod() {
+    assertThat(
+            CampaignEligibilityPolicyService.supportedPeriod("NAVER_BLOG", "DAILY_VISITORS", null))
+        .isEqualTo("RECENT_4_DAYS");
+    assertThatThrownBy(
+            () ->
+                CampaignEligibilityPolicyService.supportedPeriod(
+                    "NAVER_BLOG", "DAILY_VISITORS", "MONTHLY"))
+        .isInstanceOf(ResponseStatusException.class);
+    assertThatThrownBy(
+            () ->
+                CampaignEligibilityPolicyService.supportedPeriod(
+                    "INSTAGRAM", "FOLLOWER_COUNT", "RECENT_4_DAYS"))
+        .isInstanceOf(ResponseStatusException.class);
+  }
+
+  @Test
+  void visitorCountCheckedOverADayAgoMustBeCheckedAgain() {
+    stubVisitorRequirement();
+    when(metrics.findByMemberIdAndChannelTypeAndMetricType(1L, "NAVER_BLOG", "DAILY_VISITORS"))
+        .thenReturn(Optional.of(visitorMetric(500L, java.time.LocalDateTime.now().minusHours(25))));
+
+    assertThat(service.evaluate(1L, 10L).blockingReason()).isEqualTo("CHANNEL_METRIC_STALE");
+  }
+
+  @Test
+  void freshVisitorCountIsEvaluatedAndKeepsMeasuredAt() {
+    stubVisitorRequirement();
+    java.time.LocalDateTime checkedAt = java.time.LocalDateTime.now().minusMinutes(5);
+    when(metrics.findByMemberIdAndChannelTypeAndMetricType(1L, "NAVER_BLOG", "DAILY_VISITORS"))
+        .thenReturn(Optional.of(visitorMetric(120L, checkedAt)));
+
+    var result = service.evaluate(1L, 10L);
+    assertThat(result.blockingReason()).isNull();
+    assertThat(result.measuredAt()).isEqualTo(checkedAt);
+    assertThat(result.metricEvaluation().actualValue()).isEqualTo(120L);
+  }
+
+  @Test
+  void freshVisitorCountBelowMinimumIsBlocked() {
+    stubVisitorRequirement();
+    when(metrics.findByMemberIdAndChannelTypeAndMetricType(1L, "NAVER_BLOG", "DAILY_VISITORS"))
+        .thenReturn(Optional.of(visitorMetric(99L, java.time.LocalDateTime.now())));
+
+    assertThat(service.evaluate(1L, 10L).blockingReason())
+        .isEqualTo("CHANNEL_METRIC_BELOW_MINIMUM");
+  }
+
+  private void stubVisitorRequirement() {
+    Campaign campaign =
+        Campaign.builder().brand(Brand.builder().id(99L).name("테스트 브랜드").build()).id(10L).build();
+    CampaignEligibilityRequirement requirement =
+        CampaignEligibilityRequirement.builder()
+            .id(21L)
+            .campaign(campaign)
+            .channelType("NAVER_BLOG")
+            .metricType("DAILY_VISITORS")
+            .minimumValue(100L)
+            .measurementPeriod("RECENT_4_DAYS")
+            .build();
+    when(requirements.findByCampaignId(10L)).thenReturn(Optional.of(requirement));
+  }
+
+  private MemberChannelMetric visitorMetric(long value, java.time.LocalDateTime measuredAt) {
+    return MemberChannelMetric.builder()
+        .value(value)
+        .measurementPeriod("RECENT_4_DAYS")
+        .measuredAt(measuredAt)
+        .verificationStatus(MetricVerificationStatus.VERIFIED)
+        .build();
   }
 
   private void stubRequirement() {
