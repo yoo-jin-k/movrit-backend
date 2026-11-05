@@ -79,6 +79,10 @@ public interface CampaignApplicationRepository extends JpaRepository<CampaignApp
   /** 같은 회원이 이미 이 캠페인에 신청했는지 확인합니다(중복 신청 방지). */
   boolean existsByCampaignIdAndCreatorMemberId(Long campaignId, Long memberId);
 
+  /** 이 회원이 캠페인 신청을 특정 상태·사유 머리말로 끝냈는지 확인합니다(예: 취소 + "[신청 철회]"). */
+  boolean existsByCampaignIdAndCreatorMemberIdAndStatusAndCancellationReasonStartingWith(
+      Long campaignId, Long memberId, CampaignApplicationStatus status, String reasonPrefix);
+
   /** 콘텐츠 마감이 (now, until] 사이에 있는 진행 중 신청입니다(마감 알림용). */
   @org.springframework.data.jpa.repository.Query(
       "select a from CampaignApplication a join fetch a.campaign c join fetch a.creator cr"

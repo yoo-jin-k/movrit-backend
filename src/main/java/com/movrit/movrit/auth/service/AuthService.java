@@ -66,6 +66,9 @@ public class AuthService {
     if (member.getStatus() != MemberStatus.ACTIVE)
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이용할 수 없는 회원 상태입니다.");
 
+    // 소셜 로그인과 같이 마지막 로그인 시각을 남겨 운영자 회원 상세의 '최근 로그인'에 보이게 합니다.
+    member.updateLastLoginAt();
+
     // 3. 이메일/비밀번호가 맞으면 JWT 생성
     String accessToken = jwtTokenProvider.createAccessToken(member.getId(), member.getEmail());
 

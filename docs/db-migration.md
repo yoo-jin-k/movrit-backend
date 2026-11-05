@@ -29,6 +29,7 @@
 | 21 | `V21__extension_limit.sql` | 연장 횟수 기준: 연장 기록에 penalty_id, 패널티 종류에 EXTENSION_LIMIT 추가, 패널티 유일 조건을 신청·종류당 1건으로 변경 |
 | 22 | `V22__channel_bio_code.sql` | SNS 소개글 인증 코드(channel_bio_code: 회원·서비스별 코드, 24시간 유효, 확인 횟수·사용 시각), 연결 방법에 BIO_CODE 추가, 확인에 쓴 코드(verification_code) |
 | 23 | `V23__phone_verification.sql` | 휴대폰 번호 인증(phone_verification_challenge: 번호·인증번호 해시·만료·사용·무효화·틀린 횟수), member.phone_verified_at, 인증된 번호 회원 1명만(부분 유일 인덱스) |
+| 24 | `V24__campaign_admin_hidden.sql` | 운영자 숨김 표시(collaboration_campaign.admin_hidden_at): 숨긴 캠페인은 소유 업체·운영자·신청자만 상세를 볼 수 있음, 다시 공개하면 비움 |
 
 - 적용 이력 테이블: `movrit_schema_history`
   - 8월 실험 때 남은 `flyway_schema_history` 와는 별개입니다. 기존 표는 사용하지 않으며 지우지 않았습니다.

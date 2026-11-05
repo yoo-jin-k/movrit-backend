@@ -165,6 +165,10 @@ public class Campaign extends BaseEntity {
   @Column(nullable = false)
   private boolean open;
 
+  /** 운영자가 숨긴 시각입니다. 값이 있으면 소유 업체·운영자·신청자 외에는 상세를 볼 수 없습니다(업체 마감과 구분). */
+  @Column(name = "admin_hidden_at")
+  private LocalDateTime adminHiddenAt;
+
   /**
    * 업체가 모집 내용·참여 안내·일정을 한 번에 수정합니다. 선정 방식은 현재 값을 그대로 유지합니다. 검증과 버전 확인은 아래 선정 방식을 받는 update와 같습니다.
    */
@@ -332,9 +336,21 @@ public class Campaign extends BaseEntity {
     open = false;
   }
 
+  /** 운영자가 캠페인을 숨깁니다. 목록에서 내리고(open = false) 숨긴 시각을 남겨 상세 주소로도 일반 회원에게 보이지 않게 합니다. */
+  public void hideByAdmin() {
+    open = false;
+    adminHiddenAt = LocalDateTime.now();
+  }
+
+  /** 운영자가 숨긴 캠페인인지 확인합니다. */
+  public boolean isAdminHidden() {
+    return adminHiddenAt != null;
+  }
+
   /** 운영자가 숨긴(마감한) 캠페인을 다시 사용자 목록에 공개합니다(open = true). 모집 기간은 바꾸지 않습니다. */
   public void reopen() {
     open = true;
+    adminHiddenAt = null;
   }
 
   /** 방문형 캠페인의 방문 장소 이름과 주소를 바꿉니다. */

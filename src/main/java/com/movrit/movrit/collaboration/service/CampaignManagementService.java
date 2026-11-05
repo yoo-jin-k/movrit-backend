@@ -9,6 +9,8 @@ import com.movrit.movrit.collaboration.dto.CampaignManagementDtos;
 import com.movrit.movrit.collaboration.entity.Campaign;
 import com.movrit.movrit.collaboration.entity.CampaignSelectionMode;
 import com.movrit.movrit.collaboration.repository.CampaignRepository;
+import com.movrit.movrit.member.entity.Member;
+import com.movrit.movrit.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,31 @@ public class CampaignManagementService {
   private final CampaignApplicationFormRepository formRepository;
   private final CampaignOwnershipService campaignOwnership;
   private final AuditLogService auditLogService;
+  private final MemberRepository memberRepository;
+
+  /**
+   * 상세 화면에서 보는 사람을 확인해 캠페인 상세를 돌려줍니다. 운영자가 숨긴 캠페인은 소유 업체·운영자·이미 신청한 회원만 볼 수 있고, 그 밖의 회원과 비로그인
+   * 사용자에게는 존재를 드러내지 않도록 404로 응답합니다.
+   *
+   * @param viewerId 로그인한 회원 ID입니다. 비로그인이면 null
+   */
+  public CampaignManagementDtos.DetailResponse getDetailFor(Long campaignId, Long viewerId) {
+    Campaign campaign = getCampaign(campaignId);
+    if (campaign.isAdminHidden() && !canSeeHidden(campaign, viewerId))
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "캠페인을 찾을 수 없습니다.");
+    return getDetail(campaignId);
+  }
+
+  /** 숨긴 캠페인을 볼 수 있는 사람인지 확인합니다: 운영자, 소유 업체 회원, 이 캠페인에 신청한 회원입니다. */
+  private boolean canSeeHidden(Campaign campaign, Long viewerId) {
+    if (viewerId == null) return false;
+    if (memberRepository.findById(viewerId).map(Member::isAdmin).orElse(false)) return true;
+    if (campaign.getBrand() != null
+        && campaign.getBrand().getSeller() != null
+        && campaign.getBrand().getSeller().getMember() != null
+        && viewerId.equals(campaign.getBrand().getSeller().getMember().getId())) return true;
+    return applicationRepository.existsByCampaignIdAndCreatorMemberId(campaign.getId(), viewerId);
+  }
 
   /** 사용자에게 공개된 캠페인 상세를 조회합니다. 공개 조건을 만족하지 않으면 찾을 수 없음으로 응답하고, 신청서에 방문형이 있으면 방문 정보를 함께 보여줍니다. */
   public CampaignManagementDtos.DetailResponse getDetail(Long campaignId) {

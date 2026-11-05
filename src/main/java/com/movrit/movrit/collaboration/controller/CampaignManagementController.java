@@ -26,10 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class CampaignManagementController {
   private final CampaignManagementService service;
 
-  /** 캠페인 상세와 일정을 조회합니다. */
+  /**
+   * 캠페인 상세와 일정을 조회합니다. 로그인 없이 볼 수 있고, 로그인 토큰이 있으면 보는 사람을 확인합니다. 운영자가 숨긴 캠페인은 소유 업체·운영자·신청자에게만 보이고 그
+   * 밖에는 404입니다.
+   */
   @GetMapping("/{campaignId}")
-  public CampaignManagementDtos.DetailResponse detail(@PathVariable Long campaignId) {
-    return service.getDetail(campaignId);
+  public CampaignManagementDtos.DetailResponse detail(
+      @AuthenticationPrincipal Jwt jwt, @PathVariable Long campaignId) {
+    return service.getDetailFor(campaignId, jwt == null ? null : memberId(jwt));
   }
 
   /** 모집 현황(신청·선정·수락 인원)을 조회합니다. 로그인 없이 볼 수 있습니다. */

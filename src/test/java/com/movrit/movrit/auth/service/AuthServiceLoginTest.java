@@ -85,6 +85,30 @@ class AuthServiceLoginTest {
   }
 
   @Test
+  void successfulLoginRecordsLastLoginButFailedOrSuspendedDoNot() throws Exception {
+    MemberRepository members = mock(MemberRepository.class);
+    PasswordEncoder encoder = mock(PasswordEncoder.class);
+    AuthService service = service(members, encoder);
+    Member active =
+        Member.builder().passwordHash("stored-hash").status(MemberStatus.ACTIVE).build();
+    Member suspended =
+        Member.builder().passwordHash("stored-hash").status(MemberStatus.SUSPENDED).build();
+    when(members.findByEmail("member@movrit.local")).thenReturn(Optional.of(active));
+    when(members.findByEmail("stop@movrit.local")).thenReturn(Optional.of(suspended));
+    when(encoder.matches("Wrong1234", "stored-hash")).thenReturn(false);
+    when(encoder.matches("Right1234", "stored-hash")).thenReturn(true);
+
+    unauthorized(() -> service.login(request("member@movrit.local", "Wrong1234")));
+    assertThat(active.getLastLoginAt()).isNull();
+
+    service.login(request("member@movrit.local", "Right1234"));
+    assertThat(active.getLastLoginAt()).isNotNull();
+
+    unauthorized(() -> service.login(request("stop@movrit.local", "Right1234")));
+    assertThat(suspended.getLastLoginAt()).isNull();
+  }
+
+  @Test
   void fiveFailuresBlockTheEmailEvenWithCorrectPassword() throws Exception {
     MemberRepository members = mock(MemberRepository.class);
     PasswordEncoder encoder = mock(PasswordEncoder.class);

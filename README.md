@@ -59,14 +59,14 @@
 | 구분 | 사용 |
 |---|---|
 | 언어·프레임워크 | Java 17, Spring Boot 4.1, Spring Security(JWT, OAuth2 Resource Server), Spring Data JPA |
-| DB | PostgreSQL 18, Flyway(V1~V23) |
+| DB | PostgreSQL 18, Flyway(V1~V24) |
 | 인증 | 이메일 + JWT(액세스·리프레시), Google·Kakao 로그인, 계정 연결 |
 | 실시간 | SSE(채팅 메시지·읽음·입력 중·가림 이벤트) |
 | 테스트·품질 | JUnit 5, Mockito, Spotless(google-java-format) |
 | API 문서 | springdoc-openapi(Swagger UI), 메서드 Javadoc을 설명으로 사용 |
 | 프론트엔드 | React 19, React Router 7, Vite 8 → [movrit-frontend](https://github.com/yoo-jin-k/movrit-frontend) |
 
-규모(2026-11-04 기준): 컨트롤러 50개, API 296개, Java 파일 354개(약 3만 2천 줄), 테이블 74개, 외래 키 123개, 백엔드 테스트 214개.
+규모(2026-11-04 기준): 컨트롤러 50개, API 296개, Java 파일 354개(약 3만 2천 줄), 테이블 74개, 외래 키 123개, 백엔드 테스트 217개.
 
 ## 구조
 
@@ -75,7 +75,7 @@ flowchart LR
   FE["React (Vite)<br/>참여자·업체·운영자 화면"] -- "/api" --> SEC["Spring Security<br/>JWT 검증"]
   FE -. "SSE /api/chats/stream" .-> CHAT["ChatEventHub"]
   SEC --> API["REST 컨트롤러 48개"] --> SVC["서비스<br/>상태 전이·권한·검증"]
-  SVC --> DB[("PostgreSQL<br/>Flyway V1~V23")]
+  SVC --> DB[("PostgreSQL<br/>Flyway V1~V24")]
   SVC --> FS[("업로드 폴더<br/>이미지·영상·구매 증빙")]
   SVC --> CHAT
   JOB["예약 작업<br/>마감 알림 30분마다"] --> SVC

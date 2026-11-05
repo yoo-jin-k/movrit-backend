@@ -17,7 +17,7 @@ flowchart LR
     HUB["ChatEventHub<br/>SSE 연결 관리"]
     SCH["예약 작업<br/>마감 알림 · 프리오더 진행"]
   end
-  DB[("PostgreSQL 18<br/>테이블 74개 · Flyway V1~V23")]
+  DB[("PostgreSQL 18<br/>테이블 74개 · Flyway V1~V24")]
   FS[("업로드 폴더<br/>캠페인 이미지 · 채팅 첨부 · 구매 증빙")]
   OAUTH["Google · Kakao"]
 

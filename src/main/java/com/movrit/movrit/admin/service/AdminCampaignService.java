@@ -74,7 +74,7 @@ public class AdminCampaignService {
     if (!campaign.isOpen()) {
       throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 숨긴 캠페인입니다.");
     }
-    campaign.close();
+    campaign.hideByAdmin();
     String note = reason.trim();
     notifyBrand(campaign, "운영자가 캠페인을 마감했습니다.", "사유: " + note);
     auditLogService.record(

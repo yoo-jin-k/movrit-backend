@@ -87,7 +87,12 @@ public class CampaignApplicationService {
     boolean alreadyApplied =
         applicationRepository.existsByCampaignIdAndCreatorMemberId(campaignId, memberId);
     if (alreadyApplied) {
-      reasons.add("ALREADY_APPLIED");
+      // 선정 발표 전에 스스로 철회한 신청이면 '이미 신청'이 아니라 '철회한 캠페인'으로 알려 줍니다.
+      boolean withdrawn =
+          applicationRepository
+              .existsByCampaignIdAndCreatorMemberIdAndStatusAndCancellationReasonStartingWith(
+                  campaignId, memberId, CampaignApplicationStatus.CANCELLED, "[신청 철회]");
+      reasons.add(withdrawn ? "ALREADY_WITHDRAWN" : "ALREADY_APPLIED");
     }
     return new CampaignApplicationDtos.EligibilityResponse(
         campaignId,
@@ -157,7 +162,8 @@ public class CampaignApplicationService {
             .recipientName(
                 contactValue(request, CampaignApplicationDtos.ShippingContact::recipientName))
             .recipientPhone(
-                contactValue(request, CampaignApplicationDtos.ShippingContact::recipientPhone))
+                contactPhone(
+                    contactValue(request, CampaignApplicationDtos.ShippingContact::recipientPhone)))
             .postalCode(contactValue(request, CampaignApplicationDtos.ShippingContact::postalCode))
             .address1(contactValue(request, CampaignApplicationDtos.ShippingContact::address1))
             .address2(contactValue(request, CampaignApplicationDtos.ShippingContact::address2))
@@ -240,7 +246,7 @@ public class CampaignApplicationService {
                 value.revise(
                     request.message().trim(),
                     contact == null ? null : normalize(contact.recipientName()),
-                    contact == null ? null : normalize(contact.recipientPhone()),
+                    contact == null ? null : contactPhone(normalize(contact.recipientPhone())),
                     contact == null ? null : normalize(contact.postalCode()),
                     contact == null ? null : normalize(contact.address1()),
                     contact == null ? null : normalize(contact.address2()),
@@ -802,5 +808,25 @@ public class CampaignApplicationService {
 
   private String normalize(String value) {
     return value == null || value.isBlank() ? null : value.trim();
+  }
+
+  /**
+   * 배송 연락처를 010-1234-5678·02-123-4567 모양으로 맞춰 저장합니다. 업체 배송 화면과 엑셀에 같은 모양으로 보이게 하려는 것이며, 숫자·하이픈·공백
+   * 외의 글자가 있거나 자릿수가 전화번호와 맞지 않으면 입력한 그대로 둡니다.
+   */
+  static String contactPhone(String value) {
+    if (value == null) return null;
+    String text = value.trim();
+    if (!text.matches("[0-9\\-\\s]+")) return text;
+    String d = text.replaceAll("\\D", "");
+    if (d.startsWith("02") && (d.length() == 9 || d.length() == 10)) {
+      int middle = d.length() == 10 ? 4 : 3;
+      return "02-" + d.substring(2, 2 + middle) + "-" + d.substring(2 + middle);
+    }
+    if (!d.startsWith("02") && (d.length() == 10 || d.length() == 11)) {
+      int middle = d.length() == 11 ? 4 : 3;
+      return d.substring(0, 3) + "-" + d.substring(3, 3 + middle) + "-" + d.substring(3 + middle);
+    }
+    return text;
   }
 }
