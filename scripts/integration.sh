@@ -10,6 +10,7 @@
 #   기본 위치: 저장소 상위 폴더의 .movrit-integration.env (MOVRIT_ENV_FILE로 변경 가능)
 #   양식: scripts/integration.env.example
 # 값이 비어 있으면 JWT는 실행마다 임의 생성되고(재시작 시 로그아웃), 소셜 로그인은 비활성됩니다.
+# AI 초안 키(ANTHROPIC_API_KEY)는 환경 파일 또는 ~/.movrit/anthropic-key(권한 600)에서 읽습니다. 없으면 견본 초안으로 동작합니다.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -47,7 +48,9 @@ start() {
   if [ -f "$ENV_FILE" ]; then set -a; . "$ENV_FILE"; set +a; else echo "환경 파일이 없습니다: $ENV_FILE (소셜 로그인 비활성)"; fi
   : "${GOOGLE_CLIENT_ID:=local-unconfigured}" "${GOOGLE_CLIENT_SECRET:=local-unconfigured}" "${KAKAO_CLIENT_ID:=local-unconfigured}"
   [ -n "${JWT_SECRET:-}" ] || JWT_SECRET="$(openssl rand -hex 32)"
+  if [ -z "${ANTHROPIC_API_KEY:-}" ] && [ -f "$HOME/.movrit/anthropic-key" ]; then ANTHROPIC_API_KEY="$(cat "$HOME/.movrit/anthropic-key")"; fi
   export GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET KAKAO_CLIENT_ID KAKAO_CLIENT_SECRET="${KAKAO_CLIENT_SECRET:-}" JWT_SECRET DB_PASSWORD="${DB_PASSWORD:-}"
+  export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" # secret-check: allow (환경 변수·키 파일 값을 그대로 넘깁니다)
   (cd "$REPO" && nohup "${JAVA_HOME:+$JAVA_HOME/bin/}java" -jar "$RUN_DIR/movrit-run.jar" --spring.profiles.active=integration >"$LOG" 2>&1 &)
   for _ in $(seq 1 40); do
     sleep 1
@@ -55,6 +58,7 @@ start() {
       echo "서버가 시작되었습니다: http://localhost:$PORT (로그: $LOG)"
       [ "$GOOGLE_CLIENT_ID" = local-unconfigured ] && echo "  Google 로그인: 미설정" || echo "  Google 로그인: 설정됨"
       [ "$KAKAO_CLIENT_ID" = local-unconfigured ] && echo "  카카오 로그인: 미설정" || echo "  카카오 로그인: 설정됨"
+      [ -n "$ANTHROPIC_API_KEY" ] && echo "  AI 초안: Claude 사용" || echo "  AI 초안: 견본(키 없음)"
       return
     fi
     if grep -q "APPLICATION FAILED" "$LOG"; then echo "서버 시작에 실패했습니다. 로그를 확인해 주세요: $LOG"; exit 1; fi
