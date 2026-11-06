@@ -31,6 +31,7 @@
 | 23 | `V23__phone_verification.sql` | 휴대폰 번호 인증(phone_verification_challenge: 번호·인증번호 해시·만료·사용·무효화·틀린 횟수), member.phone_verified_at, 인증된 번호 회원 1명만(부분 유일 인덱스) |
 | 24 | `V24__campaign_admin_hidden.sql` | 운영자 숨김 표시(collaboration_campaign.admin_hidden_at): 숨긴 캠페인은 소유 업체·운영자·신청자만 상세를 볼 수 있음, 다시 공개하면 비움 |
 | 25 | `V25__application_metric_snapshot.sql` | 신청 당시 방문자 수 사본(campaign_application.eligibility_metric_value·eligibility_metric_measured_at): 블로그 일평균 방문자 조건이 있는 캠페인에 신청할 때 확인한 값을 남겨, 업체는 이 값만 보고 참여자는 신청 뒤 위젯을 다시 꺼도 됨 |
+| 26 | `V26__ai_usage_log.sql` | AI(LLM) 사용량 전용 테이블 `ai_usage_log`(회원·기능·모델·입력/출력 토큰·결과·시각). 운영 감사 기록과 분리해 하루 사용 횟수 제한과 토큰 집계에 씀. 요청 원문과 AI 답은 저장하지 않음 |
 
 - 적용 이력 테이블: `movrit_schema_history`
   - 8월 실험 때 남은 `flyway_schema_history` 와는 별개입니다. 기존 표는 사용하지 않으며 지우지 않았습니다.

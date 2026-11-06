@@ -16,17 +16,20 @@ AiDraftPanel(화면) → POST /api/campaigns/ai/draft → CampaignDraftService �
 | `ai/client/ClaudeLlmClient` | Anthropic Messages API 호출(연결 5초·응답 40초 제한), 응답의 text 조각과 usage 추출 |
 | `ai/client/SampleLlmClient` | 키 없이 개발·시연·테스트할 때 쓰는 고정 견본 |
 | `ai/config/AiConfig` | 키 유무로 연결 클래스를 고름 |
-| `ai/service/CampaignDraftService` | 권한·하루 횟수·프롬프트·답 형식 검사·사용 기록 |
+| `ai/service/CampaignDraftService` | 권한·하루 횟수·프롬프트·답 형식 검사·사용량 기록 |
+| `ai/entity/AiUsageLog`, `ai/repository/AiUsageLogRepository` | 사용량 전용 테이블 `ai_usage_log`(V26) |
 | `ai/controller/CampaignDraftController` | `POST /api/campaigns/ai/draft` |
 
 다른 회사 모델을 쓰려면 `LlmClient`를 구현한 클래스를 하나 추가하고 `AiConfig`에서 고르면 됩니다. 기능 코드·화면·테스트는 바꾸지 않습니다.
 
 ## 규칙
 
-- 권한: 승인된 업체 또는 운영자. 그 밖에는 403(업체 신청 정보가 없으면 404), 비로그인 401.
-- 하루 횟수: `movrit.ai.daily-limit`(기본 20회, 한국 시간 하루). 실제 AI를 부른 경우만 세고, 넘으면 429이며 AI를 부르지 않습니다.
-- 실패: AI 응답 실패(키 오류·과부하·시간 초과)는 503, 답이 정해진 JSON이 아니면 502. 비용이 생긴 호출은 답 형식과 상관없이 기록하고 횟수에 넣습니다.
-- 사용 기록: 감사 기록 `AI_CAMPAIGN_DRAFT`(대상 `AI_USAGE`)에 모델 이름과 입력·출력 토큰 수만 남깁니다. 요청 원문과 답은 남기지 않습니다.
+- 권한: 승인된 업체 또는 운영자. 그 밖의 회원은 403(업체 신청 정보가 없어도 403), 비로그인 401, 제목 없음 400.
+- 하루 횟수: `movrit.ai.daily-limit`(기본 20회, 한국 시간 0시 기준). 실제 AI를 부른 경우만 세고, 넘으면 429이며 AI를 부르지 않습니다.
+- 실패: AI 응답 실패는 503이며 종류별로 안내합니다. 키 오류(401·403)는 서버에 error 로그를 남기고 업체에는 "지금은 쓸 수 없습니다", 요청 많음·과부하(429·5xx)는 "잠시 후 다시"입니다. 외부 상태 코드는 업체 화면에 보이지 않습니다.
+- 잘림·형식 오류: 답이 길이 제한(2,000토큰)에 걸려 끊기면 502 "초안이 길어 중간에 끊겼습니다", 정해진 JSON이 아니면 502입니다. 비용이 생긴 호출이므로 둘 다 기록하고 횟수에 넣습니다.
+- 사용량 기록: 전용 테이블 `ai_usage_log`에 회원·기능(`CAMPAIGN_DRAFT`)·모델·입력/출력 토큰·결과(`SUCCESS`·`TRUNCATED`·`INVALID_ANSWER`)만 남깁니다. 요청 원문과 답은 남기지 않고, 운영 감사 기록에는 넣지 않습니다.
+- 알려진 한계: 확인 → 호출 → 기록 사이에 잠금이 없어 동시에 여러 번 요청하면 하루 한도를 조금 넘을 수 있습니다. 화면 버튼이 요청 중 잠겨 일반 사용에서는 거의 생기지 않습니다.
 - 길이: 설명 2,000자, 나머지 칸 1,500자까지 잘라 돌려줍니다(캠페인 저장 제한보다 작음).
 
 ## 안전장치
@@ -45,6 +48,19 @@ AiDraftPanel(화면) → POST /api/campaigns/ai/draft → CampaignDraftService �
 | `MOVRIT_AI_DAILY_LIMIT` | `20` | 한 사람의 하루 초안 수 |
 
 로컬 통합 실행(`scripts/integration.sh`)은 환경 파일이나 `~/.movrit/anthropic-key`(권한 600)에서 키를 읽습니다.
+
+## 코드 리뷰 반영 (2026-11-06)
+
+| 항목 | 고치기 전 | 고친 후 |
+|---|---|---|
+| 사용량 기록 위치 | 운영 감사 기록(audit_log)에 함께 기록 → 운영자 '최근 운영 기록 200건'이 밀려날 수 있음 | 전용 테이블 `ai_usage_log`(V26) |
+| 하루 기준 | 서버 시간대(`LocalDate.now()`) → UTC 서버면 오전 9시 초기화 | 한국 시간(`Asia/Seoul`) 고정 |
+| 답 잘림 | 잘려도 형식 오류로만 보임, 한도 1,500토큰 | `stop_reason=max_tokens`를 따로 알림(TRUNCATED), 한도 2,000토큰 |
+| 업체가 아닌 회원 | 404 "판매자 등록 신청 정보를 찾을 수 없습니다" | 403 "승인된 업체만 사용할 수 있습니다" |
+| AI 실패 안내 | "(상태 401)"처럼 외부 상태 코드 노출, 키 오류도 warn 로그 | 실패 종류(설정·요청 많음·그 밖)별 한국어 안내, 키 오류는 error 로그 |
+| 사용량 기록 형식 | JSON 문자열을 이어 붙여 특수 문자에 깨질 수 있음 | 테이블 열로 저장 |
+| 화면 오류 문장 | 서버 설명이 없으면 영어 오류 문장 노출 | 상태별 한국어 안내(`aiDraftError`) |
+| 테스트 | 로그인·입력 검사 자동 테스트 없음 | `CampaignDraftControllerTest`(401·400·토큰 회원 ID), 잘림·403·한국 시간·실패 종류 테스트 추가 |
 
 ## 확인한 것
 
