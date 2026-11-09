@@ -5,12 +5,24 @@
 
 혼자 기획·설계·개발했고, 실제 체험단 사이트를 써 보면서 업체가 손으로 하던 일을 기능으로 옮기는 데 집중했습니다.
 
-- 시연 영상(약 1분): [movrit-demo.mp4](https://github.com/yoo-jin-k/movrit-frontend/blob/developer/docs/demo/movrit-demo.mp4)
+- 시연 영상(약 2분, 소리 없음): [movrit-demo.mp4](https://github.com/yoo-jin-k/movrit-frontend/blob/developer/docs/demo/movrit-demo.mp4) — 참여자 신청 → 내 캠페인·채팅 → 업체 관리 → 운영자 승인 → AI 캠페인 초안·제출 전 점검
 - 화면 모음: [movrit-frontend/docs/screenshots](https://github.com/yoo-jin-k/movrit-frontend/tree/developer/docs/screenshots)
 
 | 참여자 · 내 캠페인 | 업체 · 참여자 관리 | 운영자 · 신고 처리 |
 |---|---|---|
 | ![내 캠페인](https://github.com/yoo-jin-k/movrit-frontend/raw/developer/docs/screenshots/04-my-campaign-workspace.png) | ![참여자 관리](https://github.com/yoo-jin-k/movrit-frontend/raw/developer/docs/screenshots/12-seller-participants.png) | ![신고 처리](https://github.com/yoo-jin-k/movrit-frontend/raw/developer/docs/screenshots/21-admin-moderation.png) |
+
+## 핵심 기술
+
+| 주제 | 무엇을 했나 | 자세히 |
+|---|---|---|
+| **동시성 제어** | 선정·선착순 신청은 캠페인 행을 `PESSIMISTIC_WRITE`로 잠근 뒤 인원을 세서 모집 인원 초과를 막고, 검토·재제출·조건 변경은 버전(`expectedVersion`)을 비교해 다르면 409로 돌려보냅니다. 동시 요청 두 건 중 한 건만 성공하는 것을 자동 점검으로 확인합니다. | [설계 고민](#설계하면서-고민한-것) |
+| **AI(LLM) 기능 설계** | 기능 코드는 `LlmClient` 인터페이스만 알고, 모델 연결과 키가 없을 때의 견본 응답은 설정이 고릅니다. 사용자 입력은 자료 블록으로만 넘겨 그 안의 지시를 따르지 않게 하고(프롬프트 주입 방어), 답은 서버가 JSON 형식과 길이를 검사합니다. 회원별 하루 횟수 제한과 전용 사용량 테이블로 비용을 통제합니다. 업체용 **캠페인 초안**과 참여자용 **제출 전 점검** 두 기능에 같은 구조를 씁니다. | [초안](docs/ai-campaign-draft.md) · [제출 전 점검](docs/ai-content-precheck.md) |
+| **인증·인가와 보안** | 이메일 + JWT(액세스·리프레시), Google·Kakao 로그인. 권한은 화면이 아니라 서비스 계층에서 매번 검사하고 회원 ID는 토큰에서만 꺼냅니다. 로그인 실패 제한(429), 비공개 업로드 분리, 연락처 마스킹, 엑셀 내려받기 감사 기록, 커밋 전·CI 비밀값 검사. | [보안 기록](docs/security.md) |
+| **데이터 정합성** | Flyway 마이그레이션(V1~V26)만으로 스키마를 바꾸고 JPA는 `validate`로 둡니다. 신청 시점의 배송지·답변·동의 버전·참여 조건은 사본으로 남겨, 원본이 바뀌어도 당시 기준으로 판단합니다. | [ERD](docs/erd/README.md) · [DB 변경 이력](docs/db-migration.md) |
+| **상태 흐름** | 신청 → 선정 → 체험 → 콘텐츠 제출 → 업체 검토 → 운영자 승인, 그 사이의 수정 요청·기간 연장·취소·패널티를 엔티티 메서드로 상태 전이를 묶어 잘못된 단계 변경을 막습니다. | [신청 상태](#신청-상태) |
+| **실시간 채팅** | 보내기는 일반 POST, 받기만 실시간이면 되는 구조라 WebSocket 대신 SSE로 메시지·읽음·입력 중·운영자 가림 이벤트를 한 스트림으로 보냅니다. | [설계 고민](#설계하면서-고민한-것) |
+| **품질·자동화** | 백엔드 테스트 259개(JUnit 5·Mockito, `@WebMvcTest`), 화면 단위 테스트 224개, Playwright로 실제 서버에 대고 도는 흐름 점검. GitHub Actions가 비밀값 검사·형식·임시 PostgreSQL에서 전체 마이그레이션과 테스트·Docker 이미지 빌드를 확인합니다. | [CI](#ci자동-점검) · [테스트](#테스트) |
 
 ## 어떤 서비스인가
 
@@ -30,6 +42,7 @@
 - 신청: 캠페인별 질문과 필수 동의, 배송지 입력. 선정 전에는 신청 내용을 고칠 수 있습니다. 방문형 선착순 캠페인은 신청하면 바로 선정됩니다.
 - 내 캠페인: 일정표(신청~결과 발표), 미션·제출 요건, 송장번호, 방문 예약, 구매 인증, 콘텐츠 제출과 수정 요청을 한 화면에서 처리. 신청한 캠페인 전체를 월 달력으로도 봅니다.
 - 참여 조정: 선정 발표 전 신청 철회, 선정 뒤 참여 취소(단순 취소 또는 업체와 협의한 취소+증빙), 체험·콘텐츠 마감 7·14일 연장 요청(신청당 1회)
+- 제출 전 점검: 게시할 본문을 붙여 넣으면 캠페인 미션·제출 요건·협찬 표시를 지켰는지 항목별로 알려 줌(본문 저장 안 함, 하루 횟수 제한)
 - 콘텐츠 성과: 올린 게시물의 조회수·좋아요·댓글 수를 날짜별로 남기고 지난 기록과 비교
 - 활동 등급(완료 횟수에 따라 새싹~다이아), 패널티·취소 횟수와 신청 제한 안내
 - 채팅(사진 여러 장·영상 첨부, 읽음 표시, 입력 중 표시, 대화 검색), 커뮤니티, 알림
@@ -65,6 +78,8 @@
 | 실시간 | SSE(채팅 메시지·읽음·입력 중·가림 이벤트) |
 | 테스트·품질 | JUnit 5, Mockito, Spotless(google-java-format) |
 | API 문서 | springdoc-openapi(Swagger UI), 메서드 Javadoc을 설명으로 사용 |
+| AI | 외부 LLM API(기본은 가벼운 모델, 환경 변수로 변경), `LlmClient` 인터페이스로 분리 |
+| 자동화 | GitHub Actions, Dependabot, Docker Compose |
 | 프론트엔드 | React 19, React Router 7, Vite 8 → [movrit-frontend](https://github.com/yoo-jin-k/movrit-frontend) |
 
 규모(2026-11-04 기준): 컨트롤러 50개, API 296개, Java 파일 354개(약 3만 2천 줄), 테이블 74개, 외래 키 123개, 백엔드 테스트 217개.
@@ -118,7 +133,7 @@ stateDiagram-v2
 
 **보던 화면과 서버 내용이 다를 때.** 참여자가 신청서를 쓰는 동안 업체가 질문이나 참여 조건을 바꾸면 옛 조건으로 신청하게 됩니다. 신청서 양식과 참여 조건에 버전을 두고, 화면이 받은 버전과 서버 버전이 다르면 409로 돌려보내 다시 확인하게 했습니다. 콘텐츠 검토도 같은 방식이라 다른 사람의 검토 결과를 덮어쓰지 않습니다.
 
-**AI를 붙이되 기능이 AI에 묶이지 않게.** 캠페인 초안 기능은 `LlmClient` 인터페이스만 알고, Claude 연결(`ClaudeLlmClient`)과 키가 없을 때의 견본 응답(`SampleLlmClient`)은 설정에서 고릅니다. 다른 회사 모델로 바꿀 때는 연결 클래스만 추가하면 됩니다. 키는 서버 환경 변수에만 있고, 업체 입력은 자료로만 넘겨 그 안의 지시를 따르지 않게 했으며, 답은 정해진 JSON 형식인지 서버가 검사합니다. 실제 호출은 토큰 수를 감사 기록에 남기고 한 사람당 하루 횟수를 제한해 비용이 한도 없이 나가지 않게 했습니다. 자세한 내용은 [docs/ai-campaign-draft.md](docs/ai-campaign-draft.md)에 있습니다.
+**AI를 붙이되 기능이 AI에 묶이지 않게.** 캠페인 초안 기능은 `LlmClient` 인터페이스만 알고, Claude 연결(`ClaudeLlmClient`)과 키가 없을 때의 견본 응답(`SampleLlmClient`)은 설정에서 고릅니다. 다른 회사 모델로 바꿀 때는 연결 클래스만 추가하면 됩니다. 키는 서버 환경 변수에만 있고, 업체 입력은 자료로만 넘겨 그 안의 지시를 따르지 않게 했으며, 답은 정해진 JSON 형식인지 서버가 검사합니다. 실제 호출은 토큰 수를 전용 사용량 테이블(`ai_usage_log`)에 남기고 한 사람당 하루 횟수를 제한해 비용이 한도 없이 나가지 않게 했습니다. 참여자용 제출 전 점검도 같은 구조를 쓰며, 점검 기준은 화면이 아니라 서버가 캠페인에서 읽어 참여자가 기준을 바꿔 '통과'를 만들 수 없게 했습니다. 자세한 내용은 [docs/ai-campaign-draft.md](docs/ai-campaign-draft.md), [docs/ai-content-precheck.md](docs/ai-content-precheck.md)에 있습니다.
 
 **나중에 바뀌는 원본.** 신청할 때의 배송지·답변·동의 버전·참여 조건을 신청서에 복사해 둡니다. 신고도 신고 당시 내용을 같이 저장해서, 작성자가 글을 지워도 운영자가 판단할 수 있습니다.
 
@@ -250,7 +265,7 @@ GitHub Actions(`.github/workflows/backend-ci.yml`)가 `feature/brand`·`main`에
 ./gradlew test -PmovritJavaVersion=18   # JDK 17이 없을 때
 ```
 
-서비스 단위 테스트가 대부분입니다. 누가 언제 어떤 상태로 바꿀 수 있는지, 송장번호·택배사 검증, 패널티 조건, 신청 자격 검사를 주로 확인합니다. `MovritApplicationTests.contextLoads`는 기본 프로필 DB(`movrit`)에 접속하므로 그 DB도 최신 스키마여야 합니다.
+테스트는 259개입니다(2026-11-09 기준, 2개 건너뜀). 서비스 단위 테스트가 대부분입니다. 누가 언제 어떤 상태로 바꿀 수 있는지, 송장번호·택배사 검증, 패널티 조건, 신청 자격 검사를 주로 확인합니다. `MovritApplicationTests.contextLoads`는 기본 프로필 DB(`movrit`)에 접속하므로 그 DB도 최신 스키마여야 합니다.
 
 화면을 거치는 흐름은 프론트 저장소의 Playwright 스크립트(`qa/e2e`)로 확인합니다. 신청 → 선정 → 배송 → 제출 → 승인, 구매평, 채팅, 신고 처리, 커뮤니티 관리, 리포트 엑셀, 콘텐츠 성과, 캠페인 검색 흐름을 실제 서버에 대고 돌립니다.
 
