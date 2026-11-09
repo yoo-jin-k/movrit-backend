@@ -57,7 +57,7 @@
 
 ```bash
 pg_dump -h localhost -U movrit_user -d movrit_integration -Fc \
-  -f ~/Documents/workspace/movrit-db-backups/movrit_integration_$(date +%Y%m%d_%H%M%S).dump
+  -f ~/MyHub/DevSpace/Movrit/movrit-db-backups/movrit_integration_$(date +%Y%m%d_%H%M%S).dump
 ```
 
 ## docs/sql 폴더의 기존 파일
