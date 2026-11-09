@@ -5,12 +5,21 @@
 
 혼자 기획·설계·개발했고, 실제 체험단 사이트를 써 보면서 업체가 손으로 하던 일을 기능으로 옮기는 데 집중했습니다.
 
-- 시연 영상(약 2분, 소리 없음): [movrit-demo.mp4](https://github.com/yoo-jin-k/movrit-frontend/blob/developer/docs/demo/movrit-demo.mp4) — 참여자 신청 → 내 캠페인·채팅 → 업체 관리 → 운영자 승인 → AI 캠페인 초안·제출 전 점검
-- 화면 모음: [movrit-frontend/docs/screenshots](https://github.com/yoo-jin-k/movrit-frontend/tree/developer/docs/screenshots)
+## 시연
 
-| 참여자 · 내 캠페인 | 업체 · 참여자 관리 | 운영자 · 신고 처리 |
-|---|---|---|
-| ![내 캠페인](https://github.com/yoo-jin-k/movrit-frontend/raw/developer/docs/screenshots/04-my-campaign-workspace.png) | ![참여자 관리](https://github.com/yoo-jin-k/movrit-frontend/raw/developer/docs/screenshots/12-seller-participants.png) | ![신고 처리](https://github.com/yoo-jin-k/movrit-frontend/raw/developer/docs/screenshots/21-admin-moderation.png) |
+전체 영상(약 2분, 소리 없음): [movrit-demo.mp4](https://github.com/yoo-jin-k/movrit-frontend/blob/main/docs/demo/movrit-demo.mp4) · 화면 모음: [movrit-frontend/docs/screenshots](https://github.com/yoo-jin-k/movrit-frontend/tree/main/docs/screenshots)
+
+아래 장면은 1.5배속입니다.
+
+| 참여자 · 캠페인 찾기와 신청 | 참여자 · 내 캠페인과 채팅 |
+|---|---|
+| <img src="docs/portfolio/media/01-participant-apply.gif" alt="캠페인 목록에서 신청서 쓰기" /> | <img src="docs/portfolio/media/02-participant-workspace.gif" alt="내 캠페인 일정과 채팅" /> |
+| **업체 · 참여자·배송·환급 관리** | **운영자 · 최종 승인과 신고 처리** |
+| <img src="docs/portfolio/media/03-seller.gif" alt="업체 참여자 관리" /> | <img src="docs/portfolio/media/04-admin.gif" alt="운영자 콘텐츠 승인" /> |
+
+**AI 기능 · 업체 캠페인 초안 → 참여자 제출 전 점검** (실제 모델 호출)
+
+<img src="docs/portfolio/media/05-ai.gif" alt="AI 캠페인 초안과 제출 전 점검" />
 
 ## 핵심 기술
 
