@@ -1,0 +1,6 @@
+# HTTPS 입구입니다. SITE_ADDRESS 도메인의 인증서를 자동으로 받고, 모든 요청을 화면 서버(nginx)로 넘깁니다.
+# 실시간 채팅(SSE)은 Caddy가 이벤트를 모으지 않고 바로 넘깁니다.
+{$SITE_ADDRESS} {
+	encode gzip
+	reverse_proxy frontend:80
+}

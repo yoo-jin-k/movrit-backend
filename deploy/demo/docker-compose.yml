@@ -1,0 +1,90 @@
+# MOVRIT 공개 시연 서버용 실행 설정입니다(클라우드 서버 1대: DB + 백엔드 + 화면 + HTTPS).
+# 준비와 순서는 같은 폴더의 README.md를 따릅니다. 비밀값은 이 폴더의 .env에만 두고 Git에 올리지 않습니다.
+#   cd deploy/demo && docker compose up -d --build
+#
+# - 백엔드는 시연 설정(integration)과 운영 보안 설정(prod)을 함께 켭니다.
+#   시연 설정: 메일·문자 없이 인증번호를 화면에 보여 줍니다.
+#   운영 설정: SQL 로그 끄기, 오류 응답에 내부 정보 숨기기, CORS 주소 필수, HTTPS 프록시 헤더 인식.
+# - 밖으로 여는 포트는 Caddy의 80·443뿐입니다. DB와 백엔드는 내부 네트워크에서만 접속합니다.
+# - Caddy가 SITE_ADDRESS 도메인의 HTTPS 인증서를 자동으로 받고 갱신합니다.
+name: movrit-demo
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: movrit
+      POSTGRES_USER: movrit_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD를 .env에 넣어 주세요}
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U movrit_user -d movrit']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ../..
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # 같은 서버의 DB와 메모리를 나눠 쓰도록 상한을 둡니다(자바 힙은 이 값의 75%).
+    mem_limit: 1g
+    environment:
+      SPRING_PROFILES_ACTIVE: integration,prod
+      DB_URL: jdbc:postgresql://db:5432/movrit
+      DB_USERNAME: movrit_user
+      DB_PASSWORD: ${DB_PASSWORD}
+      INTEGRATION_DB_PASSWORD: ${DB_PASSWORD}
+      INTEGRATION_SERVER_PORT: '8080'
+      INTEGRATION_UPLOAD_DIR: /data/uploads
+      PRIVATE_UPLOAD_DIR: /data/uploads-private
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET(32자 이상)을 .env에 넣어 주세요}
+      FRONTEND_BASE_URL: https://${SITE_ADDRESS:?SITE_ADDRESS(접속 도메인)를 .env에 넣어 주세요}
+      CORS_ALLOWED_ORIGINS: https://${SITE_ADDRESS}
+      CHANNEL_CONNECT_REDIRECT_BASE: https://${SITE_ADDRESS}
+      GOOGLE_REDIRECT_URI: https://${SITE_ADDRESS}/api/auth/google/callback
+      KAKAO_REDIRECT_URI: https://${SITE_ADDRESS}/api/auth/kakao/callback
+      # 소셜 로그인·AI 키는 선택입니다. 비워 두면 이메일 로그인과 견본 AI 초안으로 동작합니다.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID:-}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # API 문서(Swagger)는 기본으로 꺼 둡니다. 포트폴리오에서 보여 주려면 true
+      API_DOCS_ENABLED: ${API_DOCS_ENABLED:-false}
+    volumes:
+      - upload-data:/data
+
+  frontend:
+    build:
+      context: ${FRONTEND_DIR:-../../../movrit-frontend}
+      args:
+        VITE_NAVER_MAP_KEY_ID: ${VITE_NAVER_MAP_KEY_ID:-}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - frontend
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  db-data:
+  upload-data:
+  caddy-data:
+  caddy-config:
