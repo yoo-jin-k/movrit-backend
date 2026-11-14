@@ -17,7 +17,7 @@ public final class ParticipationChangeDtos {
   /** 참여 취소(단순 취소) 요청입니다. 취소 횟수 1회가 남습니다. */
   public record SelfCancelRequest(@NotBlank @Size(max = 500) String reason) {}
 
-  /** 기간 연장 요청입니다. days는 7 또는 14입니다. */
+  /** 기간 연장 요청입니다. days는 1~30일입니다. */
   public record ExtensionRequest(@NotNull Integer days, @NotBlank @Size(max = 500) String reason) {}
 
   /** 승인·반려 결정입니다. 반려할 때는 note에 사유를 적습니다. */

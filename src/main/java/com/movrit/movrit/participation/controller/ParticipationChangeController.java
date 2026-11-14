@@ -96,7 +96,7 @@ public class ParticipationChangeController {
         .body(new FileSystemResource(evidence.path()));
   }
 
-  /** 참여자가 기간 연장(7일 또는 14일)을 요청합니다. 신청마다 한 번만 요청할 수 있습니다. */
+  /** 참여자가 기간 연장(1~30일)을 요청합니다. 신청마다 한 번만 요청할 수 있습니다. */
   @PostMapping("/api/campaigns/applications/{applicationId}/extension")
   public ParticipationChangeDtos.Status requestExtension(
       @AuthenticationPrincipal Jwt jwt,

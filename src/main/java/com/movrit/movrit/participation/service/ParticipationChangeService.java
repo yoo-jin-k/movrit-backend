@@ -39,7 +39,7 @@ import org.springframework.web.server.ResponseStatusException;
  *   <li>신청 철회: 선정 발표 전 접수 상태에서 참여자가 바로 거둡니다. 취소 횟수를 남기지 않습니다(같은 캠페인에 다시 신청할 수는 없습니다).
  *   <li>참여 취소(단순 취소): 선정된 뒤 콘텐츠를 내기 전 참여자가 바로 취소합니다. 취소 횟수 1회가 남습니다.
  *   <li>협의 취소: 업체와 합의했거나 업체 사정일 때 사유와 증빙을 올리면 운영자가 확인합니다. 승인되면 취소 횟수 없이 취소합니다.
- *   <li>기간 연장: 참여자가 7·14일 연장을 요청하고 캠페인 업체(또는 운영자)가 승인하면 이 신청의 체험 기간·제출 마감을 함께 늦춥니다. 신청당 1회입니다.
+ *   <li>기간 연장: 참여자가 1~30일 연장을 요청하고 캠페인 업체(또는 운영자)가 승인하면 이 신청의 체험 기간·제출 마감을 함께 늦춥니다. 신청당 1회입니다.
  *   <li>직접 연장: 캠페인 업체나 운영자가 사정을 듣고 1~30일을 직접 늘립니다. 횟수 제한은 없습니다.
  *   <li>모든 연장은 기록(campaign_period_extension)으로 남아 운영자 회원 상세에서 참여자의 연장 횟수로 보입니다.
  *   <li>연장 횟수 기준: 1년 5회면 운영자 알림, 10회면 패널티와 30일 신청 제한({@link ExtensionCountService}).
@@ -217,7 +217,7 @@ public class ParticipationChangeService {
   }
 
   /**
-   * 기간 연장을 요청합니다(7일 또는 14일, 신청당 1회). 캠페인 업체에 알립니다.
+   * 기간 연장을 요청합니다(1~30일, 신청당 1회). 캠페인 업체에 알립니다.
    *
    * @throws ResponseStatusException 본인 신청이 아니면 404, 일수 오류는 400, 이미 요청했거나 마감이 지났거나 제출 뒤면 409
    */
@@ -225,8 +225,8 @@ public class ParticipationChangeService {
   public ParticipationChangeDtos.Status requestExtension(
       Long memberId, Long applicationId, ParticipationChangeDtos.ExtensionRequest request) {
     CampaignApplication application = getOwnApplication(memberId, applicationId);
-    if (!CampaignExtensionRequest.ALLOWED_DAYS.contains(request.days())) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "연장은 7일 또는 14일만 요청할 수 있습니다.");
+    if (!CampaignExtensionRequest.isAllowedDays(request.days())) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "연장은 1일부터 30일까지 요청할 수 있습니다.");
     }
     if (extensionRepository.existsById(applicationId)) {
       throw conflict("기간 연장은 신청마다 한 번만 요청할 수 있습니다.");

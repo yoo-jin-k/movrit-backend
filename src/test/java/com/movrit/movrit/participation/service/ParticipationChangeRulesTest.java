@@ -84,9 +84,16 @@ class ParticipationChangeRulesTest {
         .isInstanceOf(IllegalStateException.class);
     assertThatThrownBy(() -> application.extendContentDeadline(campaignDeadline))
         .isInstanceOf(IllegalStateException.class);
-    // 연장은 7일·14일만 됩니다.
-    assertThatThrownBy(() -> new CampaignExtensionRequest(1L, 7L, 3, "사유", campaignDeadline))
+    // 연장은 1~30일 사이에서 직접 정할 수 있고, 범위를 벗어나면 막습니다.
+    assertThat(new CampaignExtensionRequest(1L, 7L, 3, "사유", campaignDeadline).getDays())
+        .isEqualTo(3);
+    assertThat(new CampaignExtensionRequest(1L, 7L, 30, "사유", campaignDeadline).getDays())
+        .isEqualTo(30);
+    assertThatThrownBy(() -> new CampaignExtensionRequest(1L, 7L, 0, "사유", campaignDeadline))
         .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> new CampaignExtensionRequest(1L, 7L, 31, "사유", campaignDeadline))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThat(CampaignExtensionRequest.isAllowedDays(null)).isFalse();
     // 마감이 지난 뒤에는 연장을 요청할 수 없습니다.
     assertThat(
             ParticipationChangeService.canRequestExtension(

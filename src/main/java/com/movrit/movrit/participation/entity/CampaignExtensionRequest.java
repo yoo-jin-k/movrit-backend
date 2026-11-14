@@ -5,13 +5,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
-import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 기간 연장 요청입니다. 참여자가 7일 또는 14일 연장을 요청하고 캠페인 업체(또는 운영자)가 승인·반려합니다.
+ * 기간 연장 요청입니다. 참여자가 1~30일 사이로 연장을 요청하고 캠페인 업체(또는 운영자)가 승인·반려합니다.
  *
  * <p>신청당 한 번만 요청할 수 있고(반려되어도 다시 요청하지 않습니다), 승인되면 그 신청의 콘텐츠 제출 마감만 늦춥니다.
  */
@@ -25,7 +24,16 @@ public class CampaignExtensionRequest {
   public static final String REJECTED = "REJECTED";
 
   /** 요청할 수 있는 연장 일수입니다. */
-  public static final Set<Integer> ALLOWED_DAYS = Set.of(7, 14);
+  /** 요청할 수 있는 최소 연장 일수입니다. 업체 직접 연장과 같은 범위입니다. */
+  public static final int MIN_DAYS = CampaignPeriodExtension.MIN_DAYS;
+
+  /** 요청할 수 있는 최대 연장 일수입니다. */
+  public static final int MAX_DAYS = CampaignPeriodExtension.MAX_DAYS;
+
+  /** 요청 일수가 허용 범위(1~30일) 안인지 확인합니다. */
+  public static boolean isAllowedDays(Integer days) {
+    return days != null && days >= MIN_DAYS && days <= MAX_DAYS;
+  }
 
   @Id
   @Column(name = "application_id")
@@ -61,8 +69,8 @@ public class CampaignExtensionRequest {
 
   public CampaignExtensionRequest(
       Long applicationId, Long memberId, int days, String reason, LocalDateTime previousDeadline) {
-    if (!ALLOWED_DAYS.contains(days)) {
-      throw new IllegalArgumentException("연장은 7일 또는 14일만 요청할 수 있습니다.");
+    if (!isAllowedDays(days)) {
+      throw new IllegalArgumentException("연장은 1일부터 30일까지 요청할 수 있습니다.");
     }
     this.applicationId = applicationId;
     this.memberId = memberId;
