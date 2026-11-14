@@ -37,7 +37,8 @@ import org.springframework.web.server.ResponseStatusException;
  * <ul>
  *   <li>신청 대화방: 신청 한 건마다 하나. 그 신청의 참여자와 캠페인 브랜드, 그리고 운영자만 열 수 있습니다.
  *   <li>운영자 문의방: 회원마다 하나. 본인과 운영자만 열 수 있습니다.
- *   <li>운영자는 모든 방을 열람·참여할 수 있고, 처음 열 때 참여자로 추가됩니다.
+ *   <li>운영자는 모든 방을 열람할 수 있고, 열람만으로는 참여자가 되지 않습니다. 메시지를 보낼 때 참여자로 추가됩니다.
+ *   <li>이용 정지 등으로 ACTIVE가 아닌 회원은 방 열기·메시지 보내기·입력 중 신호가 막힙니다(403).
  *   <li>새 메시지·읽음 변화는 실시간 이벤트(SSE, {@link ChatEventHub})로 알리고, 화면은 이벤트를 받으면 '마지막으로 받은 메시지 다음'을 다시
  *       요청합니다. 연결이 끊겨도 화면의 주기적 확인(폴링)으로 이어집니다. 방을 열면 읽음 위치를 최신으로 옮깁니다.
  *   <li>상대가 읽은 위치(othersLastReadId)를 함께 내려 내 메시지에 '읽음'을 표시합니다.
@@ -46,6 +47,19 @@ import org.springframework.web.server.ResponseStatusException;
  * </ul>
  *
  * <p>권한이 없는 방은 존재를 드러내지 않도록 404로 응답합니다.
+ *
+ * <p>변경 이력:
+ *
+ * <ul>
+ *   <li>목록 미리보기에 운영자가 가린 메시지 원문이 보이던 것 → 안내 문구로 보여줌.
+ *   <li>운영자가 열람·검색·입력 신호·첨부 받기만 해도 참여자로 추가되던 것 → 메시지를 보낼 때만 추가. 신청 대화방에서는 운영자의 읽음을 상대 '읽음' 표시에 쓰지
+ *       않음.
+ *   <li>보내기만 해도 내 읽음 위치가 내 메시지까지 넘어가 동시에 온 상대 메시지를 놓칠 수 있던 것 → 보내기는 읽음 위치를 옮기지 않음.
+ *   <li>읽음 위치를 메모리 값으로 덮어써 동시 요청에서 뒤로 갈 수 있던 것 → DB에서 비교해 앞으로만 갱신.
+ *   <li>동시에 처음 열면 방·참여자 중복 저장으로 500이 나던 것 → 없을 때만 넣고 다시 읽음.
+ *   <li>이용 정지 회원이 토큰 만료 전까지 채팅할 수 있던 것 → 방 열기·보내기·입력 신호·실시간 연결을 403으로 막음.
+ *   <li>'읽음' 이벤트가 나를 빼고 보내져 같은 계정 다른 창의 안 읽은 수가 늦게 바뀌던 것 → 나에게도 보내고 memberId로 구분.
+ * </ul>
  */
 @Service
 @RequiredArgsConstructor
@@ -113,20 +127,22 @@ public class ChatService {
     if (!me.isAdmin() && !memberId.equals(creator.getId()) && !memberId.equals(brand.getId())) {
       throw notFound();
     }
+    requireActive(me);
+    // 두 사람이 동시에 처음 열어도 500이 나지 않도록, 없을 때만 넣고(충돌하면 건너뜀) 다시 읽습니다.
     ChatRoom room =
         roomRepository
             .findByApplicationId(applicationId)
             .orElseGet(
-                () ->
-                    roomRepository.save(
-                        ChatRoom.builder()
-                            .roomType(ChatRoomType.APPLICATION)
-                            .application(application)
-                            .title(application.getCampaign().getTitle())
-                            .build()));
+                () -> {
+                  roomRepository.insertApplicationRoomIfAbsent(
+                      applicationId, application.getCampaign().getTitle());
+                  return roomRepository
+                      .findByApplicationId(applicationId)
+                      .orElseThrow(ChatService::notFound);
+                });
     join(room, creator, ChatRole.CREATOR);
     join(room, brand, ChatRole.BRAND);
-    if (me.isAdmin()) join(room, me, ChatRole.ADMIN);
+    // 운영자는 열람만으로 참여자가 되지 않습니다. 메시지를 보낼 때 참여자로 추가됩니다.
     return messages(memberId, room.getId(), null);
   }
 
@@ -138,17 +154,17 @@ public class ChatService {
       throw new ResponseStatusException(
           HttpStatus.BAD_REQUEST, "운영자는 채팅 목록에서 회원의 문의방을 열어 답변해 주세요.");
     }
+    requireActive(me);
     ChatRoom room =
         roomRepository
             .findByRoomTypeAndOwnerId(ChatRoomType.SUPPORT, memberId)
             .orElseGet(
-                () ->
-                    roomRepository.save(
-                        ChatRoom.builder()
-                            .roomType(ChatRoomType.SUPPORT)
-                            .owner(me)
-                            .title(SUPPORT_TITLE)
-                            .build()));
+                () -> {
+                  roomRepository.insertSupportRoomIfAbsent(memberId, SUPPORT_TITLE);
+                  return roomRepository
+                      .findByRoomTypeAndOwnerId(ChatRoomType.SUPPORT, memberId)
+                      .orElseThrow(ChatService::notFound);
+                });
     join(room, me, ChatRole.MEMBER);
     return messages(memberId, room.getId(), null);
   }
@@ -188,18 +204,21 @@ public class ChatService {
     } else {
       messages = messageRepository.findTop200ByRoomIdAndIdGreaterThanOrderByIdAsc(roomId, afterId);
     }
-    ChatParticipant mine = participant(room, me);
-    if (!older && !messages.isEmpty()) {
-      long before = mine.getLastReadMessageId();
-      mine.readUpTo(messages.get(messages.size() - 1).getId());
-      if (mine.getLastReadMessageId() > before) publishRead(room, me);
+    // 열람만 한 운영자는 참여 기록이 없으므로 읽음 위치를 남기지 않습니다.
+    ChatParticipant mine =
+        participantRepository.findByRoomIdAndMemberId(room.getId(), me.getId()).orElse(null);
+    if (mine != null && !older && !messages.isEmpty()) {
+      int moved =
+          participantRepository.advanceRead(
+              mine.getId(), messages.get(messages.size() - 1).getId());
+      if (moved > 0) publishRead(room, me, mine.getRole());
     }
     return new ChatDtos.Room(
         room.getId(),
         room.getRoomType(),
         room.getTitle(),
         room.getApplication() == null ? null : room.getApplication().getId(),
-        mine.getRole(),
+        mine == null ? ChatRole.ADMIN : mine.getRole(),
         memberLabels(room),
         messages.stream().map(message -> view(message, me)).toList(),
         othersLastRead(room, me),
@@ -221,6 +240,7 @@ public class ChatService {
   public ChatDtos.Message send(Long memberId, Long roomId, String body) {
     Member me = memberService.getMember(memberId);
     ChatRoom room = accessibleRoom(me, roomId);
+    requireActive(me);
     String text = body == null ? "" : body.strip();
     if (text.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "메시지를 입력해 주세요.");
     requireLength(text);
@@ -237,6 +257,7 @@ public class ChatService {
       Long memberId, Long roomId, MultipartFile file, String body) {
     Member me = memberService.getMember(memberId);
     ChatRoom room = accessibleRoom(me, roomId);
+    requireActive(me);
     String text = body == null ? "" : body.strip();
     requireLength(text);
     ChatAttachmentStorage.Stored stored = attachmentStorage.store(file);
@@ -294,7 +315,8 @@ public class ChatService {
   public void typing(Long memberId, Long roomId) {
     Member me = memberService.getMember(memberId);
     ChatRoom room = accessibleRoom(me, roomId);
-    // 입력 신호만으로 운영자를 방 참여자로 추가하지 않도록, 참여 기록이 없으면 운영자로 표시합니다.
+    requireActive(me);
+    // 입력 신호만으로 운영자를 방 참여자로 추가하지 않습니다. 참여 기록이 없으면 운영자로 표시합니다.
     ChatRole role =
         participantRepository
             .findByRoomIdAndMemberId(room.getId(), me.getId())
@@ -362,7 +384,7 @@ public class ChatService {
   public record AttachmentFile(java.nio.file.Path path, String name, String contentType) {}
 
   /** 첨부 파일을 돌려줍니다. 그 방에 들어갈 수 있는 사람만 받을 수 있습니다(아니면 404). */
-  @Transactional
+  @Transactional(readOnly = true)
   public AttachmentFile attachment(Long memberId, Long roomId, Long messageId) {
     Member me = memberService.getMember(memberId);
     accessibleRoom(me, roomId);
@@ -382,7 +404,12 @@ public class ChatService {
         message.getAttachmentType());
   }
 
-  /** 메시지를 저장하고 방 시각·내 읽음 위치를 갱신한 뒤 알림과 실시간 이벤트를 보냅니다. */
+  /**
+   * 메시지를 저장하고 방 시각을 갱신한 뒤 알림과 실시간 이벤트를 보냅니다.
+   *
+   * <p>보낸 사람의 읽음 위치는 옮기지 않습니다. 동시에 저장된 상대 메시지(번호가 더 작은데 늦게 커밋된 것)를 받기 전에 읽음으로 넘기지 않도록, 읽음은 메시지를 실제로
+   * 받아 간 범위(메시지 조회)에서만 옮깁니다. 내 메시지는 안 읽은 수에 들어가지 않습니다.
+   */
   private ChatDtos.Message post(
       Member me, ChatRoom room, String text, ChatAttachmentStorage.Stored attachment) {
     ChatParticipant mine = participant(room, me);
@@ -399,7 +426,6 @@ public class ChatService {
                 .attachmentSize(attachment == null ? null : attachment.size())
                 .build());
     room.touch(message.getCreatedAt() == null ? LocalDateTime.now() : message.getCreatedAt());
-    mine.readUpTo(message.getId());
     notifyRecipients(room, me, message);
     return view(message, me);
   }
@@ -451,25 +477,66 @@ public class ChatService {
         room.getId());
   }
 
-  /** 내가 읽은 위치가 바뀌었음을 다른 참여자 화면에 알립니다('읽음' 표시 갱신). */
-  private void publishRead(ChatRoom room, Member me) {
+  /**
+   * 내가 읽은 위치가 바뀌었음을 알립니다({roomId, memberId}).
+   *
+   * <ul>
+   *   <li>다른 참여자: '읽음' 표시 갱신용. 신청 대화방에서 운영자가 읽은 것은 상대의 '읽음' 표시에 쓰지 않으므로 보내지 않습니다.
+   *   <li>나 자신: 같은 계정의 다른 창이 안 읽은 수를 바로 갱신하도록 함께 보냅니다(memberId로 내 읽음인지 구분).
+   * </ul>
+   */
+  private void publishRead(ChatRoom room, Member me, ChatRole myRole) {
+    List<Long> recipients =
+        countsAsRead(room, myRole)
+            ? participantRepository.findAllByRoomId(room.getId()).stream()
+                .map(p -> p.getMember().getId())
+                .toList()
+            : List.of(me.getId());
     eventHub.publish(
-        participantRepository.findAllByRoomId(room.getId()).stream()
-            .map(p -> p.getMember().getId())
-            .filter(id -> !id.equals(me.getId()))
-            .toList(),
-        false,
-        "read",
-        Map.of("roomId", room.getId()));
+        recipients, false, "read", Map.of("roomId", room.getId(), "memberId", me.getId()));
   }
 
-  /** 나를 뺀 참여자들이 읽은 가장 마지막 메시지 번호입니다. */
+  /**
+   * 나를 뺀 참여자들이 읽은 가장 마지막 메시지 번호입니다.
+   *
+   * <p>신청 대화방에서는 운영자가 읽은 것을 '읽음'으로 치지 않습니다(운영자 열람이 참여자·브랜드 사이의 읽음으로 보이지 않게). 운영자 문의방은 운영자가 대화 상대이므로
+   * 그대로 셉니다.
+   */
   private long othersLastRead(ChatRoom room, Member me) {
     return participantRepository.findAllByRoomId(room.getId()).stream()
         .filter(p -> !p.getMember().getId().equals(me.getId()))
+        .filter(p -> countsAsRead(room, p.getRole()))
         .mapToLong(ChatParticipant::getLastReadMessageId)
         .max()
         .orElse(0L);
+  }
+
+  /** 이 역할의 읽음 위치를 상대의 '읽음' 표시에 쓰는지입니다. 신청 대화방의 운영자만 제외합니다. */
+  private static boolean countsAsRead(ChatRoom room, ChatRole role) {
+    return !(room.getRoomType() == ChatRoomType.APPLICATION && role == ChatRole.ADMIN);
+  }
+
+  /**
+   * 메시지를 보내거나 방을 열 수 있는 정상 계정인지 확인합니다. 이용 정지 등으로 ACTIVE가 아니면 로그인 토큰이 남아 있어도 막습니다.
+   *
+   * @throws ResponseStatusException ACTIVE가 아니면 403
+   */
+  private static void requireActive(Member me) {
+    if (me.getStatus() != null && me.getStatus() != MemberStatus.ACTIVE) {
+      throw new ResponseStatusException(HttpStatus.FORBIDDEN, "이용이 제한된 계정이라 채팅을 이용할 수 없습니다.");
+    }
+  }
+
+  /**
+   * 실시간 이벤트 연결을 열 수 있는 회원인지 확인하고 운영자 여부를 돌려줍니다.
+   *
+   * @throws ResponseStatusException 회원이 없으면 404, ACTIVE가 아니면 403
+   */
+  @Transactional(readOnly = true)
+  public boolean streamAccess(Long memberId) {
+    Member me = memberService.getMember(memberId);
+    requireActive(me);
+    return me.isAdmin();
   }
 
   private static void requireLength(String text) {
@@ -480,12 +547,12 @@ public class ChatService {
 
   // ───────── 내부 규칙 ─────────
 
-  /** 참여자이거나 운영자일 때만 방을 열 수 있습니다. 운영자는 처음 열 때 참여자로 추가됩니다. */
+  /** 참여자이거나 운영자일 때만 방을 열 수 있습니다. 운영자는 열람·검색·첨부 받기만으로는 참여자가 되지 않고, 메시지를 보낼 때 참여자로 추가됩니다. */
   private ChatRoom accessibleRoom(Member me, Long roomId) {
     ChatRoom room = roomRepository.findById(roomId).orElseThrow(ChatService::notFound);
+    if (me.isAdmin()) return room;
     boolean joined = participantRepository.findByRoomIdAndMemberId(roomId, me.getId()).isPresent();
-    if (!joined && !me.isAdmin()) throw notFound();
-    if (!joined) join(room, me, ChatRole.ADMIN);
+    if (!joined) throw notFound();
     return room;
   }
 
@@ -495,21 +562,29 @@ public class ChatService {
         .orElseGet(() -> join(room, me, me.isAdmin() ? ChatRole.ADMIN : ChatRole.MEMBER));
   }
 
-  /** 아직 참여하지 않았다면 참여자로 추가합니다. 이미 있으면 그대로 돌려줍니다. */
+  /**
+   * 아직 참여하지 않았다면 참여자로 추가합니다. 이미 있으면 그대로 돌려줍니다.
+   *
+   * <p>같은 방을 동시에 처음 열어도 500이 나지 않도록, 없을 때만 넣고(충돌하면 건너뜀) 다시 읽습니다.
+   */
   private ChatParticipant join(ChatRoom room, Member member, ChatRole role) {
     return participantRepository
         .findByRoomIdAndMemberId(room.getId(), member.getId())
         .orElseGet(
-            () ->
-                participantRepository.save(
-                    ChatParticipant.builder()
-                        .room(room)
-                        .member(member)
-                        .role(role)
-                        .lastReadMessageId(0L)
-                        .build()));
+            () -> {
+              participantRepository.insertIfAbsent(room.getId(), member.getId(), role.name());
+              return participantRepository
+                  .findByRoomIdAndMemberId(room.getId(), member.getId())
+                  .orElseThrow(ChatService::notFound);
+            });
   }
 
+  /**
+   * 목록 한 줄입니다. 운영자가 가린 마지막 메시지는 안내 문구로 보여줍니다.
+   *
+   * <p>안 읽은 수: 참여한 방은 내 읽음 위치 이후 개수입니다. 운영자가 참여하지 않은(열람만 한) 방은 읽음 위치가 없어 0으로 둡니다(헤더 배지와 같은 기준). 다만
+   * 아직 어느 운영자도 답하지 않은 운영자 문의방은 답변 대기 표시로 전체 개수를 보여줍니다.
+   */
   private ChatDtos.RoomSummary summary(ChatRoom room, Member me) {
     ChatMessage last = messageRepository.findTopByRoomIdOrderByIdDesc(room.getId()).orElse(null);
     long unread =
@@ -519,7 +594,11 @@ public class ChatService {
                 p ->
                     messageRepository.countUnread(
                         room.getId(), p.getLastReadMessageId(), me.getId()))
-            .orElseGet(() -> messageRepository.countUnread(room.getId(), 0L, me.getId()));
+            .orElseGet(
+                () ->
+                    awaitingAdmin(room)
+                        ? messageRepository.countUnread(room.getId(), 0L, me.getId())
+                        : 0L);
     return new ChatDtos.RoomSummary(
         room.getId(),
         room.getRoomType(),
@@ -528,11 +607,20 @@ public class ChatService {
         room.getApplication() == null ? null : room.getApplication().getId(),
         last == null
             ? null
-            : last.hasAttachment() && last.getBody().isBlank()
-                ? "(첨부) " + last.getAttachmentName()
-                : preview(last.getBody()),
+            : last.isHidden()
+                ? HIDDEN_TEXT
+                : last.hasAttachment() && last.getBody().isBlank()
+                    ? "(첨부) " + last.getAttachmentName()
+                    : preview(last.getBody()),
         room.getLastMessageAt(),
         unread);
+  }
+
+  /** 운영자가 한 명도 참여하지 않은 운영자 문의방인지(답변 대기)입니다. */
+  private boolean awaitingAdmin(ChatRoom room) {
+    return room.getRoomType() == ChatRoomType.SUPPORT
+        && participantRepository.findAllByRoomId(room.getId()).stream()
+            .noneMatch(p -> p.getRole() == ChatRole.ADMIN);
   }
 
   /** 목록에 보여줄 상대 표시입니다. 참여자에게는 브랜드, 브랜드에게는 참여자, 운영자에게는 양쪽을 보여줍니다. */

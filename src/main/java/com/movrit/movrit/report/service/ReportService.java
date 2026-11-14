@@ -4,6 +4,7 @@ import com.movrit.movrit.audit.service.AuditLogService;
 import com.movrit.movrit.auth.repository.RefreshTokenRepository;
 import com.movrit.movrit.campaigncontent.entity.CampaignContentSubmission;
 import com.movrit.movrit.campaigncontent.repository.CampaignContentSubmissionRepository;
+import com.movrit.movrit.chat.service.ChatEventHub;
 import com.movrit.movrit.chat.service.ChatService;
 import com.movrit.movrit.collaboration.service.CampaignOwnershipService;
 import com.movrit.movrit.community.entity.CommunityComment;
@@ -57,6 +58,7 @@ public class ReportService {
   private final CommunityCommentRepository commentRepository;
   private final CampaignContentSubmissionRepository contentRepository;
   private final ChatService chatService;
+  private final ChatEventHub chatEventHub;
   private final CampaignOwnershipService campaignOwnership;
   private final MemberService memberService;
   private final MemberRepository memberRepository;
@@ -157,6 +159,8 @@ public class ReportService {
         hideTarget(report, false);
         memberService.updateStatus(adminMemberId, owner, MemberStatus.SUSPENDED);
         refreshTokenRepository.findByMemberId(owner).ifPresent(token -> token.revoke());
+        // 열려 있는 채팅 실시간 연결도 닫습니다(커밋 뒤). 다시 연결하면 정지 상태라 403입니다.
+        chatEventHub.disconnect(owner);
       }
       default -> throw badRequest("처리 방식을 확인해 주세요.");
     }

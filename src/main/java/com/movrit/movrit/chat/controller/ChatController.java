@@ -4,7 +4,6 @@ import com.movrit.movrit.chat.dto.ChatDtos;
 import com.movrit.movrit.chat.service.ChatEventHub;
 import com.movrit.movrit.chat.service.ChatService;
 import com.movrit.movrit.common.security.JwtMemberId;
-import com.movrit.movrit.member.service.MemberService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.nio.charset.StandardCharsets;
@@ -55,7 +54,6 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class ChatController {
   private final ChatService service;
   private final ChatEventHub eventHub;
-  private final MemberService memberService;
 
   /** 내가 참여한 채팅방 목록을 최근 대화 순으로 조회합니다. */
   @GetMapping
@@ -92,11 +90,15 @@ public class ChatController {
     return service.messages(JwtMemberId.from(jwt), roomId, after, before);
   }
 
-  /** 새 메시지·읽음·입력 중 이벤트를 실시간(SSE)으로 받습니다. */
+  /**
+   * 새 메시지·읽음·입력 중 이벤트를 실시간(SSE)으로 받습니다. 이용 정지 등으로 ACTIVE가 아닌 회원은 403입니다.
+   *
+   * <p>read 이벤트는 {roomId, memberId}이며, 내가 읽은 경우(memberId가 나)에도 같은 계정의 다른 창 갱신용으로 옵니다.
+   */
   @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   public SseEmitter stream(@AuthenticationPrincipal Jwt jwt) {
     Long memberId = JwtMemberId.from(jwt);
-    return eventHub.subscribe(memberId, memberService.getMember(memberId).isAdmin());
+    return eventHub.subscribe(memberId, service.streamAccess(memberId));
   }
 
   /** 사진·PDF(5MB)·영상(20MB) 첨부 메시지를 보냅니다. */

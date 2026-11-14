@@ -43,11 +43,7 @@ public class ChatParticipant extends BaseEntity {
   @Column(name = "participant_role", nullable = false, length = 20)
   private ChatRole role;
 
+  /** 마지막으로 읽은 메시지 번호입니다. 동시에 읽어도 뒤로 가지 않도록 저장소의 advanceRead(DB에서 비교 후 갱신)로만 바꿉니다. */
   @Column(name = "last_read_message_id", nullable = false)
   private long lastReadMessageId;
-
-  /** 여기까지 읽었다고 기록합니다. 앞으로만 움직입니다. */
-  public void readUpTo(long messageId) {
-    if (messageId > lastReadMessageId) lastReadMessageId = messageId;
-  }
 }

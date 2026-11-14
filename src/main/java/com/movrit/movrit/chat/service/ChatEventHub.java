@@ -58,6 +58,35 @@ public class ChatEventHub {
                         }
                       }));
         };
+    afterCommit(task);
+  }
+
+  /** 회원의 연결을 모두 닫습니다(이용 정지 등). 트랜잭션 안이면 커밋 뒤에 닫아, 화면이 다시 연결할 때 바뀐 상태로 확인되게 합니다. */
+  public void disconnect(Long memberId) {
+    Runnable task =
+        () -> {
+          List<Subscriber> subscribers = byMember.remove(memberId);
+          if (subscribers == null) return;
+          subscribers.forEach(
+              subscriber -> {
+                try {
+                  subscriber.emitter().complete();
+                } catch (IllegalStateException ignored) {
+                  // 이미 끝난 연결입니다.
+                }
+              });
+        };
+    afterCommit(task);
+  }
+
+  /** 끊긴 연결을 찾아내기 위해 25초마다 빈 신호를 보냅니다. */
+  @Scheduled(fixedRate = 25_000)
+  public void heartbeat() {
+    byMember.values().forEach(list -> list.forEach(subscriber -> send(subscriber, "ping", "")));
+  }
+
+  /** 트랜잭션 안이면 커밋 뒤에, 아니면 바로 실행합니다. */
+  private static void afterCommit(Runnable task) {
     if (TransactionSynchronizationManager.isSynchronizationActive()) {
       TransactionSynchronizationManager.registerSynchronization(
           new TransactionSynchronization() {
@@ -69,12 +98,6 @@ public class ChatEventHub {
     } else {
       task.run();
     }
-  }
-
-  /** 끊긴 연결을 찾아내기 위해 25초마다 빈 신호를 보냅니다. */
-  @Scheduled(fixedRate = 25_000)
-  public void heartbeat() {
-    byMember.values().forEach(list -> list.forEach(subscriber -> send(subscriber, "ping", "")));
   }
 
   int connectionCount() {
