@@ -321,9 +321,17 @@ public class CampaignApplicationService {
    */
   public List<CampaignApplicationDtos.Response> findSellerApplications(Long memberId) {
     sellerProfileService.getApprovedSeller(memberId);
-    List<CampaignApplication> applications =
-        applicationRepository.findAllByCampaignBrandSellerMemberIdOrderByIdDesc(memberId).stream()
-            .toList();
+    return withCreatorStats(
+        applicationRepository.findAllByCampaignBrandSellerMemberIdOrderByIdDesc(memberId));
+  }
+
+  /**
+   * 신청 목록에 참여자별 완료 캠페인 수와 채널 지표를 한 번에 모아 붙입니다(신청마다 따로 조회하지 않음).
+   *
+   * <p>업체·운영자 선정 화면이 함께 씁니다. 배송 연락처는 업체 화면과 같은 규칙으로 참여 수락 이후에만 보입니다.
+   */
+  private List<CampaignApplicationDtos.Response> withCreatorStats(
+      List<CampaignApplication> applications) {
     Set<Long> creatorIds =
         applications.stream()
             .map(application -> application.getCreator().getId())
@@ -366,11 +374,10 @@ public class CampaignApplicationService {
    */
   public List<CampaignApplicationDtos.Response> findOperatorApplications(Long adminMemberId) {
     memberService.getAdmin(adminMemberId);
-    return applicationRepository
-        .findAllByCampaignSelectionModeOrderByIdDesc(CampaignSelectionMode.OPERATOR)
-        .stream()
-        .map(responses::sellerResponse)
-        .toList();
+    // 운영자도 선정 판단에 필요한 채널 지표·완료 이력을 업체 화면과 같은 기준으로 봅니다(연락처는 수락 전 숨김 유지).
+    return withCreatorStats(
+        applicationRepository.findAllByCampaignSelectionModeOrderByIdDesc(
+            CampaignSelectionMode.OPERATOR));
   }
 
   /**

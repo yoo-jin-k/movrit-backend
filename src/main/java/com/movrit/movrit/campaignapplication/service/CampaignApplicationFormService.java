@@ -132,12 +132,20 @@ public class CampaignApplicationFormService {
   }
 
   /**
-   * 구매평 캠페인은 '구매형'만, 다른 캠페인은 배송형·방문형만, 선착순 캠페인은 방문형만 허용합니다.
+   * 구매평 캠페인은 '구매형'만, 다른 캠페인은 배송형·방문형 중 하나만, 선착순 캠페인은 방문형만 허용합니다.
    *
    * <p>구매형은 배송 주소를 받지 않고 구매 인증으로 진행하므로, 다른 유형과 섞이면 진행 단계가 맞지 않습니다.
+   *
+   * <p>변경 이력: 고치기 전에는 배송형·방문형을 함께 저장할 수 있었습니다. 고친 후에는 참여 방식을 하나만 받고, 둘 이상이면 400으로 거절합니다(이미 저장된 신청서는
+   * 그대로 읽히며, 다시 저장할 때 하나를 고르게 됩니다).
+   *
+   * @throws ResponseStatusException 참여 방식이 둘 이상이거나 캠페인 종류·선정 방식과 맞지 않으면 400
    */
   private static void requireMatchingFulfillment(
       Campaign campaign, java.util.List<FulfillmentType> types) {
+    if (new HashSet<>(types).size() != 1) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "참여 방식은 배송형·방문형 중 하나만 고를 수 있습니다.");
+    }
     boolean purchaseCampaign =
         campaign.getCampaignType()
             == com.movrit.movrit.collaboration.entity.CampaignType.PURCHASE_REVIEW;
