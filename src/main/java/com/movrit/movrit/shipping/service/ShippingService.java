@@ -55,62 +55,69 @@ public class ShippingService {
   /** 배송 준비를 시작합니다. */
   @Transactional
   public ShippingDtos.Response prepare(Long memberId, Long id) {
-    Shipping s = owned(memberId, id);
-    transit(s::prepare);
-    return ShippingDtos.Response.from(s);
+    Shipping shipping = owned(memberId, id);
+    applyTransition(shipping::prepare);
+    return ShippingDtos.Response.from(shipping);
   }
 
   /** 택배사·운송장 번호를 입력해 발송 처리하고 주문을 발송 상태로 바꿉니다. */
   @Transactional
   public ShippingDtos.Response ship(Long memberId, Long id, ShippingDtos.ShipRequest request) {
-    Shipping s = owned(memberId, id);
-    transit(
+    Shipping shipping = owned(memberId, id);
+    applyTransition(
         () -> {
-          s.ship(request.courierCode(), request.trackingNumber());
-          s.getOrder().markShipped();
+          shipping.ship(request.courierCode(), request.trackingNumber());
+          shipping.getOrder().markShipped();
         });
-    return ShippingDtos.Response.from(s);
+    return ShippingDtos.Response.from(shipping);
   }
 
   /** 배송 완료로 처리하고 주문을 배송 완료로 바꿉니다. */
   @Transactional
   public ShippingDtos.Response deliver(Long memberId, Long id) {
-    Shipping s = owned(memberId, id);
-    transit(
+    Shipping shipping = owned(memberId, id);
+    applyTransition(
         () -> {
-          s.deliver();
-          s.getOrder().markDelivered();
+          shipping.deliver();
+          shipping.getOrder().markDelivered();
         });
-    return ShippingDtos.Response.from(s);
+    return ShippingDtos.Response.from(shipping);
   }
 
   /** 배송 정보를 찾고, 요청한 업체의 브랜드 주문인지 확인합니다. */
   private Shipping owned(Long memberId, Long id) {
-    Shipping s =
+    Shipping shipping =
         shippingRepository
             .findById(id)
             .orElseThrow(
                 () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "배송 정보를 찾을 수 없습니다."));
-    sellerOrder(memberId, s.getOrder().getId());
-    return s;
+    sellerOrder(memberId, shipping.getOrder().getId());
+    return shipping;
   }
 
   /** 요청한 업체가 주문 상품의 브랜드 소유자인지 확인합니다. 아니면 403입니다. */
   private Order sellerOrder(Long memberId, Long id) {
-    Order o = orderService.getOrder(id);
-    if (!o.getPreorder().getProduct().getBrand().getSeller().getMember().getId().equals(memberId))
+    Order order = orderService.getOrder(id);
+    if (!order
+        .getPreorder()
+        .getProduct()
+        .getBrand()
+        .getSeller()
+        .getMember()
+        .getId()
+        .equals(memberId))
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "내 브랜드 주문의 배송만 관리할 수 있습니다.");
-    return o;
+    return order;
   }
 
   /** 상태 변경 중 입력 오류는 400, 상태 규칙 위반은 409로 바꿔 사유를 전달합니다. */
-  private void transit(Runnable action) {
+  private void applyTransition(Runnable action) {
     try {
       action.run();
-    } catch (IllegalArgumentException e) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
-    } catch (IllegalStateException e) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+    } catch (IllegalArgumentException exception) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
+    } catch (IllegalStateException exception) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, exception.getMessage());
     }
   }
 }

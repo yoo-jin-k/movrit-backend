@@ -48,12 +48,7 @@ public class NoticeService {
   public NoticeDtos.Response create(Long adminId, NoticeDtos.SaveRequest request) {
     Member admin = memberService.getAdmin(adminId);
     Notice notice = Notice.builder().author(admin).build();
-    notice.edit(
-        request.title().trim(),
-        request.body().trim(),
-        request.category(),
-        request.pinned(),
-        request.published());
+    applyRequest(notice, request);
     return NoticeDtos.Response.from(notices.save(notice));
   }
 
@@ -62,12 +57,7 @@ public class NoticeService {
   public NoticeDtos.Response update(Long adminId, Long id, NoticeDtos.SaveRequest request) {
     memberService.getAdmin(adminId);
     Notice notice = notices.findById(id).orElseThrow(NoticeService::notFound);
-    notice.edit(
-        request.title().trim(),
-        request.body().trim(),
-        request.category(),
-        request.pinned(),
-        request.published());
+    applyRequest(notice, request);
     return NoticeDtos.Response.from(notice);
   }
 
@@ -76,6 +66,16 @@ public class NoticeService {
   public void delete(Long adminId, Long id) {
     memberService.getAdmin(adminId);
     notices.delete(notices.findById(id).orElseThrow(NoticeService::notFound));
+  }
+
+  /** 생성과 수정에 같은 입력 정리 규칙을 적용하고, 게시 시각 판단은 엔티티에 맡깁니다. */
+  private void applyRequest(Notice notice, NoticeDtos.SaveRequest request) {
+    notice.edit(
+        request.title().trim(),
+        request.body().trim(),
+        request.category(),
+        request.pinned(),
+        request.published());
   }
 
   private static ResponseStatusException notFound() {

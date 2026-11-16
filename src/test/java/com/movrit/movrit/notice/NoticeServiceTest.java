@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.movrit.movrit.member.entity.Member;
@@ -42,6 +43,30 @@ class NoticeServiceTest {
     notice.edit("t2", "b", NoticeCategory.NOTICE, true, true);
     // 내렸다가 다시 게시해도 처음 게시 시각을 유지합니다.
     assertThat(notice.getPublishedAt()).isEqualTo(first);
+  }
+
+  @Test
+  void updateTrimsTextAndKeepsFirstPublishTime() {
+    Member author = Member.builder().id(2L).name("작성자").build();
+    Notice notice = Notice.builder().id(5L).author(author).build();
+    notice.edit("이전 제목", "이전 본문", NoticeCategory.NOTICE, false, true);
+    var firstPublishedAt = notice.getPublishedAt();
+    when(notices.findById(5L)).thenReturn(Optional.of(notice));
+
+    NoticeDtos.Response updated =
+        service.update(
+            1L,
+            5L,
+            new NoticeDtos.SaveRequest(" 수정 제목 ", " 수정 본문 ", NoticeCategory.NOTICE, true, true));
+
+    // 수정 시에도 운영자 확인과 입력 정리를 수행하고 원래 작성자·최초 게시 시각을 유지합니다.
+    verify(members).getAdmin(1L);
+    assertThat(updated.title()).isEqualTo("수정 제목");
+    assertThat(updated.body()).isEqualTo("수정 본문");
+    assertThat(updated.pinned()).isTrue();
+    assertThat(updated.published()).isTrue();
+    assertThat(updated.publishedAt()).isEqualTo(firstPublishedAt);
+    assertThat(updated.authorName()).isEqualTo("작성자");
   }
 
   @Test
